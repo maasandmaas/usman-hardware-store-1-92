@@ -76,7 +76,7 @@ export function AppSidebar() {
           </div>
           <div>
             <h2 className="text-lg font-bold text-sidebar-foreground">Usman Hardware</h2>
-            <p className="text-xs text-sidebar-foreground/60">Management System</p>
+            <p className="text-xs text-sidebar-foreground/60">Hafizabad, Punjab</p>
           </div>
         </div>
       </SidebarHeader>

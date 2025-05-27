@@ -12,54 +12,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Package, Search, Plus, Edit, Trash2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Import centralized data
+import { products as initialProducts, categories, units, Product } from "@/data/storeData";
+
 const Products = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Diverse product categories for Pakistani hardware store
-  const [products, setProducts] = useState([
-    // Hardware & Fittings
-    { id: 1, name: "Door Hinges - Heavy Duty", sku: "DH001", price: 450, stock: 15, category: "hardware", unit: "piece", minStock: 5 },
-    { id: 2, name: "Cabinet Handles - Chrome", sku: "CH002", price: 250, stock: 28, category: "hardware", unit: "piece", minStock: 10 },
-    { id: 3, name: "Drawer Slides - 18 inch", sku: "DS003", price: 850, stock: 12, category: "hardware", unit: "pair", minStock: 8 },
-    { id: 4, name: "Window Latches", sku: "WL008", price: 180, stock: 40, category: "hardware", unit: "piece", minStock: 15 },
-    
-    // Screws & Fasteners (quantity based)
-    { id: 5, name: "Wood Screws - 2 inch", sku: "WS004", price: 120, stock: 150, category: "fasteners", unit: "box", minStock: 20 },
-    { id: 6, name: "Machine Bolts - M8", sku: "MB005", price: 8, stock: 500, category: "fasteners", unit: "piece", minStock: 100 },
-    { id: 7, name: "Wall Plugs", sku: "WP006", price: 2, stock: 1000, category: "fasteners", unit: "piece", minStock: 200 },
-    
-    // Oils & Spirits (liquid based)
-    { id: 8, name: "Turpentine Oil", sku: "TO007", price: 180, stock: 25, category: "oils", unit: "liter", minStock: 10 },
-    { id: 9, name: "White Spirit", sku: "WS009", price: 220, stock: 18, category: "oils", unit: "liter", minStock: 8 },
-    { id: 10, name: "Linseed Oil", sku: "LO010", price: 350, stock: 12, category: "oils", unit: "liter", minStock: 5 },
-    
-    // Paints & Chemicals (kg/liter based)
-    { id: 11, name: "White Cement", sku: "WC011", price: 180, stock: 50, category: "cement", unit: "kg", minStock: 20 },
-    { id: 12, name: "Wall Putty", sku: "WP012", price: 280, stock: 35, category: "cement", unit: "kg", minStock: 15 },
-    { id: 13, name: "Primer Paint", sku: "PP013", price: 420, stock: 22, category: "paints", unit: "liter", minStock: 10 },
-    
-    // Tools & Equipment
-    { id: 14, name: "Hammer - Claw", sku: "HC014", price: 650, stock: 8, category: "tools", unit: "piece", minStock: 3 },
-    { id: 15, name: "Measuring Tape", sku: "MT015", price: 380, stock: 15, category: "tools", unit: "piece", minStock: 5 },
-    
-    // Pipes & Fittings (open boxes/bulk)
-    { id: 16, name: "PVC Pipe - 1 inch", sku: "PV016", price: 85, stock: 200, category: "plumbing", unit: "foot", minStock: 50 },
-    { id: 17, name: "Elbow Joint - 1 inch", sku: "EJ017", price: 25, stock: 80, category: "plumbing", unit: "piece", minStock: 20 },
-  ]);
-
-  const categories = [
-    { value: "all", label: "All Categories" },
-    { value: "hardware", label: "Hardware & Fittings" },
-    { value: "fasteners", label: "Screws & Fasteners" },
-    { value: "oils", label: "Oils & Spirits" },
-    { value: "cement", label: "Cement & Putty" },
-    { value: "paints", label: "Paints & Chemicals" },
-    { value: "tools", label: "Tools & Equipment" },
-    { value: "plumbing", label: "Pipes & Plumbing" },
-  ];
+  // Use centralized products data
+  const [products, setProducts] = useState<Product[]>(initialProducts);
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -76,7 +39,8 @@ const Products = () => {
       ...formData,
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock),
-      minStock: parseInt(formData.minStock)
+      minStock: parseInt(formData.minStock),
+      sales: 0
     };
     setProducts([...products, newProduct]);
     setIsDialogOpen(false);
@@ -348,13 +312,9 @@ const ProductDialog = ({ onSubmit, onClose }) => {
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="hardware">Hardware & Fittings</SelectItem>
-                <SelectItem value="fasteners">Screws & Fasteners</SelectItem>
-                <SelectItem value="oils">Oils & Spirits</SelectItem>
-                <SelectItem value="cement">Cement & Putty</SelectItem>
-                <SelectItem value="paints">Paints & Chemicals</SelectItem>
-                <SelectItem value="tools">Tools & Equipment</SelectItem>
-                <SelectItem value="plumbing">Pipes & Plumbing</SelectItem>
+                {categories.slice(1).map((category) => (
+                  <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -365,13 +325,9 @@ const ProductDialog = ({ onSubmit, onClose }) => {
                 <SelectValue placeholder="Select unit" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="piece">Piece</SelectItem>
-                <SelectItem value="pair">Pair</SelectItem>
-                <SelectItem value="box">Box</SelectItem>
-                <SelectItem value="kg">Kilogram</SelectItem>
-                <SelectItem value="liter">Liter</SelectItem>
-                <SelectItem value="foot">Foot</SelectItem>
-                <SelectItem value="meter">Meter</SelectItem>
+                {units.map((unit) => (
+                  <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

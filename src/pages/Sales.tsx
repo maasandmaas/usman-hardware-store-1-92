@@ -9,8 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingCart, Plus, Minus, Trash2, Search, User, CreditCard, FileText, Pin, PinOff } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Trash2, Search, User, CreditCard, FileText, Pin, PinOff, Store, BarChart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+// Import centralized data
+import { products as allProducts, customers, Product } from "@/data/storeData"; 
 
 const Sales = () => {
   const { toast } = useToast();
@@ -21,25 +24,6 @@ const Sales = () => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [orders, setOrders] = useState([]);
   const [pinnedProducts, setPinnedProducts] = useState([1, 2]); // Default pinned products
-
-  // Mock data for Pakistani hardware store
-  const allProducts = [
-    { id: 1, name: "Door Hinges - Heavy Duty", sku: "DH001", price: 450, stock: 15, sales: 45 },
-    { id: 2, name: "Cabinet Handles - Chrome", sku: "CH002", price: 250, stock: 28, sales: 38 },
-    { id: 3, name: "Drawer Slides - 18 inch", sku: "DS003", price: 850, stock: 12, sales: 22 },
-    { id: 4, name: "Wood Screws - 2 inch", sku: "WS004", price: 120, stock: 150, sales: 67 },
-    { id: 5, name: "Cabinet Lock", sku: "CL005", price: 300, stock: 35, sales: 15 },
-    { id: 6, name: "Shelf Support", sku: "SS006", price: 80, stock: 60, sales: 31 },
-    { id: 7, name: "Door Knobs - Brass", sku: "DK007", price: 380, stock: 25, sales: 19 },
-    { id: 8, name: "Window Latches", sku: "WL008", price: 180, stock: 40, sales: 28 },
-  ];
-
-  const customers = [
-    { id: 1, name: "Muhammad Ahmed", phone: "0300-1234567", address: "Model Town, Lahore", dueAmount: 2340 },
-    { id: 2, name: "Ali Hassan", phone: "0321-9876543", address: "Gulberg, Lahore", dueAmount: 1890 },
-    { id: 3, name: "Fatima Khan", phone: "0333-5555555", address: "DHA, Karachi", dueAmount: 0 },
-    { id: 4, name: "Ahmed Construction", phone: "0345-1111111", address: "Johar Town, Lahore", dueAmount: 5600 },
-  ];
 
   // Filter and sort products: pinned first, then by search
   const getFilteredProducts = () => {
@@ -160,17 +144,18 @@ const Sales = () => {
   const filteredProducts = getFilteredProducts();
 
   return (
-    <div className="flex-1 p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex-1 p-6 space-y-6 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Sales System (POS)</h1>
-            <p className="text-gray-600">Point of Sale System</p>
+            <p className="text-gray-600">Usman Hardware - Hafizabad</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Badge variant="outline" className="text-green-700 border-green-300">
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Badge variant="outline" className="text-blue-700 border-blue-300 text-sm">
+            <ShoppingCart className="h-3 w-3 mr-1" />
             {cart.length} items in cart
           </Badge>
           <Dialog>
@@ -229,28 +214,30 @@ const Sales = () => {
         {/* Products Section */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Search className="h-5 w-5 text-blue-500" />
-                Products
-              </CardTitle>
-              <div className="flex gap-4 items-center">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search products..."
-                    value={productSearch}
-                    onChange={(e) => setProductSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between mb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <Store className="h-5 w-5 text-blue-500" />
+                  Products
+                </CardTitle>
                 <Badge variant="outline" className="text-blue-600">
+                  <Pin className="h-3 w-3 mr-1" />
                   {pinnedProducts.length} pinned
                 </Badge>
               </div>
+              
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search products by name or SKU..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[65vh] overflow-y-auto p-2">
                 {filteredProducts.map((product) => (
                   <div
                     key={product.id}
@@ -279,16 +266,20 @@ const Sales = () => {
                       <div>
                         <h3 className="font-medium text-gray-900">{product.name}</h3>
                         <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-                        <p className="text-xs text-gray-400">Sales: {product.sales}</p>
+                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                          <BarChart className="h-3 w-3" />
+                          Sales: {product.sales}
+                        </div>
                       </div>
-                      <Badge variant={product.stock > 10 ? "default" : "destructive"}>
-                        {product.stock} left
+                      <Badge variant={product.stock > 10 ? "default" : "destructive"} className="whitespace-nowrap">
+                        {product.stock} {product.unit}{product.stock !== 1 ? 's' : ''}
                       </Badge>
                     </div>
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mt-3">
                       <span className="text-lg font-bold text-green-600">PKR {product.price}</span>
-                      <Button size="sm">
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                         <Plus className="h-4 w-4" />
+                        Add
                       </Button>
                     </div>
                   </div>
@@ -312,7 +303,7 @@ const Sales = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Search customer..."
+                  placeholder="Search customer by name or phone..."
                   value={customerSearch}
                   onChange={(e) => setCustomerSearch(e.target.value)}
                   className="pl-10"
@@ -320,7 +311,7 @@ const Sales = () => {
               </div>
               
               {customerSearch && (
-                <div className="max-h-40 overflow-y-auto space-y-2">
+                <div className="max-h-40 overflow-y-auto space-y-2 border rounded-md p-2">
                   {filteredCustomers.map((customer) => (
                     <div
                       key={customer.id}
@@ -334,6 +325,7 @@ const Sales = () => {
                     >
                       <p className="font-medium">{customer.name}</p>
                       <p className="text-sm text-gray-500">{customer.phone}</p>
+                      <p className="text-xs text-gray-400">{customer.address}</p>
                       {customer.dueAmount > 0 && (
                         <Badge variant="destructive" className="mt-1">
                           Due: PKR {customer.dueAmount.toLocaleString()}
@@ -348,6 +340,7 @@ const Sales = () => {
                 <div className="p-3 bg-blue-50 rounded border border-blue-200">
                   <p className="font-medium text-blue-900">{selectedCustomer.name}</p>
                   <p className="text-sm text-blue-700">{selectedCustomer.phone}</p>
+                  <p className="text-xs text-blue-600">{selectedCustomer.address}</p>
                   {selectedCustomer.dueAmount > 0 && (
                     <Badge variant="destructive" className="mt-1">
                       Previous Due: PKR {selectedCustomer.dueAmount.toLocaleString()}
@@ -384,7 +377,7 @@ const Sales = () => {
                       <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                         <div className="flex-1">
                           <p className="font-medium text-sm">{item.name}</p>
-                          <p className="text-xs text-gray-500">PKR {item.price} per unit</p>
+                          <p className="text-xs text-gray-500">PKR {item.price} per {item.unit}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
