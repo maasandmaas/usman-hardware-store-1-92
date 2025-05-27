@@ -8,108 +8,97 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Archive, Plus, ArrowUp, ArrowDown, Package, Calendar } from "lucide-react";
+import { Package, Search, Plus, Minus, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Inventory = () => {
   const { toast } = useToast();
-  const [isStockInOpen, setIsStockInOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
+  const [stockAction, setStockAction] = useState("in");
 
-  // Mock data
-  const [stockMovements, setStockMovements] = useState([
+  // Mock inventory data
+  const [inventory, setInventory] = useState([
     {
       id: 1,
-      productName: "Door Hinges - Heavy Duty",
+      name: "Door Hinges - Heavy Duty",
       sku: "DH001",
-      type: "stock_in",
-      quantity: 20,
-      date: "2024-01-15",
-      reference: "PO-001",
-      cost: 32,
-      notes: "Weekly stock replenishment"
+      currentStock: 5,
+      minStock: 20,
+      maxStock: 100,
+      lastUpdated: "2024-01-15",
+      movements: [
+        { date: "2024-01-15", type: "out", quantity: 2, reason: "Sale", reference: "ORD-001" },
+        { date: "2024-01-10", type: "in", quantity: 50, reason: "Purchase", reference: "PUR-001" }
+      ]
     },
     {
       id: 2,
-      productName: "Cabinet Handles - Chrome",
+      name: "Cabinet Handles - Chrome",
       sku: "CH002",
-      type: "sale",
-      quantity: -5,
-      date: "2024-01-15",
-      reference: "SALE-001",
-      notes: "Sale to John Hardware Co."
-    },
-    {
-      id: 3,
-      productName: "Drawer Slides - 18 inch",
-      sku: "DS003",
-      type: "adjustment",
-      quantity: -2,
-      date: "2024-01-14",
-      reference: "ADJ-001",
-      notes: "Damaged items removed"
+      currentStock: 8,
+      minStock: 25,
+      maxStock: 100,
+      lastUpdated: "2024-01-14",
+      movements: [
+        { date: "2024-01-14", type: "out", quantity: 5, reason: "Sale", reference: "ORD-002" },
+        { date: "2024-01-08", type: "in", quantity: 30, reason: "Purchase", reference: "PUR-002" }
+      ]
     }
   ]);
 
-  const [products] = useState([
-    { id: 1, name: "Door Hinges - Heavy Duty", sku: "DH001", stock: 5, minStock: 20, cost: 32 },
-    { id: 2, name: "Cabinet Handles - Chrome", sku: "CH002", stock: 8, minStock: 25, cost: 18 },
-    { id: 3, name: "Drawer Slides - 18 inch", sku: "DS003", stock: 3, minStock: 15, cost: 65 },
-    { id: 4, name: "Wood Screws - 2 inch", sku: "WS004", stock: 50, minStock: 100, cost: 8 }
-  ]);
+  const filteredInventory = inventory.filter(item =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.sku.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const lowStockItems = products.filter(product => product.stock <= product.minStock);
-  const outOfStockItems = products.filter(product => product.stock === 0);
+  const handleStockUpdate = (formData) => {
+    const quantity = parseInt(formData.quantity);
+    const updatedInventory = inventory.map(item => {
+      if (item.id === selectedProduct.id) {
+        const newStock = stockAction === "in" 
+          ? item.currentStock + quantity 
+          : item.currentStock - quantity;
+        
+        const movement = {
+          date: new Date().toISOString().split('T')[0],
+          type: stockAction,
+          quantity: quantity,
+          reason: formData.reason,
+          reference: formData.reference
+        };
 
-  const handleStockIn = (formData) => {
-    const product = products.find(p => p.id === parseInt(formData.productId));
-    if (product) {
-      const newMovement = {
-        id: stockMovements.length + 1,
-        productName: product.name,
-        sku: product.sku,
-        type: "stock_in",
-        quantity: parseInt(formData.quantity),
-        date: formData.date,
-        reference: formData.reference,
-        cost: parseFloat(formData.cost),
-        notes: formData.notes
-      };
-      
-      setStockMovements([newMovement, ...stockMovements]);
-      setIsStockInOpen(false);
-      
-      toast({
-        title: "Stock Added",
-        description: `${formData.quantity} units of ${product.name} added to inventory`,
-      });
-    }
+        return {
+          ...item,
+          currentStock: Math.max(0, newStock),
+          lastUpdated: movement.date,
+          movements: [movement, ...item.movements]
+        };
+      }
+      return item;
+    });
+
+    setInventory(updatedInventory);
+    setIsStockDialogOpen(false);
+    setSelectedProduct(null);
+    
+    toast({
+      title: "Stock Updated",
+      description: `Stock ${stockAction === "in" ? "added" : "removed"} successfully`,
+    });
   };
 
-  const getMovementIcon = (type) => {
-    switch (type) {
-      case "stock_in":
-        return <ArrowUp className="h-4 w-4 text-green-500" />;
-      case "sale":
-        return <ArrowDown className="h-4 w-4 text-blue-500" />;
-      case "adjustment":
-        return <Package className="h-4 w-4 text-orange-500" />;
-      default:
-        return <Package className="h-4 w-4 text-gray-500" />;
-    }
+  const openStockDialog = (product, action) => {
+    setSelectedProduct(product);
+    setStockAction(action);
+    setIsStockDialogOpen(true);
   };
 
-  const getMovementBadge = (type) => {
-    switch (type) {
-      case "stock_in":
-        return <Badge className="bg-green-100 text-green-800">Stock In</Badge>;
-      case "sale":
-        return <Badge className="bg-blue-100 text-blue-800">Sale</Badge>;
-      case "adjustment":
-        return <Badge className="bg-orange-100 text-orange-800">Adjustment</Badge>;
-      default:
-        return <Badge variant="secondary">{type}</Badge>;
-    }
+  const getStockStatus = (current, min) => {
+    if (current === 0) return { status: "out", color: "bg-red-500", text: "Out of Stock" };
+    if (current <= min) return { status: "low", color: "bg-orange-500", text: "Low Stock" };
+    return { status: "good", color: "bg-green-500", text: "In Stock" };
   };
 
   return (
@@ -119,345 +108,211 @@ const Inventory = () => {
           <SidebarTrigger />
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
-            <p className="text-gray-600">Track stock movements and manage inventory</p>
+            <p className="text-gray-600">Track stock levels and movements</p>
           </div>
         </div>
-        <Dialog open={isStockInOpen} onOpenChange={setIsStockInOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Stock In
-            </Button>
-          </DialogTrigger>
-          <StockInDialog products={products} onSubmit={handleStockIn} onClose={() => setIsStockInOpen(false)} />
-        </Dialog>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-l-4 border-l-blue-500">
+      {/* Search and Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="md:col-span-2">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Archive className="h-8 w-8 text-blue-500" />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search by product name or SKU..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
               <div>
-                <p className="text-sm text-gray-600">Total Products</p>
-                <p className="text-2xl font-bold text-blue-600">{products.length}</p>
+                <p className="text-sm text-gray-500">Low Stock Items</p>
+                <p className="text-xl font-bold text-red-600">
+                  {inventory.filter(item => item.currentStock <= item.minStock).length}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-red-500">
+        <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Package className="h-8 w-8 text-red-500" />
+            <div className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-blue-500" />
               <div>
-                <p className="text-sm text-gray-600">Low Stock Items</p>
-                <p className="text-2xl font-bold text-red-600">{lowStockItems.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-orange-500">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Package className="h-8 w-8 text-orange-500" />
-              <div>
-                <p className="text-sm text-gray-600">Out of Stock</p>
-                <p className="text-2xl font-bold text-orange-600">{outOfStockItems.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-green-500">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <ArrowUp className="h-8 w-8 text-green-500" />
-              <div>
-                <p className="text-sm text-gray-600">Total Stock Value</p>
-                <p className="text-2xl font-bold text-green-600">₹{products.reduce((sum, p) => sum + (p.stock * p.cost), 0).toLocaleString()}</p>
+                <p className="text-sm text-gray-500">Total Products</p>
+                <p className="text-xl font-bold text-blue-600">{inventory.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="movements" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="movements">Stock Movements</TabsTrigger>
-          <TabsTrigger value="alerts">Stock Alerts</TabsTrigger>
-          <TabsTrigger value="valuation">Inventory Valuation</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="movements">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Archive className="h-5 w-5 text-blue-500" />
-                Recent Stock Movements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {stockMovements.map((movement) => (
-                  <div key={movement.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+      {/* Inventory List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Stock Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {filteredInventory.map((item) => {
+              const stockStatus = getStockStatus(item.currentStock, item.minStock);
+              return (
+                <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
                     <div className="flex items-center gap-4">
-                      {getMovementIcon(movement.type)}
                       <div>
-                        <p className="font-medium text-gray-900">{movement.productName}</p>
-                        <p className="text-sm text-gray-500">SKU: {movement.sku}</p>
-                        <p className="text-xs text-gray-400">{movement.notes}</p>
+                        <h3 className="font-medium text-gray-900">{item.name}</h3>
+                        <p className="text-sm text-gray-500">SKU: {item.sku}</p>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center gap-2 mb-1">
-                        {getMovementBadge(movement.type)}
-                        <span className={`font-bold ${movement.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {movement.quantity > 0 ? '+' : ''}{movement.quantity}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500">{movement.date}</p>
-                      <p className="text-xs text-gray-400">Ref: {movement.reference}</p>
+                      <Badge variant="outline" className={`${stockStatus.color} text-white border-0`}>
+                        {stockStatus.text}
+                      </Badge>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="alerts">
-          <div className="space-y-6">
-            {lowStockItems.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-red-600">
-                    <Package className="h-5 w-5" />
-                    Low Stock Alerts ({lowStockItems.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {lowStockItems.map((product) => (
-                      <div key={product.id} className="flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900">{product.name}</p>
-                          <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm text-red-600">
-                            Current: <span className="font-bold">{product.stock}</span> | 
-                            Min: <span className="font-bold">{product.minStock}</span>
-                          </p>
-                          <Badge variant="destructive">Reorder Now</Badge>
-                        </div>
-                      </div>
-                    ))}
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-500">Current</p>
+                      <p className="text-lg font-bold">{item.currentStock}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-500">Min</p>
+                      <p className="text-sm">{item.minStock}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-500">Max</p>
+                      <p className="text-sm">{item.maxStock}</p>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-green-600 border-green-300"
+                        onClick={() => openStockDialog(item, "in")}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Stock In
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 border-red-300"
+                        onClick={() => openStockDialog(item, "out")}
+                      >
+                        <Minus className="h-4 w-4 mr-1" />
+                        Stock Out
+                      </Button>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {outOfStockItems.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-red-700">
-                    <Package className="h-5 w-5" />
-                    Out of Stock ({outOfStockItems.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {outOfStockItems.map((product) => (
-                      <div key={product.id} className="flex items-center justify-between p-3 bg-red-100 border border-red-300 rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900">{product.name}</p>
-                          <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-                        </div>
-                        <Badge variant="destructive">Out of Stock</Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              );
+            })}
           </div>
-        </TabsContent>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="valuation">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-green-500" />
-                Inventory Valuation
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {products.map((product) => (
-                  <div key={product.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{product.name}</p>
-                      <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">
-                        Stock: <span className="font-medium">{product.stock} units</span>
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Cost per unit: <span className="font-medium">₹{product.cost}</span>
-                      </p>
-                      <p className="font-bold text-green-600">
-                        Total Value: ₹{(product.stock * product.cost).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Stock Movement Dialog */}
+      <Dialog open={isStockDialogOpen} onOpenChange={setIsStockDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {stockAction === "in" ? "Add Stock" : "Remove Stock"} - {selectedProduct?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <StockMovementForm 
+            product={selectedProduct}
+            action={stockAction}
+            onSubmit={handleStockUpdate}
+            onClose={() => setIsStockDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-// Stock In Dialog Component
-const StockInDialog = ({ products, onSubmit, onClose }) => {
+// Stock Movement Form Component
+const StockMovementForm = ({ product, action, onSubmit, onClose }) => {
   const [formData, setFormData] = useState({
-    productId: "",
     quantity: "",
-    cost: "",
-    date: new Date().toISOString().split('T')[0],
-    reference: "",
-    notes: ""
+    reason: "",
+    reference: ""
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
-    setFormData({
-      productId: "", quantity: "", cost: "", 
-      date: new Date().toISOString().split('T')[0], 
-      reference: "", notes: ""
-    });
+    setFormData({ quantity: "", reason: "", reference: "" });
   };
 
-  const selectedProduct = products.find(p => p.id === parseInt(formData.productId));
-
   return (
-    <DialogContent className="max-w-xl">
-      <DialogHeader>
-        <DialogTitle>Add Stock</DialogTitle>
-      </DialogHeader>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="productId">Product</Label>
-          <Select value={formData.productId} onValueChange={(value) => {
-            setFormData({...formData, productId: value});
-            const product = products.find(p => p.id === parseInt(value));
-            if (product) {
-              setFormData(prev => ({...prev, productId: value, cost: product.cost.toString()}));
-            }
-          }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select product" />
-            </SelectTrigger>
-            <SelectContent>
-              {products.map((product) => (
-                <SelectItem key={product.id} value={product.id.toString()}>
-                  {product.name} (Current: {product.stock})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="quantity">Quantity</Label>
+        <Input
+          id="quantity"
+          type="number"
+          value={formData.quantity}
+          onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+          placeholder="Enter quantity"
+          required
+        />
+      </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="quantity">Quantity</Label>
-            <Input
-              id="quantity"
-              type="number"
-              value={formData.quantity}
-              onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-              required
-              min="1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="cost">Cost per unit (₹)</Label>
-            <Input
-              id="cost"
-              type="number"
-              step="0.01"
-              value={formData.cost}
-              onChange={(e) => setFormData({...formData, cost: e.target.value})}
-              required
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="date">Date</Label>
-            <Input
-              id="date"
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({...formData, date: e.target.value})}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="reference">Reference (PO/Invoice)</Label>
-            <Input
-              id="reference"
-              value={formData.reference}
-              onChange={(e) => setFormData({...formData, reference: e.target.value})}
-              placeholder="PO-001"
-            />
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="notes">Notes</Label>
-          <Input
-            id="notes"
-            value={formData.notes}
-            onChange={(e) => setFormData({...formData, notes: e.target.value})}
-            placeholder="Optional notes"
-          />
-        </div>
-
-        {selectedProduct && formData.quantity && (
-          <div className="p-3 bg-blue-50 rounded border border-blue-200">
-            <p className="text-sm text-blue-700">
-              <strong>Summary:</strong> Adding {formData.quantity} units of {selectedProduct.name}
-            </p>
-            <p className="text-sm text-blue-700">
-              New stock level will be: <strong>{selectedProduct.stock + parseInt(formData.quantity || 0)} units</strong>
-            </p>
-            {formData.cost && (
-              <p className="text-sm text-blue-700">
-                Total cost: <strong>₹{(parseFloat(formData.cost) * parseInt(formData.quantity || 0)).toLocaleString()}</strong>
-              </p>
+      <div>
+        <Label htmlFor="reason">Reason</Label>
+        <Select value={formData.reason} onValueChange={(value) => setFormData({...formData, reason: value})}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select reason" />
+          </SelectTrigger>
+          <SelectContent>
+            {action === "in" ? (
+              <>
+                <SelectItem value="Purchase">Purchase</SelectItem>
+                <SelectItem value="Return">Customer Return</SelectItem>
+                <SelectItem value="Adjustment">Stock Adjustment</SelectItem>
+              </>
+            ) : (
+              <>
+                <SelectItem value="Sale">Sale</SelectItem>
+                <SelectItem value="Damage">Damaged/Lost</SelectItem>
+                <SelectItem value="Return">Return to Supplier</SelectItem>
+                <SelectItem value="Adjustment">Stock Adjustment</SelectItem>
+              </>
             )}
-          </div>
-        )}
+          </SelectContent>
+        </Select>
+      </div>
 
-        <div className="flex gap-2 pt-4">
-          <Button type="submit" className="flex-1" disabled={!formData.productId || !formData.quantity}>
-            Add Stock
-          </Button>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-        </div>
-      </form>
-    </DialogContent>
+      <div>
+        <Label htmlFor="reference">Reference</Label>
+        <Input
+          id="reference"
+          value={formData.reference}
+          onChange={(e) => setFormData({...formData, reference: e.target.value})}
+          placeholder="Order/Invoice number"
+        />
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button type="submit" className="flex-1">
+          {action === "in" ? "Add Stock" : "Remove Stock"}
+        </Button>
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+      </div>
+    </form>
   );
 };
 
