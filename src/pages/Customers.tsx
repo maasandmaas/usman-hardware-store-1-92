@@ -9,7 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Search, Plus, Edit, CreditCard, Phone, MapPin, Calendar } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Users, Search, Plus, Edit, CreditCard, Phone, MapPin, Calendar, Mail, Building, IdCard, Receipt, History, AlertCircle, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Customers = () => {
@@ -17,72 +19,151 @@ const Customers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerTypeFilter, setCustomerTypeFilter] = useState("all");
 
-  // Mock customer data
+  // Enhanced customer data with Pakistani context
   const [customers, setCustomers] = useState([
     {
       id: 1,
-      name: "John Hardware Co.",
-      phone: "9876543210",
-      email: "john@hardware.com",
-      address: "123 Main Street, Business District",
-      gst: "GST123456789",
-      dueAmount: 2340,
-      creditLimit: 10000,
-      totalPurchases: 45600,
+      name: "Muhammad Ahmed",
+      businessName: "Ahmed Hardware Store",
+      type: "retailer",
+      phone: "0300-1234567",
+      whatsapp: "0300-1234567",
+      email: "ahmed@hardware.com",
+      address: "Shop #45, Main Bazaar, Model Town, Lahore",
+      city: "Lahore",
+      province: "Punjab",
+      cnic: "35202-1234567-1",
+      ntn: "1234567-8",
+      dueAmount: 23400,
+      creditLimit: 50000,
+      totalPurchases: 156000,
       lastPurchase: "2024-01-15",
+      joinDate: "2023-03-15",
+      status: "active",
+      paymentTerms: 30,
+      discount: 5,
       transactions: [
-        { id: 1, date: "2024-01-15", type: "sale", amount: 2340, balance: 2340, description: "Hardware items" },
-        { id: 2, date: "2024-01-10", type: "payment", amount: -1500, balance: 0, description: "Cash payment received" },
-      ]
+        { id: 1, date: "2024-01-15", type: "sale", amount: 23400, balance: 23400, description: "Door hinges & cabinet handles", orderId: "ORD-001" },
+        { id: 2, date: "2024-01-10", type: "payment", amount: -15000, balance: 0, description: "Cash payment received", orderId: null },
+        { id: 3, date: "2024-01-08", type: "sale", amount: 18600, balance: 15000, description: "Wood screws & bolts", orderId: "ORD-002" },
+      ],
+      notes: "Good customer, pays on time. Prefers cash payments."
     },
     {
       id: 2,
-      name: "ABC Furniture",
-      phone: "9876543211",
-      email: "abc@furniture.com",
-      address: "456 Oak Avenue, Industrial Area",
-      gst: "GST987654321",
-      dueAmount: 1890,
-      creditLimit: 15000,
-      totalPurchases: 78900,
+      name: "Fatima Khan",
+      businessName: "Khan Furniture Works",
+      type: "manufacturer",
+      phone: "0321-9876543",
+      whatsapp: "0321-9876543",
+      email: "fatima@khanfurniture.com",
+      address: "Plot #23, Industrial Area, Gulberg, Lahore",
+      city: "Lahore",
+      province: "Punjab",
+      cnic: "35202-9876543-2",
+      ntn: "9876543-1",
+      dueAmount: 18900,
+      creditLimit: 100000,
+      totalPurchases: 289000,
       lastPurchase: "2024-01-12",
+      joinDate: "2022-08-20",
+      status: "active",
+      paymentTerms: 45,
+      discount: 8,
       transactions: [
-        { id: 3, date: "2024-01-12", type: "sale", amount: 1890, balance: 1890, description: "Furniture fittings" },
-      ]
+        { id: 4, date: "2024-01-12", type: "sale", amount: 18900, balance: 18900, description: "Drawer slides & cabinet fittings", orderId: "ORD-003" },
+      ],
+      notes: "Bulk buyer, manufacturing furniture. Monthly credit customer."
     },
     {
       id: 3,
-      name: "XYZ Contractors",
-      phone: "9876543212",
-      email: "xyz@contractors.com",
-      address: "789 Pine Street, Construction Zone",
-      gst: "GST456789123",
+      name: "Ali Hassan",
+      businessName: "Hassan Construction",
+      type: "contractor",
+      phone: "0333-5555555",
+      whatsapp: "0333-5555555",
+      email: "ali@hassanconstruction.pk",
+      address: "Office #12, Commercial Area, DHA Phase 5, Karachi",
+      city: "Karachi",
+      province: "Sindh",
+      cnic: "42101-5555555-3",
+      ntn: "5555555-2",
       dueAmount: 0,
-      creditLimit: 20000,
-      totalPurchases: 125000,
+      creditLimit: 200000,
+      totalPurchases: 567000,
       lastPurchase: "2024-01-14",
+      joinDate: "2021-11-10",
+      status: "active",
+      paymentTerms: 30,
+      discount: 12,
       transactions: [
-        { id: 4, date: "2024-01-14", type: "payment", amount: -5000, balance: 0, description: "Full payment received" },
-      ]
+        { id: 5, date: "2024-01-14", type: "payment", amount: -45000, balance: 0, description: "Bank transfer received", orderId: null },
+      ],
+      notes: "Premium contractor, large orders. Bank transfers preferred."
+    },
+    {
+      id: 4,
+      name: "Shahid Iqbal",
+      businessName: "Walk-in Customer",
+      type: "individual",
+      phone: "0345-1111111",
+      whatsapp: "",
+      email: "",
+      address: "Johar Town, Lahore",
+      city: "Lahore",
+      province: "Punjab",
+      cnic: "",
+      ntn: "",
+      dueAmount: 5600,
+      creditLimit: 10000,
+      totalPurchases: 23400,
+      lastPurchase: "2024-01-13",
+      joinDate: "2024-01-13",
+      status: "active",
+      paymentTerms: 15,
+      discount: 0,
+      transactions: [
+        { id: 6, date: "2024-01-13", type: "sale", amount: 5600, balance: 5600, description: "PVC pipes & fittings", orderId: "ORD-004" },
+      ],
+      notes: "New customer, small orders."
     }
   ]);
 
-  const filteredCustomers = customers.filter(customer =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.phone.includes(searchTerm) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const customerTypes = [
+    { value: "all", label: "All Customers" },
+    { value: "individual", label: "Individual" },
+    { value: "retailer", label: "Retailer" },
+    { value: "manufacturer", label: "Manufacturer" },
+    { value: "contractor", label: "Contractor" },
+  ];
+
+  const filteredCustomers = customers.filter(customer => {
+    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.phone.includes(searchTerm) ||
+                         customer.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = customerTypeFilter === "all" || customer.type === customerTypeFilter;
+    return matchesSearch && matchesType;
+  });
 
   const totalDues = customers.reduce((sum, customer) => sum + customer.dueAmount, 0);
+  const activeCustomers = customers.filter(c => c.status === "active").length;
+  const customersWithDues = customers.filter(c => c.dueAmount > 0).length;
 
   const handleAddCustomer = (formData) => {
     const newCustomer = {
       id: customers.length + 1,
       ...formData,
+      creditLimit: parseFloat(formData.creditLimit) || 0,
+      discount: parseFloat(formData.discount) || 0,
+      paymentTerms: parseInt(formData.paymentTerms) || 30,
       dueAmount: 0,
       totalPurchases: 0,
       lastPurchase: null,
+      joinDate: new Date().toISOString().split('T')[0],
+      status: "active",
       transactions: []
     };
     setCustomers([...customers, newCustomer]);
@@ -103,7 +184,8 @@ const Customers = () => {
           type: "payment",
           amount: -amount,
           balance: newDueAmount,
-          description: "Payment received"
+          description: "Payment received",
+          orderId: null
         };
         return {
           ...customer,
@@ -116,18 +198,32 @@ const Customers = () => {
     
     toast({
       title: "Payment Recorded",
-      description: `₹${amount} payment has been recorded successfully.`,
+      description: `PKR ${amount.toLocaleString()} payment has been recorded successfully.`,
     });
   };
 
+  const getCustomerTypeColor = (type) => {
+    const colors = {
+      individual: "bg-blue-100 text-blue-800",
+      retailer: "bg-green-100 text-green-800",
+      manufacturer: "bg-purple-100 text-purple-800",
+      contractor: "bg-orange-100 text-orange-800",
+    };
+    return colors[type] || "bg-gray-100 text-gray-800";
+  };
+
+  const getStatusColor = (status) => {
+    return status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
+  };
+
   return (
-    <div className="flex-1 p-6 space-y-6">
+    <div className="flex-1 p-6 space-y-6 min-h-screen">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
-            <p className="text-gray-600">Manage customer profiles and dues</p>
+            <h1 className="text-3xl font-bold text-gray-900">Customer Management</h1>
+            <p className="text-gray-600">Manage customer profiles, dues, and transactions</p>
           </div>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -161,7 +257,7 @@ const Customers = () => {
               <CreditCard className="h-8 w-8 text-red-500" />
               <div>
                 <p className="text-sm text-gray-600">Total Dues</p>
-                <p className="text-2xl font-bold text-red-600">₹{totalDues.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-red-600">PKR {totalDues.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -173,56 +269,79 @@ const Customers = () => {
               <Users className="h-8 w-8 text-green-500" />
               <div>
                 <p className="text-sm text-gray-600">Active Customers</p>
-                <p className="text-2xl font-bold text-green-600">{customers.filter(c => c.dueAmount > 0).length}</p>
+                <p className="text-2xl font-bold text-green-600">{activeCustomers}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-purple-500">
+        <Card className="border-l-4 border-l-orange-500">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <CreditCard className="h-8 w-8 text-purple-500" />
+              <AlertCircle className="h-8 w-8 text-orange-500" />
               <div>
-                <p className="text-sm text-gray-600">Credit Sales</p>
-                <p className="text-2xl font-bold text-purple-600">₹{(totalDues * 2).toLocaleString()}</p>
+                <p className="text-sm text-gray-600">Customers with Dues</p>
+                <p className="text-2xl font-bold text-orange-600">{customersWithDues}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search */}
+      {/* Search and Filter */}
       <Card>
         <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search customers by name, phone, or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search customers by name, phone, business, or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={customerTypeFilter} onValueChange={setCustomerTypeFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {customerTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Customers List */}
+      {/* Customers Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredCustomers.map((customer) => (
           <Card key={customer.id} className="hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{customer.name}</CardTitle>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CardTitle className="text-lg">{customer.name}</CardTitle>
+                    <Badge className={`text-xs ${getCustomerTypeColor(customer.type)}`}>
+                      {customer.type}
+                    </Badge>
+                    <Badge className={`text-xs ${getStatusColor(customer.status)}`}>
+                      {customer.status}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 font-medium">{customer.businessName}</p>
                   <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                     <Phone className="h-4 w-4" />
                     {customer.phone}
                   </div>
                 </div>
                 {customer.dueAmount > 0 && (
-                  <Badge variant="destructive">
-                    Due: ₹{customer.dueAmount.toLocaleString()}
+                  <Badge variant="destructive" className="ml-2">
+                    Due: PKR {customer.dueAmount.toLocaleString()}
                   </Badge>
                 )}
               </div>
@@ -233,14 +352,32 @@ const Customers = () => {
                 <span className="truncate">{customer.address}</span>
               </div>
 
+              {customer.email && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Mail className="h-4 w-4" />
+                  <span className="truncate">{customer.email}</span>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500">Total Purchases</p>
-                  <p className="font-bold text-green-600">₹{customer.totalPurchases.toLocaleString()}</p>
+                  <p className="font-bold text-green-600">PKR {customer.totalPurchases.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Credit Limit</p>
-                  <p className="font-medium">₹{customer.creditLimit.toLocaleString()}</p>
+                  <p className="font-medium">PKR {customer.creditLimit.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500">Payment Terms</p>
+                  <p className="font-medium">{customer.paymentTerms} days</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Discount</p>
+                  <p className="font-medium">{customer.discount}%</p>
                 </div>
               </div>
 

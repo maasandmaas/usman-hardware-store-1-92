@@ -1,9 +1,8 @@
 
-import { Home, Package, ShoppingCart, Users, Archive, Database, FileText, Settings } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -11,32 +10,73 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+} from "@/components/ui/sidebar"
+import { 
+  Home, 
+  Package, 
+  ShoppingCart, 
+  Users, 
+  Warehouse, 
+  DollarSign, 
+  FileText,
+  Settings,
+  Store
+} from "lucide-react"
+import { useNavigate, useLocation } from "react-router-dom"
 
-const menuItems = [
-  { title: "Dashboard", url: "/", icon: Home },
-  { title: "Products", url: "/products", icon: Package },
-  { title: "Sales (POS)", url: "/sales", icon: ShoppingCart },
-  { title: "Customers", url: "/customers", icon: Users },
-  { title: "Inventory", url: "/inventory", icon: Archive },
-  { title: "Finance", url: "/finance", icon: Database },
-  { title: "Reports", url: "/reports", icon: FileText },
-];
+// Menu items
+const items = [
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: Home,
+  },
+  {
+    title: "Products",
+    url: "/products",
+    icon: Package,
+  },
+  {
+    title: "Sales (POS)",
+    url: "/sales",
+    icon: ShoppingCart,
+  },
+  {
+    title: "Customers",
+    url: "/customers",
+    icon: Users,
+  },
+  {
+    title: "Inventory",
+    url: "/inventory",
+    icon: Warehouse,
+  },
+  {
+    title: "Finance",
+    url: "/finance",
+    icon: DollarSign,
+  },
+  {
+    title: "Reports",
+    url: "/reports",
+    icon: FileText,
+  },
+]
 
 export function AppSidebar() {
-  const location = useLocation();
+  const navigate = useNavigate()
+  const location = useLocation()
 
   return (
-    <Sidebar className="border-r border-gray-200">
-      <SidebarHeader className="border-b border-gray-200 p-4">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-blue-500 to-green-500 flex items-center justify-center">
-            <Settings className="h-5 w-5 text-white" />
+    <Sidebar>
+      <SidebarHeader className="border-b border-sidebar-border p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white">
+            <Store className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Hardware Store</h2>
-            <p className="text-sm text-gray-500">Management System</p>
+            <h2 className="text-lg font-bold text-sidebar-foreground">Usman Hardware</h2>
+            <p className="text-xs text-sidebar-foreground/60">Management System</p>
           </div>
         </div>
       </SidebarHeader>
@@ -45,17 +85,20 @@ export function AppSidebar() {
           <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
-                    asChild 
+                    asChild
                     isActive={location.pathname === item.url}
-                    className="data-[active=true]:bg-blue-50 data-[active=true]:text-blue-700"
+                    className="w-full"
                   >
-                    <Link to={item.url} className="flex items-center gap-3">
-                      <item.icon className="h-5 w-5" />
+                    <button
+                      onClick={() => navigate(item.url)}
+                      className="flex items-center gap-2 w-full text-left"
+                    >
+                      <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
-                    </Link>
+                    </button>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -63,6 +106,18 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="border-t border-sidebar-border p-4">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <button className="flex items-center gap-2 w-full text-left">
+                <Settings className="h-4 w-4" />
+                <span>Settings</span>
+              </button>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
-  );
+  )
 }
