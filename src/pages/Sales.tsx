@@ -9,34 +9,66 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingCart, Plus, Minus, Trash2, Search, User, CreditCard, FileText } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Trash2, Search, User, CreditCard, FileText, Pin, PinOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Sales = () => {
   const { toast } = useToast();
   const [cart, setCart] = useState([]);
   const [customerSearch, setCustomerSearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [orders, setOrders] = useState([]);
-  const [currentOrderId, setCurrentOrderId] = useState(null);
+  const [pinnedProducts, setPinnedProducts] = useState([1, 2]); // Default pinned products
 
   // Mock data for Pakistani hardware store
-  const products = [
-    { id: 1, name: "دروازے کے کنڈے - Heavy Duty", nameEng: "Door Hinges - Heavy Duty", sku: "DH001", price: 450, stock: 15 },
-    { id: 2, name: "کابینٹ ہینڈل - Chrome", nameEng: "Cabinet Handles - Chrome", sku: "CH002", price: 250, stock: 28 },
-    { id: 3, name: "دراز سلائیڈ - 18 انچ", nameEng: "Drawer Slides - 18 inch", sku: "DS003", price: 850, stock: 12 },
-    { id: 4, name: "لکڑی کے پیچ - 2 انچ", nameEng: "Wood Screws - 2 inch", sku: "WS004", price: 120, stock: 150 },
-    { id: 5, name: "کابینٹ لاک", nameEng: "Cabinet Lock", sku: "CL005", price: 300, stock: 35 },
-    { id: 6, name: "شیلف سپورٹ", nameEng: "Shelf Support", sku: "SS006", price: 80, stock: 60 },
+  const allProducts = [
+    { id: 1, name: "Door Hinges - Heavy Duty", sku: "DH001", price: 450, stock: 15, sales: 45 },
+    { id: 2, name: "Cabinet Handles - Chrome", sku: "CH002", price: 250, stock: 28, sales: 38 },
+    { id: 3, name: "Drawer Slides - 18 inch", sku: "DS003", price: 850, stock: 12, sales: 22 },
+    { id: 4, name: "Wood Screws - 2 inch", sku: "WS004", price: 120, stock: 150, sales: 67 },
+    { id: 5, name: "Cabinet Lock", sku: "CL005", price: 300, stock: 35, sales: 15 },
+    { id: 6, name: "Shelf Support", sku: "SS006", price: 80, stock: 60, sales: 31 },
+    { id: 7, name: "Door Knobs - Brass", sku: "DK007", price: 380, stock: 25, sales: 19 },
+    { id: 8, name: "Window Latches", sku: "WL008", price: 180, stock: 40, sales: 28 },
   ];
 
   const customers = [
-    { id: 1, name: "محمد احمد", nameEng: "Muhammad Ahmed", phone: "0300-1234567", address: "Model Town, Lahore", dueAmount: 2340 },
-    { id: 2, name: "علی حسن", nameEng: "Ali Hassan", phone: "0321-9876543", address: "Gulberg, Lahore", dueAmount: 1890 },
-    { id: 3, name: "فاطمہ خان", nameEng: "Fatima Khan", phone: "0333-5555555", address: "DHA, Karachi", dueAmount: 0 },
-    { id: 4, name: "احمد کنسٹرکشن", nameEng: "Ahmed Construction", phone: "0345-1111111", address: "Johar Town, Lahore", dueAmount: 5600 },
+    { id: 1, name: "Muhammad Ahmed", phone: "0300-1234567", address: "Model Town, Lahore", dueAmount: 2340 },
+    { id: 2, name: "Ali Hassan", phone: "0321-9876543", address: "Gulberg, Lahore", dueAmount: 1890 },
+    { id: 3, name: "Fatima Khan", phone: "0333-5555555", address: "DHA, Karachi", dueAmount: 0 },
+    { id: 4, name: "Ahmed Construction", phone: "0345-1111111", address: "Johar Town, Lahore", dueAmount: 5600 },
   ];
+
+  // Filter and sort products: pinned first, then by search
+  const getFilteredProducts = () => {
+    let filtered = allProducts;
+    
+    if (productSearch) {
+      filtered = allProducts.filter(product =>
+        product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+        product.sku.toLowerCase().includes(productSearch.toLowerCase())
+      );
+    }
+
+    // Separate pinned and unpinned products
+    const pinned = filtered.filter(product => pinnedProducts.includes(product.id));
+    const unpinned = filtered.filter(product => !pinnedProducts.includes(product.id));
+
+    // Sort unpinned by sales (highest first)
+    unpinned.sort((a, b) => b.sales - a.sales);
+
+    return [...pinned, ...unpinned];
+  };
+
+  const togglePin = (productId) => {
+    setPinnedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
 
   const addToCart = (product) => {
     const existingItem = cart.find(item => item.id === product.id);
@@ -49,8 +81,8 @@ const Sales = () => {
         ));
       } else {
         toast({
-          title: "اسٹاک ختم",
-          description: `صرف ${product.stock} یونٹس دستیاب ہیں`,
+          title: "Out of Stock",
+          description: `Only ${product.stock} units available`,
           variant: "destructive"
         });
       }
@@ -63,15 +95,15 @@ const Sales = () => {
     if (newQuantity <= 0) {
       setCart(cart.filter(item => item.id !== id));
     } else {
-      const product = products.find(p => p.id === id);
+      const product = allProducts.find(p => p.id === id);
       if (newQuantity <= product.stock) {
         setCart(cart.map(item =>
           item.id === id ? { ...item, quantity: newQuantity } : item
         ));
       } else {
         toast({
-          title: "اسٹاک ختم",
-          description: `صرف ${product.stock} یونٹس دستیاب ہیں`,
+          title: "Out of Stock",
+          description: `Only ${product.stock} units available`,
           variant: "destructive"
         });
       }
@@ -102,12 +134,12 @@ const Sales = () => {
       customer: selectedCustomer,
       paymentMethod,
       timestamp: new Date().toISOString(),
-      type: paymentMethod === "cash" ? "نقد" : "ادھار",
-      status: "مکمل"
+      type: paymentMethod === "cash" ? "Cash" : "Credit",
+      status: "Completed"
     };
 
     setOrders([order, ...orders]);
-    console.log("آرڈر مکمل:", order);
+    console.log("Order completed:", order);
     
     // Clear cart and reset
     setCart([]);
@@ -115,16 +147,17 @@ const Sales = () => {
     setPaymentMethod("cash");
     
     toast({
-      title: "آرڈر مکمل",
-      description: `₹${calculateTotal().toLocaleString()} کا آرڈر کامیابی سے مکمل ہوا`,
+      title: "Order Completed",
+      description: `PKR ${calculateTotal().toLocaleString()} order completed successfully`,
     });
   };
 
   const filteredCustomers = customers.filter(customer =>
     customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-    customer.nameEng.toLowerCase().includes(customerSearch.toLowerCase()) ||
     customer.phone.includes(customerSearch)
   );
+
+  const filteredProducts = getFilteredProducts();
 
   return (
     <div className="flex-1 p-6 space-y-6">
@@ -132,44 +165,44 @@ const Sales = () => {
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">سیلز سسٹم (POS)</h1>
-            <p className="text-gray-600">Point of Sale System - فروخت کا نظام</p>
+            <h1 className="text-3xl font-bold text-gray-900">Sales System (POS)</h1>
+            <p className="text-gray-600">Point of Sale System</p>
           </div>
         </div>
         <div className="flex gap-2">
           <Badge variant="outline" className="text-green-700 border-green-300">
-            {cart.length} اشیاء کارٹ میں
+            {cart.length} items in cart
           </Badge>
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline">
                 <FileText className="h-4 w-4 mr-2" />
-                آج کے آرڈرز
+                Today's Orders
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>آج کے آرڈرز کی فہرست</DialogTitle>
+                <DialogTitle>Today's Orders List</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 {orders.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">آج کوئی آرڈر نہیں</p>
+                  <p className="text-center text-gray-500 py-8">No orders today</p>
                 ) : (
                   orders.map((order) => (
                     <div key={order.id} className="border rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-bold">آرڈر ID: {order.id}</p>
+                          <p className="font-bold">Order ID: {order.id}</p>
                           <p className="text-sm text-gray-600">
-                            کسٹمر: {order.customer ? order.customer.name : "واک-ان کسٹمر"}
+                            Customer: {order.customer ? order.customer.name : "Walk-in Customer"}
                           </p>
                           <p className="text-sm text-gray-600">
-                            وقت: {new Date(order.timestamp).toLocaleString('ur-PK')}
+                            Time: {new Date(order.timestamp).toLocaleString()}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-bold">₹{order.total.toLocaleString()}</p>
-                          <Badge variant={order.type === "نقد" ? "default" : "secondary"}>
+                          <p className="text-lg font-bold">PKR {order.total.toLocaleString()}</p>
+                          <Badge variant={order.type === "Cash" ? "default" : "secondary"}>
                             {order.type}
                           </Badge>
                         </div>
@@ -178,8 +211,8 @@ const Sales = () => {
                       <div className="space-y-1">
                         {order.items.map((item) => (
                           <div key={item.id} className="flex justify-between text-sm">
-                            <span>{item.nameEng} x {item.quantity}</span>
-                            <span>₹{(item.price * item.quantity).toLocaleString()}</span>
+                            <span>{item.name} x {item.quantity}</span>
+                            <span>PKR {(item.price * item.quantity).toLocaleString()}</span>
                           </div>
                         ))}
                       </div>
@@ -199,29 +232,61 @@ const Sales = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Search className="h-5 w-5 text-blue-500" />
-                مصنوعات - Products
+                Products
               </CardTitle>
+              <div className="flex gap-4 items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search products..."
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Badge variant="outline" className="text-blue-600">
+                  {pinnedProducts.length} pinned
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {products.map((product) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                {filteredProducts.map((product) => (
                   <div
                     key={product.id}
-                    className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                    className={`p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors relative ${
+                      pinnedProducts.includes(product.id) ? 'border-blue-300 bg-blue-50' : ''
+                    }`}
                     onClick={() => addToCart(product)}
                   >
-                    <div className="flex justify-between items-start mb-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="absolute top-2 right-2 p-1 h-6 w-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePin(product.id);
+                      }}
+                    >
+                      {pinnedProducts.includes(product.id) ? (
+                        <Pin className="h-3 w-3 text-blue-600" />
+                      ) : (
+                        <PinOff className="h-3 w-3 text-gray-400" />
+                      )}
+                    </Button>
+                    
+                    <div className="flex justify-between items-start mb-2 pr-8">
                       <div>
-                        <h3 className="font-medium text-gray-900">{product.nameEng}</h3>
-                        <p className="text-sm text-blue-600">{product.name}</p>
+                        <h3 className="font-medium text-gray-900">{product.name}</h3>
+                        <p className="text-sm text-gray-500">SKU: {product.sku}</p>
+                        <p className="text-xs text-gray-400">Sales: {product.sales}</p>
                       </div>
                       <Badge variant={product.stock > 10 ? "default" : "destructive"}>
-                        {product.stock} باقی
+                        {product.stock} left
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-500 mb-2">SKU: {product.sku}</p>
                     <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold text-green-600">₹{product.price}</span>
+                      <span className="text-lg font-bold text-green-600">PKR {product.price}</span>
                       <Button size="sm">
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -240,14 +305,14 @@ const Sales = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5 text-blue-500" />
-                کسٹمر - Customer
+                Customer
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="کسٹمر تلاش کریں..."
+                  placeholder="Search customer..."
                   value={customerSearch}
                   onChange={(e) => setCustomerSearch(e.target.value)}
                   className="pl-10"
@@ -268,11 +333,10 @@ const Sales = () => {
                       }}
                     >
                       <p className="font-medium">{customer.name}</p>
-                      <p className="text-sm text-gray-600">{customer.nameEng}</p>
                       <p className="text-sm text-gray-500">{customer.phone}</p>
                       {customer.dueAmount > 0 && (
                         <Badge variant="destructive" className="mt-1">
-                          واجب الادا: ₹{customer.dueAmount.toLocaleString()}
+                          Due: PKR {customer.dueAmount.toLocaleString()}
                         </Badge>
                       )}
                     </div>
@@ -283,11 +347,10 @@ const Sales = () => {
               {selectedCustomer && (
                 <div className="p-3 bg-blue-50 rounded border border-blue-200">
                   <p className="font-medium text-blue-900">{selectedCustomer.name}</p>
-                  <p className="text-sm text-blue-700">{selectedCustomer.nameEng}</p>
                   <p className="text-sm text-blue-700">{selectedCustomer.phone}</p>
                   {selectedCustomer.dueAmount > 0 && (
                     <Badge variant="destructive" className="mt-1">
-                      پرانا بقایا: ₹{selectedCustomer.dueAmount.toLocaleString()}
+                      Previous Due: PKR {selectedCustomer.dueAmount.toLocaleString()}
                     </Badge>
                   )}
                 </div>
@@ -298,7 +361,7 @@ const Sales = () => {
                 className="w-full"
                 onClick={() => setSelectedCustomer(null)}
               >
-                نقد فروخت (واک-ان کسٹمر)
+                Cash Sale (Walk-in Customer)
               </Button>
             </CardContent>
           </Card>
@@ -308,21 +371,20 @@ const Sales = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5 text-blue-500" />
-                کارٹ ({cart.length} اشیاء)
+                Cart ({cart.length} items)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {cart.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">کارٹ خالی ہے</p>
+                <p className="text-gray-500 text-center py-8">Cart is empty</p>
               ) : (
                 <>
                   <div className="space-y-3 max-h-60 overflow-y-auto">
                     {cart.map((item) => (
                       <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                         <div className="flex-1">
-                          <p className="font-medium text-sm">{item.nameEng}</p>
-                          <p className="text-xs text-blue-600">{item.name}</p>
-                          <p className="text-xs text-gray-500">₹{item.price} فی یونٹ</p>
+                          <p className="font-medium text-sm">{item.name}</p>
+                          <p className="text-xs text-gray-500">PKR {item.price} per unit</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
@@ -357,29 +419,29 @@ const Sales = () => {
 
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span>کل رقم:</span>
-                      <span>₹{calculateTotal().toLocaleString()}</span>
+                      <span>Total Amount:</span>
+                      <span>PKR {calculateTotal().toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between font-bold text-lg">
-                      <span>ٹوٹل:</span>
-                      <span>₹{calculateTotal().toLocaleString()}</span>
+                      <span>Total:</span>
+                      <span>PKR {calculateTotal().toLocaleString()}</span>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <Label>ادائیگی کا طریقہ</Label>
+                    <Label>Payment Method</Label>
                     <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="cash">نقد ادائیگی</SelectItem>
-                        <SelectItem value="credit">ادھار فروخت</SelectItem>
+                        <SelectItem value="cash">Cash Payment</SelectItem>
+                        <SelectItem value="credit">Credit Sale</SelectItem>
                       </SelectContent>
                     </Select>
 
                     {paymentMethod === "credit" && !selectedCustomer && (
-                      <p className="text-sm text-red-600">ادھار فروخت کے لیے کسٹمر کا انتخاب کریں</p>
+                      <p className="text-sm text-red-600">Please select a customer for credit sale</p>
                     )}
 
                     <Button
@@ -388,7 +450,7 @@ const Sales = () => {
                       disabled={cart.length === 0 || (paymentMethod === "credit" && !selectedCustomer)}
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
-                      آرڈر مکمل کریں - ₹{calculateTotal().toLocaleString()}
+                      Complete Order - PKR {calculateTotal().toLocaleString()}
                     </Button>
                   </div>
                 </>
