@@ -1,481 +1,104 @@
 
-export type ProductUnit = 'piece' | 'kg' | 'liter' | 'meter' | 'box' | 'pack' | 'bottle' | 'bag' | 'roll' | 'sheet';
+// Centralized data for Usman Hardware store
 
-export type ProductCategory = 'hardware' | 'electrical' | 'plumbing' | 'tools' | 'paints' | 'building_materials' | 'safety' | 'automotive';
+// Product Units
+export type ProductUnit = "piece" | "pair" | "box" | "kg" | "liter" | "foot" | "meter";
 
+// Product interface
 export interface Product {
-  id: string;
+  id: number;
   name: string;
-  category: ProductCategory;
+  sku: string;
   price: number;
   stock: number;
+  category: string;
   unit: ProductUnit;
-  description: string;
-  supplier: string;
   minStock: number;
-  maxStock: number;
-  lastUpdated: string;
-  image?: string;
-  barcode?: string;
-  isPinned?: boolean;
-  salesCount?: number;
+  sales: number;
 }
 
+// Customer interface
 export interface Customer {
-  id: string;
+  id: number;
   name: string;
   phone: string;
   address: string;
-  city: string;
-  area: string;
-  creditLimit: number;
-  currentDue: number;
-  totalPurchases: number;
-  lastPurchase: string;
-  customerType: 'regular' | 'wholesale' | 'retail';
-  status: 'active' | 'inactive';
-  cnic?: string;
-  email?: string;
-  notes?: string;
+  dueAmount: number;
 }
 
-export interface Sale {
-  id: string;
-  customerId: string;
-  customerName: string;
-  items: {
-    productId: string;
-    productName: string;
-    quantity: number;
-    price: number;
-    total: number;
-  }[];
-  subtotal: number;
-  discount: number;
-  tax: number;
-  total: number;
-  paymentMethod: 'cash' | 'credit' | 'bank_transfer';
-  status: 'pending' | 'completed' | 'cancelled';
-  date: string;
-  time: string;
-}
+// Product Categories
+export const categories = [
+  { value: "all", label: "All Categories" },
+  { value: "hardware", label: "Hardware & Fittings" },
+  { value: "fasteners", label: "Screws & Fasteners" },
+  { value: "oils", label: "Oils & Spirits" },
+  { value: "cement", label: "Cement & Putty" },
+  { value: "paints", label: "Paints & Chemicals" },
+  { value: "tools", label: "Tools & Equipment" },
+  { value: "plumbing", label: "Pipes & Plumbing" },
+];
 
-// Centralized Products Data
+// Units for products
+export const units = [
+  { value: "piece", label: "Piece" },
+  { value: "pair", label: "Pair" },
+  { value: "box", label: "Box" },
+  { value: "kg", label: "Kilogram" },
+  { value: "liter", label: "Liter" },
+  { value: "foot", label: "Foot" },
+  { value: "meter", label: "Meter" },
+];
+
+// Products data
 export const products: Product[] = [
-  {
-    id: 'PRD001',
-    name: 'Steel Door Hinges - Heavy Duty',
-    category: 'hardware',
-    price: 250,
-    stock: 45,
-    unit: 'piece',
-    description: 'High-quality steel door hinges for heavy doors',
-    supplier: 'Ahmed Steel Works',
-    minStock: 20,
-    maxStock: 100,
-    lastUpdated: '2024-01-15',
-    barcode: '123456789012',
-    isPinned: true,
-    salesCount: 156
-  },
-  {
-    id: 'PRD002',
-    name: 'Cabinet Handles - Chrome Finish',
-    category: 'hardware',
-    price: 180,
-    stock: 78,
-    unit: 'piece',
-    description: 'Modern chrome cabinet handles',
-    supplier: 'Malik Hardware Suppliers',
-    minStock: 25,
-    maxStock: 150,
-    lastUpdated: '2024-01-14',
-    barcode: '123456789013',
-    salesCount: 89
-  },
-  {
-    id: 'PRD003',
-    name: 'PVC Pipe 4 inch',
-    category: 'plumbing',
-    price: 450,
-    stock: 32,
-    unit: 'meter',
-    description: 'High-grade PVC pipe for drainage',
-    supplier: 'Lahore Pipe Industries',
-    minStock: 15,
-    maxStock: 80,
-    lastUpdated: '2024-01-13',
-    barcode: '123456789014',
-    isPinned: true,
-    salesCount: 234
-  },
-  {
-    id: 'PRD004',
-    name: 'Wall Paint - White Emulsion',
-    category: 'paints',
-    price: 1250,
-    stock: 24,
-    unit: 'liter',
-    description: 'Premium quality white emulsion paint',
-    supplier: 'Diamond Paints Karachi',
-    minStock: 10,
-    maxStock: 50,
-    lastUpdated: '2024-01-12',
-    barcode: '123456789015',
-    salesCount: 67
-  },
-  {
-    id: 'PRD005',
-    name: 'Portland Cement',
-    category: 'building_materials',
-    price: 680,
-    stock: 120,
-    unit: 'bag',
-    description: 'High-grade Portland cement 50kg bag',
-    supplier: 'Fauji Cement Company',
-    minStock: 50,
-    maxStock: 200,
-    lastUpdated: '2024-01-11',
-    barcode: '123456789016',
-    isPinned: true,
-    salesCount: 445
-  },
-  {
-    id: 'PRD006',
-    name: 'Electric Wire 2.5mm',
-    category: 'electrical',
-    price: 85,
-    stock: 200,
-    unit: 'meter',
-    description: 'Copper electric wire 2.5mm for house wiring',
-    supplier: 'Pak Elektron Wires',
-    minStock: 100,
-    maxStock: 500,
-    lastUpdated: '2024-01-10',
-    barcode: '123456789017',
-    salesCount: 178
-  },
-  {
-    id: 'PRD007',
-    name: 'Hammer - 500g',
-    category: 'tools',
-    price: 420,
-    stock: 18,
-    unit: 'piece',
-    description: 'Professional claw hammer with wooden handle',
-    supplier: 'Sialkot Tools Manufacturing',
-    minStock: 15,
-    maxStock: 40,
-    lastUpdated: '2024-01-09',
-    barcode: '123456789018',
-    salesCount: 34
-  },
-  {
-    id: 'PRD008',
-    name: 'Safety Helmet',
-    category: 'safety',
-    price: 650,
-    stock: 25,
-    unit: 'piece',
-    description: 'Industrial safety helmet - yellow',
-    supplier: 'Safety First Pakistan',
-    minStock: 20,
-    maxStock: 60,
-    lastUpdated: '2024-01-08',
-    barcode: '123456789019',
-    salesCount: 28
-  },
-  {
-    id: 'PRD009',
-    name: 'Engine Oil - 5W30',
-    category: 'automotive',
-    price: 2100,
-    stock: 15,
-    unit: 'bottle',
-    description: 'Premium engine oil 4 liters',
-    supplier: 'Total Oil Pakistan',
-    minStock: 10,
-    maxStock: 30,
-    lastUpdated: '2024-01-07',
-    barcode: '123456789020',
-    salesCount: 52
-  },
-  {
-    id: 'PRD010',
-    name: 'Steel Rods - 12mm',
-    category: 'building_materials',
-    price: 95,
-    stock: 500,
-    unit: 'kg',
-    description: 'Construction steel rods',
-    supplier: 'Ittefaq Steel Mills',
-    minStock: 200,
-    maxStock: 1000,
-    lastUpdated: '2024-01-06',
-    barcode: '123456789021',
-    isPinned: true,
-    salesCount: 678
-  },
-  {
-    id: 'PRD011',
-    name: 'Ceramic Tiles',
-    category: 'building_materials',
-    price: 45,
-    stock: 800,
-    unit: 'piece',
-    description: 'Glazed ceramic floor tiles 12x12 inch',
-    supplier: 'Master Tiles Gujranwala',
-    minStock: 100,
-    maxStock: 1200,
-    lastUpdated: '2024-01-05',
-    barcode: '123456789022',
-    salesCount: 234
-  },
-  {
-    id: 'PRD012',
-    name: 'Wood Stain - Dark Brown',
-    category: 'paints',
-    price: 890,
-    stock: 18,
-    unit: 'liter',
-    description: 'Premium wood stain for furniture',
-    supplier: 'Berger Paints Pakistan',
-    minStock: 12,
-    maxStock: 40,
-    lastUpdated: '2024-01-04',
-    barcode: '123456789023',
-    salesCount: 41
-  },
-  {
-    id: 'PRD013',
-    name: 'Electrical Switches',
-    category: 'electrical',
-    price: 125,
-    stock: 65,
-    unit: 'piece',
-    description: 'Modern electrical switches with plates',
-    supplier: 'Schneider Electric Pakistan',
-    minStock: 30,
-    maxStock: 100,
-    lastUpdated: '2024-01-03',
-    barcode: '123456789024',
-    salesCount: 98
-  },
-  {
-    id: 'PRD014',
-    name: 'Screwdriver Kit',
-    category: 'tools',
-    price: 750,
-    stock: 22,
-    unit: 'pack',
-    description: 'Professional screwdriver kit with 12 pieces',
-    supplier: 'Stanley Tools Pakistan',
-    minStock: 15,
-    maxStock: 50,
-    lastUpdated: '2024-01-02',
-    barcode: '123456789025',
-    salesCount: 45
-  },
-  {
-    id: 'PRD015',
-    name: 'Waterproof Membrane',
-    category: 'building_materials',
-    price: 1250,
-    stock: 12,
-    unit: 'roll',
-    description: 'Waterproof membrane for roof protection',
-    supplier: 'Sika Pakistan',
-    minStock: 8,
-    maxStock: 25,
-    lastUpdated: '2024-01-01',
-    barcode: '123456789026',
-    salesCount: 23
-  }
+  // Hardware & Fittings
+  { id: 1, name: "Door Hinges - Heavy Duty", sku: "DH001", price: 450, stock: 15, category: "hardware", unit: "piece", minStock: 5, sales: 45 },
+  { id: 2, name: "Cabinet Handles - Chrome", sku: "CH002", price: 250, stock: 28, category: "hardware", unit: "piece", minStock: 10, sales: 38 },
+  { id: 3, name: "Drawer Slides - 18 inch", sku: "DS003", price: 850, stock: 12, category: "hardware", unit: "pair", minStock: 8, sales: 22 },
+  { id: 4, name: "Window Latches", sku: "WL008", price: 180, stock: 40, category: "hardware", unit: "piece", minStock: 15, sales: 28 },
+  { id: 5, name: "Cabinet Lock", sku: "CL005", price: 300, stock: 35, category: "hardware", unit: "piece", minStock: 12, sales: 15 },
+  { id: 6, name: "Shelf Support", sku: "SS006", price: 80, stock: 60, category: "hardware", unit: "piece", minStock: 20, sales: 31 },
+  { id: 7, name: "Door Knobs - Brass", sku: "DK007", price: 380, stock: 25, category: "hardware", unit: "piece", minStock: 8, sales: 19 },
+  
+  // Screws & Fasteners (quantity based)
+  { id: 8, name: "Wood Screws - 2 inch", sku: "WS004", price: 120, stock: 150, category: "fasteners", unit: "box", minStock: 20, sales: 67 },
+  { id: 9, name: "Machine Bolts - M8", sku: "MB005", price: 8, stock: 500, category: "fasteners", unit: "piece", minStock: 100, sales: 120 },
+  { id: 10, name: "Wall Plugs", sku: "WP006", price: 2, stock: 1000, category: "fasteners", unit: "piece", minStock: 200, sales: 95 },
+  { id: 11, name: "Nails - 1 inch", sku: "N011", price: 5, stock: 2000, category: "fasteners", unit: "piece", minStock: 300, sales: 180 },
+  { id: 12, name: "Self-Tapping Screws", sku: "ST012", price: 3, stock: 800, category: "fasteners", unit: "piece", minStock: 150, sales: 85 },
+  
+  // Oils & Spirits (liquid based)
+  { id: 13, name: "Turpentine Oil", sku: "TO007", price: 180, stock: 25, category: "oils", unit: "liter", minStock: 10, sales: 17 },
+  { id: 14, name: "White Spirit", sku: "WS009", price: 220, stock: 18, category: "oils", unit: "liter", minStock: 8, sales: 12 },
+  { id: 15, name: "Linseed Oil", sku: "LO010", price: 350, stock: 12, category: "oils", unit: "liter", minStock: 5, sales: 8 },
+  { id: 16, name: "Engine Oil", sku: "EO016", price: 450, stock: 30, category: "oils", unit: "liter", minStock: 10, sales: 25 },
+  
+  // Paints & Chemicals (kg/liter based)
+  { id: 17, name: "White Cement", sku: "WC011", price: 180, stock: 50, category: "cement", unit: "kg", minStock: 20, sales: 42 },
+  { id: 18, name: "Wall Putty", sku: "WP012", price: 280, stock: 35, category: "cement", unit: "kg", minStock: 15, sales: 28 },
+  { id: 19, name: "Primer Paint", sku: "PP013", price: 420, stock: 22, category: "paints", unit: "liter", minStock: 10, sales: 18 },
+  { id: 20, name: "Emulsion Paint", sku: "EP020", price: 500, stock: 25, category: "paints", unit: "liter", minStock: 12, sales: 23 },
+  { id: 21, name: "Enamel Paint", sku: "ENP021", price: 580, stock: 18, category: "paints", unit: "liter", minStock: 8, sales: 15 },
+  
+  // Tools & Equipment
+  { id: 22, name: "Hammer - Claw", sku: "HC014", price: 650, stock: 8, category: "tools", unit: "piece", minStock: 3, sales: 6 },
+  { id: 23, name: "Measuring Tape", sku: "MT015", price: 380, stock: 15, category: "tools", unit: "piece", minStock: 5, sales: 12 },
+  { id: 24, name: "Screwdriver Set", sku: "SD024", price: 750, stock: 10, category: "tools", unit: "set", minStock: 4, sales: 8 },
+  { id: 25, name: "Pliers", sku: "PL025", price: 320, stock: 12, category: "tools", unit: "piece", minStock: 5, sales: 9 },
+  
+  // Pipes & Fittings (open boxes/bulk)
+  { id: 26, name: "PVC Pipe - 1 inch", sku: "PV016", price: 85, stock: 200, category: "plumbing", unit: "foot", minStock: 50, sales: 160 },
+  { id: 27, name: "Elbow Joint - 1 inch", sku: "EJ017", price: 25, stock: 80, category: "plumbing", unit: "piece", minStock: 20, sales: 55 },
+  { id: 28, name: "T-Joint - 1 inch", sku: "TJ028", price: 35, stock: 70, category: "plumbing", unit: "piece", minStock: 15, sales: 48 },
+  { id: 29, name: "Gate Valve - 1 inch", sku: "GV029", price: 320, stock: 25, category: "plumbing", unit: "piece", minStock: 8, sales: 12 },
 ];
 
-// Centralized Customers Data
+// Customers data
 export const customers: Customer[] = [
-  {
-    id: 'CUST001',
-    name: 'Muhammad Afzal Construction',
-    phone: '+92-300-1234567',
-    address: 'Main Bazaar, Near Jamia Mosque',
-    city: 'Hafizabad',
-    area: 'Main Bazaar',
-    creditLimit: 50000,
-    currentDue: 12340,
-    totalPurchases: 125000,
-    lastPurchase: '2024-01-15',
-    customerType: 'wholesale',
-    status: 'active',
-    cnic: '33101-1234567-8',
-    email: 'afzal.construction@gmail.com',
-    notes: 'Regular wholesale customer, payment usually within 30 days'
-  },
-  {
-    id: 'CUST002',
-    name: 'Shahid Furniture Works',
-    phone: '+92-301-9876543',
-    address: 'Furniture Market, Circular Road',
-    city: 'Hafizabad',
-    area: 'Circular Road',
-    creditLimit: 30000,
-    currentDue: 8500,
-    totalPurchases: 85000,
-    lastPurchase: '2024-01-14',
-    customerType: 'wholesale',
-    status: 'active',
-    cnic: '33101-9876543-2',
-    email: 'shahid.furniture@yahoo.com'
-  },
-  {
-    id: 'CUST003',
-    name: 'Fatima Home Builders',
-    phone: '+92-302-5555666',
-    address: 'Satellite Town, Block A',
-    city: 'Hafizabad',
-    area: 'Satellite Town',
-    creditLimit: 75000,
-    currentDue: 15600,
-    totalPurchases: 200000,
-    lastPurchase: '2024-01-13',
-    customerType: 'wholesale',
-    status: 'active',
-    cnic: '33101-5555666-9',
-    notes: 'Premium customer, always pays on time'
-  },
-  {
-    id: 'CUST004',
-    name: 'Ali Electrical Shop',
-    phone: '+92-303-7777888',
-    address: 'Electrical Market, GT Road',
-    city: 'Hafizabad',
-    area: 'GT Road',
-    creditLimit: 25000,
-    currentDue: 5200,
-    totalPurchases: 45000,
-    lastPurchase: '2024-01-12',
-    customerType: 'retail',
-    status: 'active',
-    cnic: '33101-7777888-5'
-  },
-  {
-    id: 'CUST005',
-    name: 'Usman Plumbing Services',
-    phone: '+92-304-9999000',
-    address: 'New City, Main Street',
-    city: 'Hafizabad',
-    area: 'New City',
-    creditLimit: 20000,
-    currentDue: 3400,
-    totalPurchases: 32000,
-    lastPurchase: '2024-01-11',
-    customerType: 'retail',
-    status: 'active',
-    cnic: '33101-9999000-7',
-    email: 'usman.plumbing@hotmail.com'
-  },
-  {
-    id: 'CUST006',
-    name: 'Ahmed Paint Contractor',
-    phone: '+92-305-1111222',
-    address: 'Industrial Area, Street 5',
-    city: 'Hafizabad',
-    area: 'Industrial Area',
-    creditLimit: 40000,
-    currentDue: 0,
-    totalPurchases: 78000,
-    lastPurchase: '2024-01-10',
-    customerType: 'wholesale',
-    status: 'active',
-    cnic: '33101-1111222-3',
-    notes: 'Seasonal customer, mostly active during summer'
-  },
-  {
-    id: 'CUST007',
-    name: 'Zain Hardware Store',
-    phone: '+92-306-3333444',
-    address: 'Old Bazaar, Shop No. 15',
-    city: 'Hafizabad',
-    area: 'Old Bazaar',
-    creditLimit: 35000,
-    currentDue: 7800,
-    totalPurchases: 95000,
-    lastPurchase: '2024-01-09',
-    customerType: 'wholesale',
-    status: 'active',
-    cnic: '33101-3333444-1'
-  },
-  {
-    id: 'CUST008',
-    name: 'Bismillah Construction Co.',
-    phone: '+92-307-5555777',
-    address: 'Model Town, Phase 2',
-    city: 'Hafizabad',
-    area: 'Model Town',
-    creditLimit: 100000,
-    currentDue: 25600,
-    totalPurchases: 350000,
-    lastPurchase: '2024-01-08',
-    customerType: 'wholesale',
-    status: 'active',
-    cnic: '33101-5555777-6',
-    email: 'bismillah.construction@gmail.com',
-    notes: 'Largest customer, VIP treatment required'
-  }
-];
-
-// Sample Sales Data
-export const sales: Sale[] = [
-  {
-    id: 'SALE001',
-    customerId: 'CUST001',
-    customerName: 'Muhammad Afzal Construction',
-    items: [
-      {
-        productId: 'PRD001',
-        productName: 'Steel Door Hinges - Heavy Duty',
-        quantity: 5,
-        price: 250,
-        total: 1250
-      },
-      {
-        productId: 'PRD003',
-        productName: 'PVC Pipe 4 inch',
-        quantity: 10,
-        price: 450,
-        total: 4500
-      }
-    ],
-    subtotal: 5750,
-    discount: 250,
-    tax: 0,
-    total: 5500,
-    paymentMethod: 'credit',
-    status: 'completed',
-    date: '2024-01-15',
-    time: '10:30 AM'
-  },
-  {
-    id: 'SALE002',
-    customerId: 'CASH',
-    customerName: 'Walk-in Customer',
-    items: [
-      {
-        productId: 'PRD004',
-        productName: 'Wall Paint - White Emulsion',
-        quantity: 2,
-        price: 1250,
-        total: 2500
-      }
-    ],
-    subtotal: 2500,
-    discount: 0,
-    tax: 0,
-    total: 2500,
-    paymentMethod: 'cash',
-    status: 'completed',
-    date: '2024-01-15',
-    time: '11:15 AM'
-  }
+  { id: 1, name: "Muhammad Ahmed", phone: "0300-1234567", address: "Sagar Road, Hafizabad", dueAmount: 2340 },
+  { id: 2, name: "Ali Hassan", phone: "0321-9876543", address: "Gujranwala Road, Hafizabad", dueAmount: 1890 },
+  { id: 3, name: "Fatima Khan", phone: "0333-5555555", address: "College Road, Hafizabad", dueAmount: 0 },
+  { id: 4, name: "Ahmed Construction", phone: "0345-1111111", address: "Kolo Road, Hafizabad", dueAmount: 5600 },
+  { id: 5, name: "Khan Brothers", phone: "0311-2222222", address: "Vanike Tarar, Hafizabad", dueAmount: 3200 },
+  { id: 6, name: "Malik Traders", phone: "0333-3333333", address: "Main Bazaar, Hafizabad", dueAmount: 0 },
 ];
