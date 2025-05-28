@@ -17,7 +17,7 @@ const Dashboard = () => {
   };
 
   const recentSales = [
-    { id: "001", customer: "John Hardware Co.", amount: 2340, type: "credit", time: "10:30 AM" },
+    { id: "001", customer: "Afzal Hardware Co.", amount: 2340, type: "credit", time: "10:30 AM" },
     { id: "002", customer: "Cash Sale", amount: 450, type: "cash", time: "11:15 AM" },
     { id: "003", customer: "ABC Furniture", amount: 1890, type: "credit", time: "12:45 PM" },
     { id: "004", customer: "Cash Sale", amount: 230, type: "cash", time: "1:20 PM" },
@@ -37,7 +37,7 @@ const Dashboard = () => {
           <SidebarTrigger />
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600">Welcome to your Hardware Store Management System</p>
+            <p className="text-gray-600">Welcome to Usman Hardware Store Management System</p>
           </div>
         </div>
         <Badge variant="outline" className="text-green-700 border-green-300">
@@ -53,7 +53,7 @@ const Dashboard = () => {
             <ShoppingCart className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">₹{todayStats.totalSales.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-blue-600">Rs. {todayStats.totalSales.toLocaleString()}</div>
             <div className="flex items-center text-xs text-green-600 mt-1">
               <ArrowUp className="h-3 w-3 mr-1" />
               12% from yesterday
@@ -67,7 +67,7 @@ const Dashboard = () => {
             <Database className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">₹{todayStats.cashSales.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-green-600">Rs. {todayStats.cashSales.toLocaleString()}</div>
             <div className="text-xs text-gray-500 mt-1">
               {((todayStats.cashSales / todayStats.totalSales) * 100).toFixed(1)}% of total
             </div>
@@ -80,7 +80,7 @@ const Dashboard = () => {
             <Users className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">₹{todayStats.creditSales.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-orange-600">Rs. {todayStats.creditSales.toLocaleString()}</div>
             <div className="text-xs text-gray-500 mt-1">
               {((todayStats.creditSales / todayStats.totalSales) * 100).toFixed(1)}% of total
             </div>
@@ -93,7 +93,7 @@ const Dashboard = () => {
             <ArrowDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">₹{todayStats.customersDue.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-red-600">Rs. {todayStats.customersDue.toLocaleString()}</div>
             <div className="text-xs text-gray-500 mt-1">
               From {todayStats.totalCustomers} customers
             </div>
@@ -119,7 +119,7 @@ const Dashboard = () => {
                     <p className="text-sm text-gray-500">{sale.time}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-gray-900">₹{sale.amount.toLocaleString()}</p>
+                    <p className="font-bold text-gray-900">Rs. {sale.amount.toLocaleString()}</p>
                     <Badge variant={sale.type === 'cash' ? 'default' : 'secondary'} className="text-xs">
                       {sale.type.toUpperCase()}
                     </Badge>

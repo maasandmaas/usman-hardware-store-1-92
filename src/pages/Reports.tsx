@@ -28,7 +28,7 @@ const Reports = () => {
   ];
 
   const customersDue = [
-    { name: "John Hardware Co.", amount: 2340, days: 5 },
+    { name: "Afzal Hardware Co.", amount: 2340, days: 5 },
     { name: "ABC Furniture", amount: 1890, days: 3 },
     { name: "DEF Contractors", amount: 4560, days: 12 },
     { name: "GHI Builders", amount: 890, days: 2 }
@@ -94,7 +94,7 @@ const Reports = () => {
               <TrendingUp className="h-8 w-8 text-blue-500" />
               <div>
                 <p className="text-sm text-gray-600">Sales ({dateRange})</p>
-                <p className="text-2xl font-bold text-blue-600">₹{getDateRangeData().total.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-600">Rs. {getDateRangeData().total.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -106,7 +106,7 @@ const Reports = () => {
               <CreditCard className="h-8 w-8 text-green-500" />
               <div>
                 <p className="text-sm text-gray-600">Cash Sales</p>
-                <p className="text-2xl font-bold text-green-600">₹{getDateRangeData().cash.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-600">Rs. {getDateRangeData().cash.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -118,7 +118,7 @@ const Reports = () => {
               <Users className="h-8 w-8 text-orange-500" />
               <div>
                 <p className="text-sm text-gray-600">Credit Sales</p>
-                <p className="text-2xl font-bold text-orange-600">₹{getDateRangeData().credit.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-orange-600">Rs. {getDateRangeData().credit.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -163,7 +163,7 @@ const Reports = () => {
                         <p className="text-sm text-gray-500">Qty sold: {product.quantity}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-green-600">₹{product.revenue.toLocaleString()}</p>
+                        <p className="font-bold text-green-600">Rs. {product.revenue.toLocaleString()}</p>
                         <Badge variant="outline">#{index + 1}</Badge>
                       </div>
                     </div>
@@ -185,10 +185,10 @@ const Reports = () => {
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium text-gray-900">{month.month} 2024</p>
-                        <p className="text-sm text-gray-500">Sales: ₹{month.sales.toLocaleString()}</p>
+                        <p className="text-sm text-gray-500">Sales: Rs. {month.sales.toLocaleString()}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-green-600">₹{month.profit.toLocaleString()}</p>
+                        <p className="font-bold text-green-600">Rs. {month.profit.toLocaleString()}</p>
                         <p className="text-xs text-gray-500">Profit</p>
                       </div>
                     </div>
@@ -206,7 +206,7 @@ const Reports = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center p-6 bg-blue-50 rounded-lg border border-blue-200">
                   <TrendingUp className="h-12 w-12 text-blue-500 mx-auto mb-3" />
-                  <p className="text-2xl font-bold text-blue-600">₹{getDateRangeData().total.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-blue-600">Rs. {getDateRangeData().total.toLocaleString()}</p>
                   <p className="text-sm text-gray-600">Total Sales</p>
                 </div>
                 <div className="text-center p-6 bg-green-50 rounded-lg border border-green-200">
@@ -277,7 +277,7 @@ const Reports = () => {
               </Card>
               <Card className="text-center p-6">
                 <Package className="h-12 w-12 text-green-500 mx-auto mb-3" />
-                <p className="text-2xl font-bold text-green-600">₹{(456780).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-600">Rs. {(456780).toLocaleString()}</p>
                 <p className="text-sm text-gray-600">Inventory Value</p>
               </Card>
             </div>
@@ -302,7 +302,7 @@ const Reports = () => {
                         <p className="text-sm text-gray-500">Outstanding for {customer.days} days</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-red-600">₹{customer.amount.toLocaleString()}</p>
+                        <p className="font-bold text-red-600">Rs. {customer.amount.toLocaleString()}</p>
                         <Badge variant={customer.days > 7 ? "destructive" : "secondary"}>
                           {customer.days > 7 ? "Overdue" : "Due"}
                         </Badge>
@@ -326,7 +326,7 @@ const Reports = () => {
               </Card>
               <Card className="text-center p-6">
                 <CreditCard className="h-12 w-12 text-red-500 mx-auto mb-3" />
-                <p className="text-2xl font-bold text-red-600">₹{customersDue.reduce((sum, c) => sum + c.amount, 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-red-600">Rs. {customersDue.reduce((sum, c) => sum + c.amount, 0).toLocaleString()}</p>
                 <p className="text-sm text-gray-600">Total Dues</p>
               </Card>
               <Card className="text-center p-6">
@@ -349,15 +349,15 @@ const Reports = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between p-3 bg-green-50 rounded">
                       <span>Sales Revenue</span>
-                      <span className="font-bold">₹4,56,780</span>
+                      <span className="font-bold">Rs. 4,56,780</span>
                     </div>
                     <div className="flex justify-between p-3 bg-green-50 rounded">
                       <span>Other Income</span>
-                      <span className="font-bold">₹12,450</span>
+                      <span className="font-bold">Rs. 12,450</span>
                     </div>
                     <div className="flex justify-between p-3 bg-green-100 rounded border-t-2 border-green-300">
                       <span className="font-bold">Total Income</span>
-                      <span className="font-bold text-green-600">₹4,69,230</span>
+                      <span className="font-bold text-green-600">Rs. 4,69,230</span>
                     </div>
                   </div>
                 </CardContent>
@@ -371,19 +371,19 @@ const Reports = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between p-3 bg-red-50 rounded">
                       <span>Inventory Purchases</span>
-                      <span className="font-bold">₹2,85,600</span>
+                      <span className="font-bold">Rs. 2,85,600</span>
                     </div>
                     <div className="flex justify-between p-3 bg-red-50 rounded">
                       <span>Operational Expenses</span>
-                      <span className="font-bold">₹45,800</span>
+                      <span className="font-bold">Rs. 45,800</span>
                     </div>
                     <div className="flex justify-between p-3 bg-red-50 rounded">
                       <span>Other Expenses</span>
-                      <span className="font-bold">₹18,200</span>
+                      <span className="font-bold">Rs. 18,200</span>
                     </div>
                     <div className="flex justify-between p-3 bg-red-100 rounded border-t-2 border-red-300">
                       <span className="font-bold">Total Expenses</span>
-                      <span className="font-bold text-red-600">₹3,49,600</span>
+                      <span className="font-bold text-red-600">Rs. 3,49,600</span>
                     </div>
                   </div>
                 </CardContent>
@@ -400,7 +400,7 @@ const Reports = () => {
               <CardContent>
                 <div className="text-center p-8 bg-blue-50 rounded-lg">
                   <TrendingUp className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-                  <p className="text-4xl font-bold text-blue-600 mb-2">₹1,19,630</p>
+                  <p className="text-4xl font-bold text-blue-600 mb-2">Rs. 1,19,630</p>
                   <p className="text-lg text-gray-600 mb-4">Net Profit This Month</p>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>

@@ -198,7 +198,7 @@ const Customers = () => {
     
     toast({
       title: "Payment Recorded",
-      description: `PKR ${amount.toLocaleString()} payment has been recorded successfully.`,
+      description: `Rs.  ${amount.toLocaleString()} payment has been recorded successfully.`,
     });
   };
 
@@ -257,7 +257,7 @@ const Customers = () => {
               <CreditCard className="h-8 w-8 text-red-500" />
               <div>
                 <p className="text-sm text-gray-600">Total Dues</p>
-                <p className="text-2xl font-bold text-red-600">PKR {totalDues.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-red-600">Rs.  {totalDues.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -341,7 +341,7 @@ const Customers = () => {
                 </div>
                 {customer.dueAmount > 0 && (
                   <Badge variant="destructive" className="ml-2">
-                    Due: PKR {customer.dueAmount.toLocaleString()}
+                    Due: Rs.  {customer.dueAmount.toLocaleString()}
                   </Badge>
                 )}
               </div>
@@ -362,11 +362,11 @@ const Customers = () => {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500">Total Purchases</p>
-                  <p className="font-bold text-green-600">PKR {customer.totalPurchases.toLocaleString()}</p>
+                  <p className="font-bold text-green-600">Rs.  {customer.totalPurchases.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Credit Limit</p>
-                  <p className="font-medium">PKR {customer.creditLimit.toLocaleString()}</p>
+                  <p className="font-medium">Rs.  {customer.creditLimit.toLocaleString()}</p>
                 </div>
               </div>
 
@@ -491,7 +491,7 @@ const CustomerDialog = ({ onSubmit, onClose }) => {
             />
           </div>
           <div>
-            <Label htmlFor="creditLimit">Credit Limit (₹)</Label>
+            <Label htmlFor="creditLimit">Credit Limit (Rs. )</Label>
             <Input
               id="creditLimit"
               type="number"
@@ -538,10 +538,10 @@ const PaymentDialog = ({ customer, onPayment }) => {
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <p className="text-sm text-gray-600">Outstanding Amount: <span className="font-bold text-red-600">₹{customer.dueAmount}</span></p>
+            <p className="text-sm text-gray-600">Outstanding Amount: <span className="font-bold text-red-600">Rs. {customer.dueAmount}</span></p>
           </div>
           <div>
-            <Label htmlFor="amount">Payment Amount (₹)</Label>
+            <Label htmlFor="amount">Payment Amount (Rs. )</Label>
             <Input
               id="amount"
               type="number"
@@ -594,10 +594,10 @@ const CustomerDetailsDialog = ({ customer, onClose, onPayment }) => {
                 <div>
                   <Label>Account Summary</Label>
                   <div className="mt-2 space-y-2 text-sm">
-                    <p><strong>Total Purchases:</strong> ₹{customer.totalPurchases.toLocaleString()}</p>
-                    <p><strong>Credit Limit:</strong> ₹{customer.creditLimit.toLocaleString()}</p>
-                    <p><strong>Outstanding Amount:</strong> <span className="text-red-600 font-bold">₹{customer.dueAmount.toLocaleString()}</span></p>
-                    <p><strong>Available Credit:</strong> ₹{(customer.creditLimit - customer.dueAmount).toLocaleString()}</p>
+                    <p><strong>Total Purchases:</strong> Rs. {customer.totalPurchases.toLocaleString()}</p>
+                    <p><strong>Credit Limit:</strong> Rs. {customer.creditLimit.toLocaleString()}</p>
+                    <p><strong>Outstanding Amount:</strong> <span className="text-red-600 font-bold">Rs. {customer.dueAmount.toLocaleString()}</span></p>
+                    <p><strong>Available Credit:</strong> Rs. {(customer.creditLimit - customer.dueAmount).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -621,9 +621,9 @@ const CustomerDetailsDialog = ({ customer, onClose, onPayment }) => {
                     </div>
                     <div className="text-right">
                       <p className={`font-bold ${transaction.type === 'payment' ? 'text-green-600' : 'text-red-600'}`}>
-                        {transaction.type === 'payment' ? '+' : ''}₹{Math.abs(transaction.amount).toLocaleString()}
+                        {transaction.type === 'payment' ? '+' : ''}Rs. {Math.abs(transaction.amount).toLocaleString()}
                       </p>
-                      <p className="text-sm text-gray-500">Balance: ₹{transaction.balance.toLocaleString()}</p>
+                      <p className="text-sm text-gray-500">Balance: Rs. {transaction.balance.toLocaleString()}</p>
                     </div>
                   </div>
                 ))}

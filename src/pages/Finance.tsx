@@ -106,7 +106,7 @@ const Finance = () => {
     
     toast({
       title: `${type === "income" ? "Income" : "Expense"} Added`,
-      description: `₹${formData.amount} ${type} has been recorded successfully.`,
+      description: `Rs. ${formData.amount} ${type} has been recorded successfully.`,
     });
   };
 
@@ -172,7 +172,7 @@ const Finance = () => {
               <ArrowUp className="h-8 w-8 text-green-500" />
               <div>
                 <p className="text-sm text-gray-600">Total Income</p>
-                <p className="text-2xl font-bold text-green-600">₹{totalIncome.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-600">Rs. {totalIncome.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -184,7 +184,7 @@ const Finance = () => {
               <ArrowDown className="h-8 w-8 text-red-500" />
               <div>
                 <p className="text-sm text-gray-600">Total Expenses</p>
-                <p className="text-2xl font-bold text-red-600">₹{totalExpenses.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-red-600">Rs. {totalExpenses.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -197,7 +197,7 @@ const Finance = () => {
               <div>
                 <p className="text-sm text-gray-600">Net Profit</p>
                 <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ₹{netProfit.toLocaleString()}
+                  Rs. {netProfit.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -211,7 +211,7 @@ const Finance = () => {
               <div>
                 <p className="text-sm text-gray-600">This Month</p>
                 <p className={`text-2xl font-bold ${monthlyProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ₹{monthlyProfit.toLocaleString()}
+                  Rs. {monthlyProfit.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -257,7 +257,7 @@ const Finance = () => {
                     </div>
                     <div className="text-right">
                       <p className={`text-lg font-bold ${transaction.type === "income" ? 'text-green-600' : 'text-red-600'}`}>
-                        {transaction.type === "income" ? '+' : '-'}₹{transaction.amount.toLocaleString()}
+                        {transaction.type === "income" ? '+' : '-'}Rs. {transaction.amount.toLocaleString()}
                       </p>
                       <Badge variant={transaction.type === "income" ? "default" : "destructive"} className="text-xs">
                         {transaction.type.toUpperCase()}
@@ -290,7 +290,7 @@ const Finance = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-green-600">+₹{transaction.amount.toLocaleString()}</p>
+                      <p className="text-lg font-bold text-green-600">+Rs. {transaction.amount.toLocaleString()}</p>
                       <p className="text-xs text-gray-500">{transaction.reference}</p>
                     </div>
                   </div>
@@ -320,7 +320,7 @@ const Finance = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-red-600">-₹{transaction.amount.toLocaleString()}</p>
+                      <p className="text-lg font-bold text-red-600">-Rs. {transaction.amount.toLocaleString()}</p>
                       <p className="text-xs text-gray-500">{transaction.reference}</p>
                     </div>
                   </div>
@@ -348,7 +348,7 @@ const Finance = () => {
                     return (
                       <div key={category} className="flex justify-between items-center p-3 bg-green-50 rounded">
                         <span className="capitalize font-medium">{category.replace('_', ' ')}</span>
-                        <span className="font-bold text-green-600">₹{categoryTotal.toLocaleString()}</span>
+                        <span className="font-bold text-green-600">Rs. {categoryTotal.toLocaleString()}</span>
                       </div>
                     );
                   })}
@@ -372,7 +372,7 @@ const Finance = () => {
                     return (
                       <div key={category} className="flex justify-between items-center p-3 bg-red-50 rounded">
                         <span className="capitalize font-medium">{category.replace('_', ' ')}</span>
-                        <span className="font-bold text-red-600">₹{categoryTotal.toLocaleString()}</span>
+                        <span className="font-bold text-red-600">Rs. {categoryTotal.toLocaleString()}</span>
                       </div>
                     );
                   })}
@@ -432,7 +432,7 @@ const TransactionDialog = ({ type, categories, onSubmit, onClose }) => {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="amount">Amount (₹)</Label>
+            <Label htmlFor="amount">Amount (Rs. )</Label>
             <Input
               id="amount"
               type="number"
