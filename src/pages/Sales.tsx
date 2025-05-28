@@ -144,13 +144,13 @@ const Sales = () => {
   const filteredProducts = getFilteredProducts();
 
   return (
-    <div className="flex-1 p-6 space-y-6 min-h-screen">
+    <div className="flex-1 p-6 space-y-6 min-h-screen bg-slate-50">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Sales System (POS)</h1>
-            <p className="text-gray-600">Usman Hardware - Hafizabad</p>
+            <h1 className="text-3xl font-bold text-slate-900">Sales System (POS)</h1>
+            <p className="text-slate-600">Usman Hardware - Hafizabad</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
@@ -160,7 +160,7 @@ const Sales = () => {
           </Badge>
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50">
                 <FileText className="h-4 w-4 mr-2" />
                 Today's Orders
               </Button>
@@ -171,17 +171,17 @@ const Sales = () => {
               </DialogHeader>
               <div className="space-y-4">
                 {orders.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">No orders today</p>
+                  <p className="text-center text-slate-500 py-8">No orders today</p>
                 ) : (
                   orders.map((order) => (
                     <div key={order.id} className="border rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <p className="font-bold">Order ID: {order.id}</p>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-slate-600">
                             Customer: {order.customer ? order.customer.name : "Walk-in Customer"}
                           </p>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-slate-600">
                             Time: {new Date(order.timestamp).toLocaleString()}
                           </p>
                         </div>
@@ -213,36 +213,36 @@ const Sales = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Products Section */}
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
+          <Card className="border-slate-200">
+            <CardHeader className="pb-4">
               <div className="flex items-center justify-between mb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <Store className="h-5 w-5 text-blue-500" />
+                <CardTitle className="flex items-center gap-2 text-slate-900">
+                  <Store className="h-5 w-5 text-blue-600" />
                   Products
                 </CardTitle>
-                <Badge variant="outline" className="text-blue-600">
+                <Badge variant="outline" className="text-blue-600 border-blue-200">
                   <Pin className="h-3 w-3 mr-1" />
                   {pinnedProducts.length} pinned
                 </Badge>
               </div>
               
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
                 <Input
                   placeholder="Search products by name or SKU..."
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 border-slate-300"
                 />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[65vh] overflow-y-auto p-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto">
                 {filteredProducts.map((product) => (
                   <div
                     key={product.id}
-                    className={`p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors relative ${
-                      pinnedProducts.includes(product.id) ? 'border-blue-300 bg-blue-50' : ''
+                    className={`p-4 border rounded-lg hover:shadow-md cursor-pointer transition-all duration-200 relative ${
+                      pinnedProducts.includes(product.id) ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-slate-300'
                     }`}
                     onClick={() => addToCart(product)}
                   >
@@ -258,27 +258,46 @@ const Sales = () => {
                       {pinnedProducts.includes(product.id) ? (
                         <Pin className="h-3 w-3 text-blue-600" />
                       ) : (
-                        <PinOff className="h-3 w-3 text-gray-400" />
+                        <PinOff className="h-3 w-3 text-slate-400" />
                       )}
                     </Button>
                     
-                    <div className="flex justify-between items-start mb-2 pr-8">
-                      <div>
-                        <h3 className="font-medium text-gray-900">{product.name}</h3>
-                        <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
-                          <BarChart className="h-3 w-3" />
-                          Sales: {product.sales}
-                        </div>
+                    {/* Product Header */}
+                    <div className="flex justify-between items-start mb-3 pr-8">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-slate-900 text-base leading-tight">{product.name}</h3>
+                        <p className="text-sm text-slate-500 mt-1">SKU: {product.sku}</p>
                       </div>
-                      <Badge variant={product.stock > 10 ? "default" : "destructive"} className="whitespace-nowrap">
+                      <Badge 
+                        variant={product.stock > 10 ? "default" : "destructive"} 
+                        className={`text-xs whitespace-nowrap ml-2 ${
+                          product.stock > 10 
+                            ? "bg-slate-100 text-slate-700 border-slate-300" 
+                            : "bg-red-100 text-red-700 border-red-300"
+                        }`}
+                      >
                         {product.stock} {product.unit}{product.stock !== 1 ? 's' : ''}
                       </Badge>
                     </div>
-                    <div className="flex justify-between items-center mt-3">
-                      <span className="text-lg font-bold text-green-600">PKR {product.price}</span>
-                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                        <Plus className="h-4 w-4" />
+
+                    {/* Sales Info */}
+                    <div className="flex items-center gap-1 text-xs text-slate-400 mb-3">
+                      <BarChart className="h-3 w-3" />
+                      Sales: {product.sales}
+                    </div>
+
+                    {/* Price and Add Button */}
+                    <div className="flex justify-between items-center mt-4">
+                      <span className="text-lg font-bold text-emerald-600">PKR {product.price.toLocaleString()}</span>
+                      <Button 
+                        size="sm" 
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToCart(product);
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
                         Add
                       </Button>
                     </div>
@@ -292,40 +311,40 @@ const Sales = () => {
         {/* Cart Section */}
         <div className="space-y-6">
           {/* Customer Selection */}
-          <Card>
+          <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5 text-blue-500" />
+              <CardTitle className="flex items-center gap-2 text-slate-900">
+                <User className="h-5 w-5 text-blue-600" />
                 Customer
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
                 <Input
                   placeholder="Search customer by name or phone..."
                   value={customerSearch}
                   onChange={(e) => setCustomerSearch(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 border-slate-300"
                 />
               </div>
               
               {customerSearch && (
-                <div className="max-h-40 overflow-y-auto space-y-2 border rounded-md p-2">
+                <div className="max-h-40 overflow-y-auto space-y-2 border rounded-md p-2 border-slate-200">
                   {filteredCustomers.map((customer) => (
                     <div
                       key={customer.id}
                       className={`p-3 border rounded cursor-pointer transition-colors ${
-                        selectedCustomer?.id === customer.id ? "bg-blue-50 border-blue-300" : "hover:bg-gray-50"
+                        selectedCustomer?.id === customer.id ? "bg-blue-50 border-blue-300" : "hover:bg-slate-50 border-slate-200"
                       }`}
                       onClick={() => {
                         setSelectedCustomer(customer);
                         setCustomerSearch("");
                       }}
                     >
-                      <p className="font-medium">{customer.name}</p>
-                      <p className="text-sm text-gray-500">{customer.phone}</p>
-                      <p className="text-xs text-gray-400">{customer.address}</p>
+                      <p className="font-medium text-slate-900">{customer.name}</p>
+                      <p className="text-sm text-slate-500">{customer.phone}</p>
+                      <p className="text-xs text-slate-400">{customer.address}</p>
                       {customer.dueAmount > 0 && (
                         <Badge variant="destructive" className="mt-1">
                           Due: PKR {customer.dueAmount.toLocaleString()}
@@ -351,7 +370,7 @@ const Sales = () => {
 
               <Button
                 variant="outline"
-                className="w-full"
+                className="w-full border-slate-300 text-slate-700 hover:bg-slate-50"
                 onClick={() => setSelectedCustomer(null)}
               >
                 Cash Sale (Walk-in Customer)
@@ -360,45 +379,47 @@ const Sales = () => {
           </Card>
 
           {/* Shopping Cart */}
-          <Card>
+          <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5 text-blue-500" />
+              <CardTitle className="flex items-center gap-2 text-slate-900">
+                <ShoppingCart className="h-5 w-5 text-blue-600" />
                 Cart ({cart.length} items)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {cart.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">Cart is empty</p>
+                <p className="text-slate-500 text-center py-8">Cart is empty</p>
               ) : (
                 <>
                   <div className="space-y-3 max-h-60 overflow-y-auto">
                     {cart.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                      <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-200">
                         <div className="flex-1">
-                          <p className="font-medium text-sm">{item.name}</p>
-                          <p className="text-xs text-gray-500">PKR {item.price} per {item.unit}</p>
+                          <p className="font-medium text-sm text-slate-900">{item.name}</p>
+                          <p className="text-xs text-slate-500">PKR {item.price} per {item.unit}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="h-8 w-8 p-0 border-slate-300"
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="w-8 text-center">{item.quantity}</span>
+                          <span className="w-8 text-center text-slate-900">{item.quantity}</span>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="h-8 w-8 p-0 border-slate-300"
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-red-600"
+                            className="text-red-600 h-8 w-8 p-0 border-red-300 hover:bg-red-50"
                             onClick={() => removeFromCart(item.id)}
                           >
                             <Trash2 className="h-3 w-3" />
@@ -411,20 +432,20 @@ const Sales = () => {
                   <Separator />
 
                   <div className="space-y-2">
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-slate-600">
                       <span>Total Amount:</span>
                       <span>PKR {calculateTotal().toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between font-bold text-lg">
+                    <div className="flex justify-between font-bold text-lg text-slate-900">
                       <span>Total:</span>
                       <span>PKR {calculateTotal().toLocaleString()}</span>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <Label>Payment Method</Label>
+                    <Label className="text-slate-700">Payment Method</Label>
                     <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                      <SelectTrigger>
+                      <SelectTrigger className="border-slate-300">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -438,7 +459,7 @@ const Sales = () => {
                     )}
 
                     <Button
-                      className="w-full bg-green-600 hover:bg-green-700"
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
                       onClick={handleCheckout}
                       disabled={cart.length === 0 || (paymentMethod === "credit" && !selectedCustomer)}
                     >
