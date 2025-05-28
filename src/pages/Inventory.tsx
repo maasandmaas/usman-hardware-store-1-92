@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ import { products, suppliers } from "@/data/storeData";
 const Inventory = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   const [stockAction, setStockAction] = useState("in");
@@ -44,7 +43,7 @@ const Inventory = () => {
 
   const lowStockItems = inventory.filter(item => item.currentStock <= item.minStock);
 
-  const handleStockUpdate = (formData) => {
+  const handleStockUpdate = (formData: any) => {
     const quantity = parseInt(formData.quantity);
     const updatedInventory = inventory.map(item => {
       if (item.id === selectedProduct.id) {
@@ -80,12 +79,12 @@ const Inventory = () => {
     });
   };
 
-  const handleInstantOrder = (product) => {
+  const handleInstantOrder = (product: any) => {
     setSelectedProduct(product);
     setIsOrderDialogOpen(true);
   };
 
-  const handleCreatePurchaseOrder = (formData) => {
+  const handleCreatePurchaseOrder = (formData: any) => {
     // In a real app, this would create a purchase order
     toast({
       title: "Purchase Order Created",
@@ -95,20 +94,20 @@ const Inventory = () => {
     setSelectedProduct(null);
   };
 
-  const openStockDialog = (product, action) => {
+  const openStockDialog = (product: any, action: string) => {
     setSelectedProduct(product);
     setStockAction(action);
     setIsStockDialogOpen(true);
   };
 
-  const getStockStatus = (current, min) => {
+  const getStockStatus = (current: number, min: number) => {
     if (current === 0) return { status: "out", color: "bg-red-500", text: "Out of Stock" };
     if (current <= min) return { status: "low", color: "bg-orange-500", text: "Low Stock" };
     return { status: "good", color: "bg-green-500", text: "In Stock" };
   };
 
   return (
-    <div className="flex-1 p-6 space-y-6">
+    <div className="flex-1 p-6 space-y-6 bg-gray-50 min-h-screen">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
@@ -121,7 +120,7 @@ const Inventory = () => {
 
       {/* Search and Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="md:col-span-2">
+        <Card className="md:col-span-2 border-gray-200">
           <CardContent className="p-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -129,16 +128,16 @@ const Inventory = () => {
                 placeholder="Search by product name or SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 border-gray-300 focus:border-gray-500"
               />
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-red-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <AlertTriangle className="h-5 w-5 text-red-600" />
               <div>
                 <p className="text-sm text-gray-500">Low Stock Items</p>
                 <p className="text-xl font-bold text-red-600">{lowStockItems.length}</p>
@@ -147,13 +146,13 @@ const Inventory = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-gray-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-blue-500" />
+              <Package className="h-5 w-5 text-gray-700" />
               <div>
                 <p className="text-sm text-gray-500">Total Products</p>
-                <p className="text-xl font-bold text-blue-600">{inventory.length}</p>
+                <p className="text-xl font-bold text-gray-900">{inventory.length}</p>
               </div>
             </div>
           </CardContent>
@@ -172,21 +171,19 @@ const Inventory = () => {
           <CardContent>
             <div className="space-y-3">
               {lowStockItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded border border-red-200">
-                  <div>
+                <div key={item.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-red-200">
+                  <div className="flex-1">
                     <p className="font-medium text-gray-900">{item.name}</p>
                     <p className="text-sm text-red-600">Current: {item.currentStock} | Min: {item.minStock}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700"
-                      onClick={() => handleInstantOrder(item)}
-                    >
-                      <ShoppingCart className="h-4 w-4 mr-1" />
-                      Order Now
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-gray-800 hover:bg-gray-900 text-white"
+                    onClick={() => handleInstantOrder(item)}
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-1" />
+                    Order Now
+                  </Button>
                 </div>
               ))}
             </div>

@@ -1,7 +1,8 @@
+
 // Centralized data for Usman Hardware store
 
 // Product Units
-export type ProductUnit = "piece" | "pair" | "box" | "kg" | "liter" | "foot" | "meter";
+export type ProductUnit = "piece" | "pair" | "box" | "kg" | "liter" | "foot" | "meter" | "set";
 
 // Product interface
 export interface Product {
@@ -79,6 +80,54 @@ export interface SalesReceipt {
   cashier: string;
 }
 
+// Dashboard Stats interface
+export interface DashboardStats {
+  totalSales: number;
+  cashSales: number;
+  creditSales: number;
+  customersDue: number;
+  lowStockItems: number;
+  totalCustomers: number;
+  totalProducts: number;
+}
+
+// Sales Data interface for charts
+export interface SalesData {
+  name: string;
+  cash: number;
+  credit: number;
+}
+
+// Category Data interface for charts
+export interface CategoryData {
+  name: string;
+  value: number;
+  color: string;
+}
+
+// Monthly Trend interface
+export interface MonthlyTrend {
+  month: string;
+  sales: number;
+}
+
+// Recent Sales interface
+export interface RecentSale {
+  id: string;
+  customer: string;
+  amount: number;
+  type: "cash" | "credit";
+  time: string;
+}
+
+// Low Stock Item interface
+export interface LowStockItem {
+  name: string;
+  current: number;
+  minimum: number;
+  id: number;
+}
+
 // Product Categories
 export const categories = [
   { value: "all", label: "All Categories" },
@@ -100,6 +149,7 @@ export const units = [
   { value: "liter", label: "Liter" },
   { value: "foot", label: "Foot" },
   { value: "meter", label: "Meter" },
+  { value: "set", label: "Set" },
 ];
 
 // Products data
@@ -276,4 +326,62 @@ export const salesReceipts: SalesReceipt[] = [
     date: "2024-01-22",
     cashier: "Admin"
   }
+];
+
+// Dashboard Statistics
+export const dashboardStats: DashboardStats = {
+  totalSales: 15420,
+  cashSales: 8950,
+  creditSales: 6470,
+  customersDue: 12340,
+  lowStockItems: 8,
+  totalCustomers: 156,
+  totalProducts: 1248
+};
+
+// Sales Data for charts
+export const salesData: SalesData[] = [
+  { name: "Mon", cash: 4000, credit: 2400 },
+  { name: "Tue", cash: 3000, credit: 1398 },
+  { name: "Wed", cash: 2000, credit: 9800 },
+  { name: "Thu", cash: 2780, credit: 3908 },
+  { name: "Fri", cash: 1890, credit: 4800 },
+  { name: "Sat", cash: 2390, credit: 3800 },
+  { name: "Sun", cash: 3490, credit: 4300 },
+];
+
+// Category Data for pie chart
+export const categoryData: CategoryData[] = [
+  { name: "Hardware", value: 35, color: "#1f2937" },
+  { name: "Fasteners", value: 25, color: "#374151" },
+  { name: "Oils", value: 15, color: "#4b5563" },
+  { name: "Cement", value: 12, color: "#6b7280" },
+  { name: "Paints", value: 8, color: "#9ca3af" },
+  { name: "Tools", value: 5, color: "#d1d5db" },
+];
+
+// Monthly Trend Data
+export const monthlyTrend: MonthlyTrend[] = [
+  { month: "Jan", sales: 45000 },
+  { month: "Feb", sales: 52000 },
+  { month: "Mar", sales: 48000 },
+  { month: "Apr", sales: 61000 },
+  { month: "May", sales: 58000 },
+  { month: "Jun", sales: 67000 },
+];
+
+// Recent Sales Data
+export const recentSales: RecentSale[] = [
+  { id: "001", customer: "Afzal Hardware Co.", amount: 2340, type: "credit", time: "10:30 AM" },
+  { id: "002", customer: "Cash Sale", amount: 450, type: "cash", time: "11:15 AM" },
+  { id: "003", customer: "ABC Furniture", amount: 1890, type: "credit", time: "12:45 PM" },
+  { id: "004", customer: "Cash Sale", amount: 230, type: "cash", time: "1:20 PM" },
+];
+
+// Low Stock Items Data
+export const lowStockItems: LowStockItem[] = [
+  { name: "Door Hinges - Heavy Duty", current: 5, minimum: 20, id: 1 },
+  { name: "Wood Screws - 2 inch", current: 12, minimum: 50, id: 8 },
+  { name: "Cabinet Handles - Chrome", current: 8, minimum: 25, id: 2 },
+  { name: "Drawer Slides - 18 inch", current: 3, minimum: 15, id: 3 },
 ];
