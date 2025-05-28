@@ -52,6 +52,21 @@ const items = [
     icon: Warehouse,
   },
   {
+    title: "Suppliers",
+    url: "/suppliers",
+    icon: Users,
+  },
+  {
+    title: "Purchase Orders",
+    url: "/purchase-orders",
+    icon: FileText,
+  },
+  {
+    title: "Sales Receipts",
+    url: "/sales-receipts", 
+    icon: FileText,
+  },
+  {
     title: "Finance",
     url: "/finance",
     icon: DollarSign,

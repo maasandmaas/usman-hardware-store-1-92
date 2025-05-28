@@ -1,4 +1,3 @@
-
 // Centralized data for Usman Hardware store
 
 // Product Units
@@ -24,6 +23,60 @@ export interface Customer {
   phone: string;
   address: string;
   dueAmount: number;
+}
+
+// Supplier interface
+export interface Supplier {
+  id: number;
+  name: string;
+  contact: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  totalPurchases: number;
+  pendingPayments: number;
+  lastOrderDate: string;
+  status: "active" | "inactive";
+  products: number[]; // Product IDs they supply
+}
+
+// Purchase Order interface
+export interface PurchaseOrder {
+  id: string;
+  supplierId: number;
+  supplierName: string;
+  items: Array<{
+    productId: number;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+  }>;
+  totalAmount: number;
+  orderDate: string;
+  expectedDelivery: string;
+  status: "pending" | "delivered" | "cancelled";
+  paymentStatus: "pending" | "paid" | "partial";
+  notes: string;
+}
+
+// Sales Receipt interface
+export interface SalesReceipt {
+  id: string;
+  customerId?: number;
+  customerName: string;
+  items: Array<{
+    productId: number;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+  }>;
+  totalAmount: number;
+  paymentMethod: "cash" | "credit";
+  date: string;
+  cashier: string;
 }
 
 // Product Categories
@@ -101,4 +154,126 @@ export const customers: Customer[] = [
   { id: 4, name: "Ahmed Construction", phone: "0345-1111111", address: "Kolo Road, Hafizabad", dueAmount: 5600 },
   { id: 5, name: "Khan Brothers", phone: "0311-2222222", address: "Vanike Tarar, Hafizabad", dueAmount: 3200 },
   { id: 6, name: "Malik Traders", phone: "0333-3333333", address: "Main Bazaar, Hafizabad", dueAmount: 0 },
+];
+
+// Suppliers data
+export const suppliers: Supplier[] = [
+  {
+    id: 1,
+    name: "Lahore Hardware Suppliers",
+    contact: "Muhammad Tariq",
+    phone: "042-35123456",
+    email: "tariq@lhsuppliers.pk",
+    address: "Industrial Area, Kot Lakhpat",
+    city: "Lahore",
+    totalPurchases: 450000,
+    pendingPayments: 25000,
+    lastOrderDate: "2024-01-20",
+    status: "active",
+    products: [1, 2, 3, 7, 22, 23, 24, 25]
+  },
+  {
+    id: 2,
+    name: "Gujranwala Tools & Hardware",
+    contact: "Ahmed Hassan",
+    phone: "055-3234567",
+    email: "ahmed@gthardware.pk",
+    address: "GT Road, Satellite Town",
+    city: "Gujranwala",
+    totalPurchases: 320000,
+    pendingPayments: 0,
+    lastOrderDate: "2024-01-15",
+    status: "active",
+    products: [8, 9, 10, 11, 12, 26, 27, 28, 29]
+  },
+  {
+    id: 3,
+    name: "Karachi Chemical Industries",
+    contact: "Fatima Sheikh",
+    phone: "021-32567890",
+    email: "fatima@kci.pk",
+    address: "SITE Area, Karachi",
+    city: "Karachi",
+    totalPurchases: 180000,
+    pendingPayments: 15000,
+    lastOrderDate: "2024-01-18",
+    status: "active",
+    products: [13, 14, 15, 16, 17, 18, 19, 20, 21]
+  },
+  {
+    id: 4,
+    name: "Sialkot Hardware Co.",
+    contact: "Malik Usman",
+    phone: "052-4567890",
+    email: "usman@sialkothardware.pk",
+    address: "Paris Road, Sialkot",
+    city: "Sialkot",
+    totalPurchases: 95000,
+    pendingPayments: 8000,
+    lastOrderDate: "2024-01-10",
+    status: "inactive",
+    products: [4, 5, 6]
+  }
+];
+
+// Purchase Orders data
+export const purchaseOrders: PurchaseOrder[] = [
+  {
+    id: "PO-2024-001",
+    supplierId: 1,
+    supplierName: "Lahore Hardware Suppliers",
+    items: [
+      { productId: 1, productName: "Door Hinges - Heavy Duty", quantity: 50, unitPrice: 400, total: 20000 },
+      { productId: 22, productName: "Hammer - Claw", quantity: 10, unitPrice: 600, total: 6000 }
+    ],
+    totalAmount: 26000,
+    orderDate: "2024-01-20",
+    expectedDelivery: "2024-01-25",
+    status: "delivered",
+    paymentStatus: "paid",
+    notes: "Regular monthly order"
+  },
+  {
+    id: "PO-2024-002",
+    supplierId: 2,
+    supplierName: "Gujranwala Tools & Hardware",
+    items: [
+      { productId: 8, productName: "Wood Screws - 2 inch", quantity: 100, unitPrice: 110, total: 11000 },
+      { productId: 26, productName: "PVC Pipe - 1 inch", quantity: 200, unitPrice: 80, total: 16000 }
+    ],
+    totalAmount: 27000,
+    orderDate: "2024-01-15",
+    expectedDelivery: "2024-01-22",
+    status: "pending",
+    paymentStatus: "pending",
+    notes: "Urgent order for low stock items"
+  }
+];
+
+// Sales Receipts data
+export const salesReceipts: SalesReceipt[] = [
+  {
+    id: "RCP-2024-001",
+    customerId: 1,
+    customerName: "Muhammad Ahmed",
+    items: [
+      { productId: 1, productName: "Door Hinges - Heavy Duty", quantity: 2, unitPrice: 450, total: 900 },
+      { productId: 8, productName: "Wood Screws - 2 inch", quantity: 1, unitPrice: 120, total: 120 }
+    ],
+    totalAmount: 1020,
+    paymentMethod: "credit",
+    date: "2024-01-22",
+    cashier: "Admin"
+  },
+  {
+    id: "RCP-2024-002",
+    customerName: "Walk-in Customer",
+    items: [
+      { productId: 13, productName: "Turpentine Oil", quantity: 2, unitPrice: 180, total: 360 }
+    ],
+    totalAmount: 360,
+    paymentMethod: "cash",
+    date: "2024-01-22",
+    cashier: "Admin"
+  }
 ];
