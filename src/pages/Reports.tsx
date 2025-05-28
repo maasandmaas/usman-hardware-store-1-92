@@ -1,8 +1,6 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,47 +9,45 @@ import { FileText, Download, Calendar, TrendingUp, Users, Package, CreditCard } 
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState("today");
-  const [reportType, setReportType] = useState("sales");
 
-  // Mock data for reports
+  // Mock data for reports with furniture hardware focus
   const salesData = {
-    today: { total: 15420, cash: 8950, credit: 6470, transactions: 12 },
-    week: { total: 89540, cash: 52430, credit: 37110, transactions: 67 },
-    month: { total: 456780, cash: 278900, credit: 177880, transactions: 289 }
+    today: { total: 25420, cash: 12950, credit: 12470, transactions: 18 },
+    week: { total: 156840, cash: 89430, credit: 67410, transactions: 89 },
+    month: { total: 687890, cash: 398900, credit: 288990, transactions: 342 }
   };
 
   const topProducts = [
-    { name: "Door Hinges - Heavy Duty", quantity: 45, revenue: 2025 },
-    { name: "Cabinet Handles - Chrome", quantity: 38, revenue: 950 },
-    { name: "Drawer Slides - 18 inch", quantity: 22, revenue: 1870 },
-    { name: "Wood Screws - 2 inch", quantity: 156, revenue: 1872 }
+    { name: "Piano Hinges - 1.5m", quantity: 45, revenue: 38250 },
+    { name: "Cabinet Handles - Stainless Steel", quantity: 89, revenue: 22250 },
+    { name: "Soft Close Drawer Slides - 18 inch", quantity: 32, revenue: 30400 },
+    { name: "Wood Screws - 2 inch", quantity: 234, revenue: 28080 }
   ];
 
   const customersDue = [
-    { name: "Afzal Hardware Co.", amount: 2340, days: 5 },
-    { name: "ABC Furniture", amount: 1890, days: 3 },
-    { name: "DEF Contractors", amount: 4560, days: 12 },
-    { name: "GHI Builders", amount: 890, days: 2 }
+    { name: "Furniture Master Hafizabad", amount: 3240, days: 5 },
+    { name: "Royal Cabinet Makers", amount: 2890, days: 3 },
+    { name: "Ali Furniture Works", amount: 5600, days: 12 },
+    { name: "Classic Furniture", amount: 1890, days: 2 }
   ];
 
   const inventoryReports = [
-    { name: "Door Hinges - Heavy Duty", stock: 5, minStock: 20, status: "critical" },
-    { name: "Cabinet Handles - Chrome", stock: 8, minStock: 25, status: "low" },
-    { name: "Drawer Slides - 18 inch", stock: 3, minStock: 15, status: "critical" },
-    { name: "Wood Screws - 2 inch", stock: 50, minStock: 100, status: "low" }
+    { name: "Piano Hinges - 1.5m", stock: 15, minStock: 25, status: "low" },
+    { name: "Cabinet Handles - Stainless Steel", stock: 28, minStock: 40, status: "low" },
+    { name: "Soft Close Drawer Slides - 18 inch", stock: 12, minStock: 20, status: "critical" },
+    { name: "Heavy Duty Hinges - 4 inch", stock: 12, minStock: 25, status: "critical" }
   ];
 
   const monthlyTrends = [
-    { month: "Oct", sales: 345600, profit: 89400 },
-    { month: "Nov", sales: 398700, profit: 103600 },
-    { month: "Dec", sales: 425800, profit: 110700 },
-    { month: "Jan", sales: 456780, profit: 118800 }
+    { month: "Aug", sales: 545600, profit: 142600 },
+    { month: "Sep", sales: 598700, profit: 155600 },
+    { month: "Oct", sales: 625800, profit: 162700 },
+    { month: "Nov", sales: 687890, profit: 178800 }
   ];
 
   const handleExportReport = () => {
-    // In real app, this would generate and download the report
-    console.log(`Exporting ${reportType} report for ${dateRange}`);
-    alert(`${reportType.toUpperCase()} report for ${dateRange} would be downloaded`);
+    console.log(`Exporting report for ${dateRange}`);
+    alert(`Report for ${dateRange} would be downloaded`);
   };
 
   const getDateRangeData = () => {
@@ -59,18 +55,18 @@ const Reports = () => {
   };
 
   return (
-    <div className="flex-1 p-6 space-y-6">
+    <div className="flex-1 p-6 space-y-6 bg-slate-50 min-h-screen">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Reports</h1>
-            <p className="text-gray-600">Comprehensive business analytics and reports</p>
+            <h1 className="text-3xl font-bold text-slate-900">Reports</h1>
+            <p className="text-slate-600">Comprehensive business analytics and reports</p>
           </div>
         </div>
         <div className="flex gap-2">
           <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-32 border-slate-300">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -79,7 +75,7 @@ const Reports = () => {
               <SelectItem value="month">This Month</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleExportReport} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={handleExportReport} className="bg-blue-700 hover:bg-blue-800">
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>
@@ -88,49 +84,49 @@ const Reports = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-l-4 border-l-blue-500">
+        <Card className="border-l-4 border-l-blue-700 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <TrendingUp className="h-8 w-8 text-blue-500" />
+              <TrendingUp className="h-8 w-8 text-blue-700" />
               <div>
-                <p className="text-sm text-gray-600">Sales ({dateRange})</p>
-                <p className="text-2xl font-bold text-blue-600">Rs. {getDateRangeData().total.toLocaleString()}</p>
+                <p className="text-sm text-slate-600">Sales ({dateRange})</p>
+                <p className="text-2xl font-bold text-blue-700">Rs. {getDateRangeData().total.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-green-500">
+        <Card className="border-l-4 border-l-emerald-700 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <CreditCard className="h-8 w-8 text-green-500" />
+              <CreditCard className="h-8 w-8 text-emerald-700" />
               <div>
-                <p className="text-sm text-gray-600">Cash Sales</p>
-                <p className="text-2xl font-bold text-green-600">Rs. {getDateRangeData().cash.toLocaleString()}</p>
+                <p className="text-sm text-slate-600">Cash Sales</p>
+                <p className="text-2xl font-bold text-emerald-700">Rs. {getDateRangeData().cash.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-orange-500">
+        <Card className="border-l-4 border-l-orange-700 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-orange-500" />
+              <Users className="h-8 w-8 text-orange-700" />
               <div>
-                <p className="text-sm text-gray-600">Credit Sales</p>
-                <p className="text-2xl font-bold text-orange-600">Rs. {getDateRangeData().credit.toLocaleString()}</p>
+                <p className="text-sm text-slate-600">Credit Sales</p>
+                <p className="text-2xl font-bold text-orange-700">Rs. {getDateRangeData().credit.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-purple-500">
+        <Card className="border-l-4 border-l-purple-700 hover:shadow-lg transition-all duration-300">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <Package className="h-8 w-8 text-purple-500" />
+              <Package className="h-8 w-8 text-purple-700" />
               <div>
-                <p className="text-sm text-gray-600">Transactions</p>
-                <p className="text-2xl font-bold text-purple-600">{getDateRangeData().transactions}</p>
+                <p className="text-sm text-slate-600">Transactions</p>
+                <p className="text-2xl font-bold text-purple-700">{getDateRangeData().transactions}</p>
               </div>
             </div>
           </CardContent>
@@ -138,11 +134,11 @@ const Reports = () => {
       </div>
 
       <Tabs defaultValue="sales" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="sales">Sales Reports</TabsTrigger>
-          <TabsTrigger value="inventory">Inventory Reports</TabsTrigger>
-          <TabsTrigger value="customers">Customer Reports</TabsTrigger>
-          <TabsTrigger value="financial">Financial Reports</TabsTrigger>
+        <TabsList className="bg-slate-100">
+          <TabsTrigger value="sales" className="data-[state=active]:bg-blue-700 data-[state=active]:text-white">Sales Reports</TabsTrigger>
+          <TabsTrigger value="inventory" className="data-[state=active]:bg-blue-700 data-[state=active]:text-white">Inventory Reports</TabsTrigger>
+          <TabsTrigger value="customers" className="data-[state=active]:bg-blue-700 data-[state=active]:text-white">Customer Reports</TabsTrigger>
+          <TabsTrigger value="financial" className="data-[state=active]:bg-blue-700 data-[state=active]:text-white">Financial Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sales">

@@ -20,9 +20,9 @@ const Dashboard = () => {
   const { toast } = useToast();
 
   const chartConfig = {
-    cash: { label: "Cash Sales", color: "#3b82f6" },
-    credit: { label: "Credit Sales", color: "#1e40af" },
-    sales: { label: "Sales", color: "#2563eb" }
+    cash: { label: "Cash Sales", color: "#1e40af" },
+    credit: { label: "Credit Sales", color: "#3b82f6" },
+    sales: { label: "Sales", color: "#1e3a8a" }
   };
 
   const handleInstantOrder = (productName: string, productId: number) => {
@@ -39,34 +39,34 @@ const Dashboard = () => {
           <SidebarTrigger />
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-            <p className="text-slate-600">Usman Hardware Store Management System</p>
+            <p className="text-slate-600">Usman Hardware Store - Furniture Hardware Specialist</p>
           </div>
         </div>
-        <Badge className="bg-green-100 text-green-800 border-green-200 px-3 py-1">
+        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 px-3 py-1">
           Store Open
         </Badge>
       </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-l-4 border-l-blue-600 hover:shadow-lg transition-all duration-300">
+        <Card className="border-l-4 border-l-blue-700 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-600">Today's Sales</CardTitle>
-            <ShoppingCart className="h-5 w-5 text-blue-600" />
+            <ShoppingCart className="h-5 w-5 text-blue-700" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">Rs. {dashboardStats.totalSales.toLocaleString()}</div>
-            <div className="flex items-center text-xs text-green-600 mt-1">
+            <div className="flex items-center text-xs text-emerald-600 mt-1">
               <ArrowUp className="h-3 w-3 mr-1" />
-              12% from yesterday
+              15% from yesterday
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-indigo-600 hover:shadow-lg transition-all duration-300">
+        <Card className="border-l-4 border-l-indigo-700 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-600">Cash Sales</CardTitle>
-            <Database className="h-5 w-5 text-indigo-600" />
+            <Database className="h-5 w-5 text-indigo-700" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">Rs. {dashboardStats.cashSales.toLocaleString()}</div>
@@ -76,10 +76,10 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-purple-600 hover:shadow-lg transition-all duration-300">
+        <Card className="border-l-4 border-l-purple-700 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-600">Credit Sales</CardTitle>
-            <Users className="h-5 w-5 text-purple-600" />
+            <Users className="h-5 w-5 text-purple-700" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">Rs. {dashboardStats.creditSales.toLocaleString()}</div>
@@ -89,13 +89,13 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-red-600 hover:shadow-lg transition-all duration-300">
+        <Card className="border-l-4 border-l-red-700 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-600">Pending Dues</CardTitle>
-            <ArrowDown className="h-5 w-5 text-red-600" />
+            <ArrowDown className="h-5 w-5 text-red-700" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">Rs. {dashboardStats.customersDue.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-red-700">Rs. {dashboardStats.customersDue.toLocaleString()}</div>
             <div className="text-xs text-slate-500 mt-1">
               From {dashboardStats.totalCustomers} customers
             </div>
@@ -103,155 +103,147 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Charts Section with Scrollable Container */}
-      <div className="space-y-6">
-        <div className="overflow-x-auto">
-          <div className="min-w-[1200px] grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Weekly Sales Chart */}
-            <Card className="hover:shadow-lg transition-shadow duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-900">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
-                  Weekly Sales Overview
-                </CardTitle>
-                <p className="text-sm text-slate-500">Cash vs Credit sales comparison for the week</p>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={chartConfig} className="h-[350px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis 
-                        dataKey="name" 
-                        tick={{ fontSize: 12, fill: '#64748b' }}
-                        axisLine={{ stroke: '#cbd5e1' }}
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 12, fill: '#64748b' }}
-                        axisLine={{ stroke: '#cbd5e1' }}
-                        label={{ value: 'Amount (PKR)', angle: -90, position: 'insideLeft' }}
-                      />
-                      <ChartTooltip 
-                        content={<ChartTooltipContent />}
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Legend 
-                        wrapperStyle={{ paddingTop: '20px' }}
-                      />
-                      <Bar dataKey="cash" fill="#3b82f6" name="Cash Sales" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="credit" fill="#1e40af" name="Credit Sales" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-
-            {/* Category Distribution */}
-            <Card className="hover:shadow-lg transition-shadow duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-900">
-                  <Package className="h-5 w-5 text-blue-600" />
-                  Sales by Category
-                </CardTitle>
-                <p className="text-sm text-slate-500">Distribution of sales across product categories</p>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={chartConfig} className="h-[350px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={categoryData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={120}
-                        paddingAngle={2}
-                        dataKey="value"
-                        label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {categoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <ChartTooltip 
-                        content={<ChartTooltipContent />}
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Monthly Trend - Full Width */}
+      {/* Charts Section - Responsive Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Weekly Sales Chart */}
         <Card className="hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-slate-900">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-              Monthly Sales Trend
+              <TrendingUp className="h-5 w-5 text-blue-700" />
+              Weekly Sales Overview
             </CardTitle>
-            <p className="text-sm text-slate-500">Sales performance over the last 6 months</p>
+            <p className="text-sm text-slate-500">Cash vs Credit sales comparison for the week</p>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <div className="min-w-[800px]">
-                <ChartContainer config={chartConfig} className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={monthlyTrend} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis 
-                        dataKey="month" 
-                        tick={{ fontSize: 12, fill: '#64748b' }}
-                        axisLine={{ stroke: '#cbd5e1' }}
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 12, fill: '#64748b' }}
-                        axisLine={{ stroke: '#cbd5e1' }}
-                        label={{ value: 'Sales (PKR)', angle: -90, position: 'insideLeft' }}
-                      />
-                      <ChartTooltip 
-                        content={<ChartTooltipContent />}
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="sales" 
-                        stroke="#2563eb" 
-                        strokeWidth={3}
-                        dot={{ fill: "#2563eb", strokeWidth: 2, r: 6 }}
-                        activeDot={{ r: 8, fill: "#2563eb" }}
-                        name="Monthly Sales"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </div>
-            </div>
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={salesData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 11, fill: '#64748b' }}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 11, fill: '#64748b' }}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                    label={{ value: 'Amount (PKR)', angle: -90, position: 'insideLeft', style: { fontSize: 10 } }}
+                  />
+                  <ChartTooltip 
+                    content={<ChartTooltipContent />}
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend wrapperStyle={{ paddingTop: '15px', fontSize: '12px' }} />
+                  <Bar dataKey="cash" fill="#1e40af" name="Cash Sales" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="credit" fill="#3b82f6" name="Credit Sales" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Category Distribution */}
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-slate-900">
+              <Package className="h-5 w-5 text-blue-700" />
+              Sales by Category
+            </CardTitle>
+            <p className="text-sm text-slate-500">Distribution of sales across furniture hardware categories</p>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={100}
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                    style={{ fontSize: '11px' }}
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip 
+                    content={<ChartTooltipContent />}
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
+
+      {/* Monthly Trend - Full Width */}
+      <Card className="hover:shadow-lg transition-shadow duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-slate-900">
+            <TrendingUp className="h-5 w-5 text-blue-700" />
+            Monthly Sales Trend
+          </CardTitle>
+          <p className="text-sm text-slate-500">Sales performance over the last 6 months</p>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyTrend} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  axisLine={{ stroke: '#cbd5e1' }}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  axisLine={{ stroke: '#cbd5e1' }}
+                  label={{ value: 'Sales (PKR)', angle: -90, position: 'insideLeft' }}
+                />
+                <ChartTooltip 
+                  content={<ChartTooltipContent />}
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="sales" 
+                  stroke="#1e3a8a" 
+                  strokeWidth={3}
+                  dot={{ fill: "#1e3a8a", strokeWidth: 2, r: 5 }}
+                  activeDot={{ r: 7, fill: "#1e3a8a" }}
+                  name="Monthly Sales"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Sales */}
         <Card className="hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-slate-900">
-              <ShoppingCart className="h-5 w-5 text-blue-600" />
+              <ShoppingCart className="h-5 w-5 text-blue-700" />
               Recent Sales Today
             </CardTitle>
           </CardHeader>
@@ -284,7 +276,7 @@ const Dashboard = () => {
         <Card className="hover:shadow-lg transition-shadow duration-300 border-red-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-slate-900">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <AlertTriangle className="h-5 w-5 text-red-700" />
               Low Stock Alerts
               <Badge className="bg-red-100 text-red-800 border-red-300">
                 {lowStockItems.length}
@@ -297,11 +289,11 @@ const Dashboard = () => {
                 <div key={item.id} className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200 hover:bg-red-100 transition-colors">
                   <div className="flex-1">
                     <p className="font-medium text-slate-900">{item.name}</p>
-                    <p className="text-sm text-red-600">Current: {item.current} | Min: {item.minimum}</p>
+                    <p className="text-sm text-red-700">Current: {item.current} | Min: {item.minimum}</p>
                   </div>
                   <Button
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-blue-700 hover:bg-blue-800 text-white"
                     onClick={() => handleInstantOrder(item.name, item.id)}
                   >
                     Order Now

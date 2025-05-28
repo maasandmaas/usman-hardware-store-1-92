@@ -1,8 +1,8 @@
 
-// Centralized data for Usman Hardware store
+// Centralized data for Usman Hardware store - Furniture Hardware Specialist
 
 // Product Units
-export type ProductUnit = "piece" | "pair" | "box" | "kg" | "liter" | "foot" | "meter" | "set";
+export type ProductUnit = "piece" | "pair" | "box" | "kg" | "liter" | "set" | "pack";
 
 // Product interface
 export interface Product {
@@ -77,7 +77,12 @@ export interface SalesReceipt {
   totalAmount: number;
   paymentMethod: "cash" | "credit";
   date: string;
+  time: string;
   cashier: string;
+  invoiceNumber: string;
+  taxAmount: number;
+  discountAmount: number;
+  notes?: string;
 }
 
 // Dashboard Stats interface
@@ -128,16 +133,17 @@ export interface LowStockItem {
   id: number;
 }
 
-// Product Categories
+// Product Categories - Furniture Hardware Focus
 export const categories = [
   { value: "all", label: "All Categories" },
-  { value: "hardware", label: "Hardware & Fittings" },
+  { value: "hinges", label: "Hinges & Joints" },
+  { value: "handles", label: "Handles & Knobs" },
+  { value: "locks", label: "Locks & Security" },
   { value: "fasteners", label: "Screws & Fasteners" },
-  { value: "oils", label: "Oils & Spirits" },
-  { value: "cement", label: "Cement & Putty" },
-  { value: "paints", label: "Paints & Chemicals" },
-  { value: "tools", label: "Tools & Equipment" },
-  { value: "plumbing", label: "Pipes & Plumbing" },
+  { value: "slides", label: "Drawer Slides & Rails" },
+  { value: "polishes", label: "Wood Polish & Finishes" },
+  { value: "adhesives", label: "Glues & Adhesives" },
+  { value: "brackets", label: "Brackets & Supports" },
 ];
 
 // Units for products
@@ -147,122 +153,126 @@ export const units = [
   { value: "box", label: "Box" },
   { value: "kg", label: "Kilogram" },
   { value: "liter", label: "Liter" },
-  { value: "foot", label: "Foot" },
-  { value: "meter", label: "Meter" },
   { value: "set", label: "Set" },
+  { value: "pack", label: "Pack" },
 ];
 
-// Products data
+// Products data - Furniture Hardware Focus
 export const products: Product[] = [
-  // Hardware & Fittings
-  { id: 1, name: "Door Hinges - Heavy Duty", sku: "DH001", price: 450, stock: 15, category: "hardware", unit: "piece", minStock: 5, sales: 45 },
-  { id: 2, name: "Cabinet Handles - Chrome", sku: "CH002", price: 250, stock: 28, category: "hardware", unit: "piece", minStock: 10, sales: 38 },
-  { id: 3, name: "Drawer Slides - 18 inch", sku: "DS003", price: 850, stock: 12, category: "hardware", unit: "pair", minStock: 8, sales: 22 },
-  { id: 4, name: "Window Latches", sku: "WL008", price: 180, stock: 40, category: "hardware", unit: "piece", minStock: 15, sales: 28 },
-  { id: 5, name: "Cabinet Lock", sku: "CL005", price: 300, stock: 35, category: "hardware", unit: "piece", minStock: 12, sales: 15 },
-  { id: 6, name: "Shelf Support", sku: "SS006", price: 80, stock: 60, category: "hardware", unit: "piece", minStock: 20, sales: 31 },
-  { id: 7, name: "Door Knobs - Brass", sku: "DK007", price: 380, stock: 25, category: "hardware", unit: "piece", minStock: 8, sales: 19 },
+  // Hinges & Joints
+  { id: 1, name: "Piano Hinges - 1.5m", sku: "PH001", price: 850, stock: 15, category: "hinges", unit: "piece", minStock: 5, sales: 45 },
+  { id: 2, name: "Cabinet Door Hinges - Soft Close", sku: "CDH002", price: 320, stock: 28, category: "hinges", unit: "piece", minStock: 10, sales: 38 },
+  { id: 3, name: "Heavy Duty Hinges - 4 inch", sku: "HDH003", price: 450, stock: 12, category: "hinges", unit: "piece", minStock: 8, sales: 22 },
+  { id: 4, name: "Concealed Hinges - 35mm", sku: "CH004", price: 180, stock: 40, category: "hinges", unit: "piece", minStock: 15, sales: 28 },
   
-  // Screws & Fasteners (quantity based)
-  { id: 8, name: "Wood Screws - 2 inch", sku: "WS004", price: 120, stock: 150, category: "fasteners", unit: "box", minStock: 20, sales: 67 },
-  { id: 9, name: "Machine Bolts - M8", sku: "MB005", price: 8, stock: 500, category: "fasteners", unit: "piece", minStock: 100, sales: 120 },
-  { id: 10, name: "Wall Plugs", sku: "WP006", price: 2, stock: 1000, category: "fasteners", unit: "piece", minStock: 200, sales: 95 },
-  { id: 11, name: "Nails - 1 inch", sku: "N011", price: 5, stock: 2000, category: "fasteners", unit: "piece", minStock: 300, sales: 180 },
-  { id: 12, name: "Self-Tapping Screws", sku: "ST012", price: 3, stock: 800, category: "fasteners", unit: "piece", minStock: 150, sales: 85 },
+  // Handles & Knobs
+  { id: 5, name: "Cabinet Handles - Stainless Steel", sku: "CHS005", price: 250, stock: 35, category: "handles", unit: "piece", minStock: 12, sales: 15 },
+  { id: 6, name: "Wooden Knobs - Teak Finish", sku: "WKT006", price: 120, stock: 60, category: "handles", unit: "piece", minStock: 20, sales: 31 },
+  { id: 7, name: "Modern Pull Handles - Black", sku: "MPH007", price: 380, stock: 25, category: "handles", unit: "piece", minStock: 8, sales: 19 },
+  { id: 8, name: "Antique Brass Knobs", sku: "ABK008", price: 280, stock: 18, category: "handles", unit: "piece", minStock: 6, sales: 14 },
   
-  // Oils & Spirits (liquid based)
-  { id: 13, name: "Turpentine Oil", sku: "TO007", price: 180, stock: 25, category: "oils", unit: "liter", minStock: 10, sales: 17 },
-  { id: 14, name: "White Spirit", sku: "WS009", price: 220, stock: 18, category: "oils", unit: "liter", minStock: 8, sales: 12 },
-  { id: 15, name: "Linseed Oil", sku: "LO010", price: 350, stock: 12, category: "oils", unit: "liter", minStock: 5, sales: 8 },
-  { id: 16, name: "Engine Oil", sku: "EO016", price: 450, stock: 30, category: "oils", unit: "liter", minStock: 10, sales: 25 },
+  // Locks & Security
+  { id: 9, name: "Cabinet Locks - Cam Lock", sku: "CLC009", price: 150, stock: 30, category: "locks", unit: "piece", minStock: 10, sales: 25 },
+  { id: 10, name: "Drawer Locks - Push Button", sku: "DLP010", price: 200, stock: 22, category: "locks", unit: "piece", minStock: 8, sales: 18 },
+  { id: 11, name: "Furniture Safety Locks", sku: "FSL011", price: 80, stock: 45, category: "locks", unit: "piece", minStock: 15, sales: 32 },
   
-  // Paints & Chemicals (kg/liter based)
-  { id: 17, name: "White Cement", sku: "WC011", price: 180, stock: 50, category: "cement", unit: "kg", minStock: 20, sales: 42 },
-  { id: 18, name: "Wall Putty", sku: "WP012", price: 280, stock: 35, category: "cement", unit: "kg", minStock: 15, sales: 28 },
-  { id: 19, name: "Primer Paint", sku: "PP013", price: 420, stock: 22, category: "paints", unit: "liter", minStock: 10, sales: 18 },
-  { id: 20, name: "Emulsion Paint", sku: "EP020", price: 500, stock: 25, category: "paints", unit: "liter", minStock: 12, sales: 23 },
-  { id: 21, name: "Enamel Paint", sku: "ENP021", price: 580, stock: 18, category: "paints", unit: "liter", minStock: 8, sales: 15 },
+  // Screws & Fasteners
+  { id: 12, name: "Wood Screws - 2 inch", sku: "WS012", price: 120, stock: 150, category: "fasteners", unit: "box", minStock: 20, sales: 67 },
+  { id: 13, name: "Furniture Bolts - M6", sku: "FB013", price: 8, stock: 500, category: "fasteners", unit: "piece", minStock: 100, sales: 120 },
+  { id: 14, name: "Wood Dowels - 8mm", sku: "WD014", price: 5, stock: 800, category: "fasteners", unit: "piece", minStock: 150, sales: 95 },
+  { id: 15, name: "Furniture Nails - 1.5 inch", sku: "FN015", price: 3, stock: 1000, category: "fasteners", unit: "piece", minStock: 200, sales: 180 },
   
-  // Tools & Equipment
-  { id: 22, name: "Hammer - Claw", sku: "HC014", price: 650, stock: 8, category: "tools", unit: "piece", minStock: 3, sales: 6 },
-  { id: 23, name: "Measuring Tape", sku: "MT015", price: 380, stock: 15, category: "tools", unit: "piece", minStock: 5, sales: 12 },
-  { id: 24, name: "Screwdriver Set", sku: "SD024", price: 750, stock: 10, category: "tools", unit: "set", minStock: 4, sales: 8 },
-  { id: 25, name: "Pliers", sku: "PL025", price: 320, stock: 12, category: "tools", unit: "piece", minStock: 5, sales: 9 },
+  // Drawer Slides & Rails
+  { id: 16, name: "Soft Close Drawer Slides - 18 inch", sku: "SCD016", price: 950, stock: 12, category: "slides", unit: "pair", minStock: 5, sales: 22 },
+  { id: 17, name: "Ball Bearing Slides - 20 inch", sku: "BBS017", price: 650, stock: 20, category: "slides", unit: "pair", minStock: 8, sales: 16 },
+  { id: 18, name: "Side Mount Slides - 16 inch", sku: "SMS018", price: 450, stock: 25, category: "slides", unit: "pair", minStock: 10, sales: 12 },
   
-  // Pipes & Fittings (open boxes/bulk)
-  { id: 26, name: "PVC Pipe - 1 inch", sku: "PV016", price: 85, stock: 200, category: "plumbing", unit: "foot", minStock: 50, sales: 160 },
-  { id: 27, name: "Elbow Joint - 1 inch", sku: "EJ017", price: 25, stock: 80, category: "plumbing", unit: "piece", minStock: 20, sales: 55 },
-  { id: 28, name: "T-Joint - 1 inch", sku: "TJ028", price: 35, stock: 70, category: "plumbing", unit: "piece", minStock: 15, sales: 48 },
-  { id: 29, name: "Gate Valve - 1 inch", sku: "GV029", price: 320, stock: 25, category: "plumbing", unit: "piece", minStock: 8, sales: 12 },
+  // Wood Polish & Finishes
+  { id: 19, name: "Teak Wood Polish", sku: "TWP019", price: 380, stock: 25, category: "polishes", unit: "liter", minStock: 10, sales: 17 },
+  { id: 20, name: "Furniture Varnish - Clear", sku: "FVC020", price: 420, stock: 18, category: "polishes", unit: "liter", minStock: 8, sales: 12 },
+  { id: 21, name: "Wood Stain - Walnut", sku: "WSW021", price: 350, stock: 22, category: "polishes", unit: "liter", minStock: 5, sales: 8 },
+  { id: 22, name: "Furniture Wax Polish", sku: "FWP022", price: 280, stock: 30, category: "polishes", unit: "kg", minStock: 10, sales: 25 },
+  
+  // Glues & Adhesives
+  { id: 23, name: "Wood Glue - PVA", sku: "WGP023", price: 180, stock: 35, category: "adhesives", unit: "kg", minStock: 12, sales: 28 },
+  { id: 24, name: "Contact Cement", sku: "CC024", price: 320, stock: 20, category: "adhesives", unit: "kg", minStock: 8, sales: 15 },
+  { id: 25, name: "Epoxy Adhesive", sku: "EA025", price: 450, stock: 15, category: "adhesives", unit: "kg", minStock: 6, sales: 10 },
+  
+  // Brackets & Supports
+  { id: 26, name: "Shelf Support Brackets", sku: "SSB026", price: 120, stock: 50, category: "brackets", unit: "piece", minStock: 20, sales: 35 },
+  { id: 27, name: "Corner Braces - L Shape", sku: "CBL027", price: 80, stock: 80, category: "brackets", unit: "piece", minStock: 25, sales: 45 },
+  { id: 28, name: "Table Leg Brackets", sku: "TLB028", price: 200, stock: 30, category: "brackets", unit: "piece", minStock: 12, sales: 20 },
 ];
 
 // Customers data
 export const customers: Customer[] = [
-  { id: 1, name: "Muhammad Ahmed", phone: "0300-1234567", address: "Sagar Road, Hafizabad", dueAmount: 2340 },
-  { id: 2, name: "Ali Hassan", phone: "0321-9876543", address: "Gujranwala Road, Hafizabad", dueAmount: 1890 },
-  { id: 3, name: "Fatima Khan", phone: "0333-5555555", address: "College Road, Hafizabad", dueAmount: 0 },
-  { id: 4, name: "Ahmed Construction", phone: "0345-1111111", address: "Kolo Road, Hafizabad", dueAmount: 5600 },
-  { id: 5, name: "Khan Brothers", phone: "0311-2222222", address: "Vanike Tarar, Hafizabad", dueAmount: 3200 },
-  { id: 6, name: "Malik Traders", phone: "0333-3333333", address: "Main Bazaar, Hafizabad", dueAmount: 0 },
+  { id: 1, name: "Furniture Master Hafizabad", phone: "0300-1234567", address: "Sagar Road, Hafizabad", dueAmount: 3240 },
+  { id: 2, name: "Ali Furniture Works", phone: "0321-9876543", address: "Gujranwala Road, Hafizabad", dueAmount: 2890 },
+  { id: 3, name: "Modern Furniture House", phone: "0333-5555555", address: "College Road, Hafizabad", dueAmount: 0 },
+  { id: 4, name: "Royal Cabinet Makers", phone: "0345-1111111", address: "Kolo Road, Hafizabad", dueAmount: 5600 },
+  { id: 5, name: "Khan Furniture Center", phone: "0311-2222222", address: "Vanike Tarar, Hafizabad", dueAmount: 1200 },
+  { id: 6, name: "Elite Wood Works", phone: "0333-3333333", address: "Main Bazaar, Hafizabad", dueAmount: 0 },
+  { id: 7, name: "Classic Furniture", phone: "0302-4444444", address: "GT Road, Hafizabad", dueAmount: 4500 },
+  { id: 8, name: "Wooden Dreams", phone: "0315-5555555", address: "Railway Road, Hafizabad", dueAmount: 890 },
 ];
 
 // Suppliers data
 export const suppliers: Supplier[] = [
   {
     id: 1,
-    name: "Lahore Hardware Suppliers",
+    name: "Lahore Furniture Hardware",
     contact: "Muhammad Tariq",
     phone: "042-35123456",
-    email: "tariq@lhsuppliers.pk",
+    email: "tariq@lfhardware.pk",
     address: "Industrial Area, Kot Lakhpat",
     city: "Lahore",
-    totalPurchases: 450000,
-    pendingPayments: 25000,
+    totalPurchases: 650000,
+    pendingPayments: 35000,
     lastOrderDate: "2024-01-20",
     status: "active",
-    products: [1, 2, 3, 7, 22, 23, 24, 25]
+    products: [1, 2, 3, 4, 5, 6, 7, 8]
   },
   {
     id: 2,
-    name: "Gujranwala Tools & Hardware",
+    name: "Gujranwala Hardware Depot",
     contact: "Ahmed Hassan",
     phone: "055-3234567",
-    email: "ahmed@gthardware.pk",
+    email: "ahmed@ghd.pk",
     address: "GT Road, Satellite Town",
     city: "Gujranwala",
-    totalPurchases: 320000,
+    totalPurchases: 420000,
     pendingPayments: 0,
     lastOrderDate: "2024-01-15",
     status: "active",
-    products: [8, 9, 10, 11, 12, 26, 27, 28, 29]
+    products: [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
   },
   {
     id: 3,
-    name: "Karachi Chemical Industries",
+    name: "Karachi Polish Industries",
     contact: "Fatima Sheikh",
     phone: "021-32567890",
-    email: "fatima@kci.pk",
+    email: "fatima@kpi.pk",
     address: "SITE Area, Karachi",
     city: "Karachi",
-    totalPurchases: 180000,
-    pendingPayments: 15000,
+    totalPurchases: 280000,
+    pendingPayments: 25000,
     lastOrderDate: "2024-01-18",
     status: "active",
-    products: [13, 14, 15, 16, 17, 18, 19, 20, 21]
+    products: [19, 20, 21, 22, 23, 24, 25]
   },
   {
     id: 4,
-    name: "Sialkot Hardware Co.",
+    name: "Sialkot Metal Works",
     contact: "Malik Usman",
     phone: "052-4567890",
-    email: "usman@sialkothardware.pk",
+    email: "usman@smw.pk",
     address: "Paris Road, Sialkot",
     city: "Sialkot",
-    totalPurchases: 95000,
-    pendingPayments: 8000,
+    totalPurchases: 195000,
+    pendingPayments: 18000,
     lastOrderDate: "2024-01-10",
-    status: "inactive",
-    products: [4, 5, 6]
+    status: "active",
+    products: [26, 27, 28]
   }
 ];
 
@@ -271,27 +281,27 @@ export const purchaseOrders: PurchaseOrder[] = [
   {
     id: "PO-2024-001",
     supplierId: 1,
-    supplierName: "Lahore Hardware Suppliers",
+    supplierName: "Lahore Furniture Hardware",
     items: [
-      { productId: 1, productName: "Door Hinges - Heavy Duty", quantity: 50, unitPrice: 400, total: 20000 },
-      { productId: 22, productName: "Hammer - Claw", quantity: 10, unitPrice: 600, total: 6000 }
+      { productId: 1, productName: "Piano Hinges - 1.5m", quantity: 50, unitPrice: 800, total: 40000 },
+      { productId: 5, productName: "Cabinet Handles - Stainless Steel", quantity: 100, unitPrice: 230, total: 23000 }
     ],
-    totalAmount: 26000,
+    totalAmount: 63000,
     orderDate: "2024-01-20",
     expectedDelivery: "2024-01-25",
     status: "delivered",
     paymentStatus: "paid",
-    notes: "Regular monthly order"
+    notes: "Regular monthly order for hinges and handles"
   },
   {
     id: "PO-2024-002",
     supplierId: 2,
-    supplierName: "Gujranwala Tools & Hardware",
+    supplierName: "Gujranwala Hardware Depot",
     items: [
-      { productId: 8, productName: "Wood Screws - 2 inch", quantity: 100, unitPrice: 110, total: 11000 },
-      { productId: 26, productName: "PVC Pipe - 1 inch", quantity: 200, unitPrice: 80, total: 16000 }
+      { productId: 12, productName: "Wood Screws - 2 inch", quantity: 200, unitPrice: 110, total: 22000 },
+      { productId: 16, productName: "Soft Close Drawer Slides - 18 inch", quantity: 50, unitPrice: 900, total: 45000 }
     ],
-    totalAmount: 27000,
+    totalAmount: 67000,
     orderDate: "2024-01-15",
     expectedDelivery: "2024-01-22",
     status: "pending",
@@ -300,88 +310,177 @@ export const purchaseOrders: PurchaseOrder[] = [
   }
 ];
 
-// Sales Receipts data
+// Sales Receipts data - More detailed with authentication elements
 export const salesReceipts: SalesReceipt[] = [
   {
     id: "RCP-2024-001",
     customerId: 1,
-    customerName: "Muhammad Ahmed",
+    customerName: "Furniture Master Hafizabad",
     items: [
-      { productId: 1, productName: "Door Hinges - Heavy Duty", quantity: 2, unitPrice: 450, total: 900 },
-      { productId: 8, productName: "Wood Screws - 2 inch", quantity: 1, unitPrice: 120, total: 120 }
+      { productId: 1, productName: "Piano Hinges - 1.5m", quantity: 4, unitPrice: 850, total: 3400 },
+      { productId: 5, productName: "Cabinet Handles - Stainless Steel", quantity: 20, unitPrice: 250, total: 5000 },
+      { productId: 12, productName: "Wood Screws - 2 inch", quantity: 2, unitPrice: 120, total: 240 }
     ],
-    totalAmount: 1020,
+    totalAmount: 8640,
     paymentMethod: "credit",
     date: "2024-01-22",
-    cashier: "Admin"
+    time: "10:30 AM",
+    cashier: "Muhammad Usman",
+    invoiceNumber: "INV-001-2024",
+    taxAmount: 864,
+    discountAmount: 0,
+    notes: "Bulk order for cabinet project"
   },
   {
     id: "RCP-2024-002",
-    customerName: "Walk-in Customer",
+    customerName: "Walk-in Customer - Imran Ali",
     items: [
-      { productId: 13, productName: "Turpentine Oil", quantity: 2, unitPrice: 180, total: 360 }
+      { productId: 19, productName: "Teak Wood Polish", quantity: 2, unitPrice: 380, total: 760 },
+      { productId: 6, productName: "Wooden Knobs - Teak Finish", quantity: 8, unitPrice: 120, total: 960 }
     ],
-    totalAmount: 360,
+    totalAmount: 1720,
     paymentMethod: "cash",
     date: "2024-01-22",
-    cashier: "Admin"
+    time: "11:45 AM",
+    cashier: "Muhammad Usman",
+    invoiceNumber: "INV-002-2024",
+    taxAmount: 172,
+    discountAmount: 50,
+    notes: "Furniture restoration supplies"
+  },
+  {
+    id: "RCP-2024-003",
+    customerId: 4,
+    customerName: "Royal Cabinet Makers",
+    items: [
+      { productId: 16, productName: "Soft Close Drawer Slides - 18 inch", quantity: 10, unitPrice: 950, total: 9500 },
+      { productId: 2, productName: "Cabinet Door Hinges - Soft Close", quantity: 30, unitPrice: 320, total: 9600 },
+      { productId: 9, productName: "Cabinet Locks - Cam Lock", quantity: 15, unitPrice: 150, total: 2250 }
+    ],
+    totalAmount: 21350,
+    paymentMethod: "credit",
+    date: "2024-01-21",
+    time: "2:15 PM",
+    cashier: "Muhammad Usman",
+    invoiceNumber: "INV-003-2024",
+    taxAmount: 2135,
+    discountAmount: 500,
+    notes: "Premium cabinet hardware order"
+  },
+  {
+    id: "RCP-2024-004",
+    customerId: 2,
+    customerName: "Ali Furniture Works",
+    items: [
+      { productId: 23, productName: "Wood Glue - PVA", quantity: 5, unitPrice: 180, total: 900 },
+      { productId: 26, productName: "Shelf Support Brackets", quantity: 20, unitPrice: 120, total: 2400 },
+      { productId: 13, productName: "Furniture Bolts - M6", quantity: 100, unitPrice: 8, total: 800 }
+    ],
+    totalAmount: 4100,
+    paymentMethod: "cash",
+    date: "2024-01-21",
+    time: "4:30 PM",
+    cashier: "Muhammad Usman",
+    invoiceNumber: "INV-004-2024",
+    taxAmount: 410,
+    discountAmount: 100,
+    notes: "Shelving project supplies"
+  },
+  {
+    id: "RCP-2024-005",
+    customerId: 7,
+    customerName: "Classic Furniture",
+    items: [
+      { productId: 20, productName: "Furniture Varnish - Clear", quantity: 3, unitPrice: 420, total: 1260 },
+      { productId: 21, productName: "Wood Stain - Walnut", quantity: 2, unitPrice: 350, total: 700 },
+      { productId: 7, productName: "Modern Pull Handles - Black", quantity: 12, unitPrice: 380, total: 4560 }
+    ],
+    totalAmount: 6520,
+    paymentMethod: "credit",
+    date: "2024-01-20",
+    time: "9:45 AM",
+    cashier: "Muhammad Usman",
+    invoiceNumber: "INV-005-2024",
+    taxAmount: 652,
+    discountAmount: 200,
+    notes: "Finishing materials for dining set"
+  },
+  {
+    id: "RCP-2024-006",
+    customerName: "Walk-in Customer - Asad Ahmed",
+    items: [
+      { productId: 11, productName: "Furniture Safety Locks", quantity: 6, unitPrice: 80, total: 480 },
+      { productId: 14, productName: "Wood Dowels - 8mm", quantity: 50, unitPrice: 5, total: 250 }
+    ],
+    totalAmount: 730,
+    paymentMethod: "cash",
+    date: "2024-01-20",
+    time: "3:20 PM",
+    cashier: "Muhammad Usman",
+    invoiceNumber: "INV-006-2024",
+    taxAmount: 73,
+    discountAmount: 0,
+    notes: "Safety locks for children's furniture"
   }
 ];
 
 // Dashboard Statistics
 export const dashboardStats: DashboardStats = {
-  totalSales: 15420,
-  cashSales: 8950,
-  creditSales: 6470,
-  customersDue: 12340,
-  lowStockItems: 8,
-  totalCustomers: 156,
-  totalProducts: 1248
+  totalSales: 25420,
+  cashSales: 12950,
+  creditSales: 12470,
+  customersDue: 18320,
+  lowStockItems: 6,
+  totalCustomers: 98,
+  totalProducts: 876
 };
 
 // Sales Data for charts
 export const salesData: SalesData[] = [
-  { name: "Mon", cash: 4000, credit: 2400 },
-  { name: "Tue", cash: 3000, credit: 1398 },
-  { name: "Wed", cash: 2000, credit: 9800 },
-  { name: "Thu", cash: 2780, credit: 3908 },
-  { name: "Fri", cash: 1890, credit: 4800 },
-  { name: "Sat", cash: 2390, credit: 3800 },
-  { name: "Sun", cash: 3490, credit: 4300 },
+  { name: "Mon", cash: 6400, credit: 4200 },
+  { name: "Tue", cash: 5200, credit: 3800 },
+  { name: "Wed", cash: 4800, credit: 6200 },
+  { name: "Thu", cash: 5600, credit: 4900 },
+  { name: "Fri", cash: 7200, credit: 5800 },
+  { name: "Sat", cash: 8900, credit: 6400 },
+  { name: "Sun", cash: 4200, credit: 3200 },
 ];
 
-// Category Data for pie chart
+// Category Data for pie chart - Furniture Hardware Focus
 export const categoryData: CategoryData[] = [
-  { name: "Hardware", value: 35, color: "#1f2937" },
-  { name: "Fasteners", value: 25, color: "#374151" },
-  { name: "Oils", value: 15, color: "#4b5563" },
-  { name: "Cement", value: 12, color: "#6b7280" },
-  { name: "Paints", value: 8, color: "#9ca3af" },
-  { name: "Tools", value: 5, color: "#d1d5db" },
+  { name: "Hinges", value: 32, color: "#1e3a8a" },
+  { name: "Handles", value: 24, color: "#1e40af" },
+  { name: "Fasteners", value: 18, color: "#3b82f6" },
+  { name: "Slides", value: 12, color: "#60a5fa" },
+  { name: "Polishes", value: 8, color: "#93c5fd" },
+  { name: "Locks", value: 6, color: "#dbeafe" },
 ];
 
 // Monthly Trend Data
 export const monthlyTrend: MonthlyTrend[] = [
-  { month: "Jan", sales: 45000 },
-  { month: "Feb", sales: 52000 },
-  { month: "Mar", sales: 48000 },
-  { month: "Apr", sales: 61000 },
-  { month: "May", sales: 58000 },
-  { month: "Jun", sales: 67000 },
+  { month: "Aug", sales: 65000 },
+  { month: "Sep", sales: 72000 },
+  { month: "Oct", sales: 68000 },
+  { month: "Nov", sales: 81000 },
+  { month: "Dec", sales: 78000 },
+  { month: "Jan", sales: 87000 },
 ];
 
 // Recent Sales Data
 export const recentSales: RecentSale[] = [
-  { id: "001", customer: "Afzal Hardware Co.", amount: 2340, type: "credit", time: "10:30 AM" },
-  { id: "002", customer: "Cash Sale", amount: 450, type: "cash", time: "11:15 AM" },
-  { id: "003", customer: "ABC Furniture", amount: 1890, type: "credit", time: "12:45 PM" },
-  { id: "004", customer: "Cash Sale", amount: 230, type: "cash", time: "1:20 PM" },
+  { id: "001", customer: "Furniture Master Hafizabad", amount: 3240, type: "credit", time: "10:30 AM" },
+  { id: "002", customer: "Walk-in Customer", amount: 850, type: "cash", time: "11:15 AM" },
+  { id: "003", customer: "Royal Cabinet Makers", amount: 2890, type: "credit", time: "12:45 PM" },
+  { id: "004", customer: "Ali Furniture Works", amount: 1230, type: "cash", time: "1:20 PM" },
+  { id: "005", customer: "Modern Furniture House", amount: 4560, type: "credit", time: "2:45 PM" },
 ];
 
 // Low Stock Items Data
 export const lowStockItems: LowStockItem[] = [
-  { name: "Door Hinges - Heavy Duty", current: 5, minimum: 20, id: 1 },
-  { name: "Wood Screws - 2 inch", current: 12, minimum: 50, id: 8 },
-  { name: "Cabinet Handles - Chrome", current: 8, minimum: 25, id: 2 },
-  { name: "Drawer Slides - 18 inch", current: 3, minimum: 15, id: 3 },
+  { name: "Piano Hinges - 1.5m", current: 15, minimum: 25, id: 1 },
+  { name: "Soft Close Drawer Slides - 18 inch", current: 12, minimum: 20, id: 16 },
+  { name: "Cabinet Door Hinges - Soft Close", current: 28, minimum: 40, id: 2 },
+  { name: "Heavy Duty Hinges - 4 inch", current: 12, minimum: 25, id: 3 },
+  { name: "Modern Pull Handles - Black", current: 25, minimum: 35, id: 7 },
+  { name: "Antique Brass Knobs", current: 18, minimum: 30, id: 8 },
 ];
