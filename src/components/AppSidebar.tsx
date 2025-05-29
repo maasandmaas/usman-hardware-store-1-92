@@ -20,13 +20,30 @@ import {
   DollarSign, 
   FileText,
   Settings,
-  Store
+  Store,
+  TrendingUp,
+  Calculator,
+  Truck,
+  Bell,
+  Shield,
+  BarChart3,
+  Calendar,
+  MessageSquare,
+  CreditCard,
+  Archive,
+  UserCheck,
+  Globe,
+  HelpCircle,
+  Database,
+  Zap,
+  Bookmark
 } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
+import { Badge } from "@/components/ui/badge"
 
-// Menu items
-const items = [
+// Main Menu items
+const mainItems = [
   {
     title: "Dashboard",
     url: "/",
@@ -52,10 +69,14 @@ const items = [
     url: "/inventory",
     icon: Warehouse,
   },
+]
+
+// Business Operations
+const businessItems = [
   {
     title: "Suppliers",
     url: "/suppliers",
-    icon: Users,
+    icon: Truck,
   },
   {
     title: "Purchase Orders",
@@ -68,14 +89,97 @@ const items = [
     icon: FileText,
   },
   {
-    title: "Finance",
+    title: "Quotations",
+    url: "/quotations",
+    icon: Calculator,
+    badge: "New"
+  },
+  {
+    title: "Return Management",
+    url: "/returns",
+    icon: Archive,
+    badge: "Pro"
+  },
+]
+
+// Financial Management
+const financeItems = [
+  {
+    title: "Finance Overview",
     url: "/finance",
     icon: DollarSign,
   },
   {
+    title: "Accounts Receivable",
+    url: "/accounts-receivable",
+    icon: CreditCard,
+  },
+  {
+    title: "Expense Tracking",
+    url: "/expenses",
+    icon: TrendingUp,
+  },
+  {
+    title: "Tax Management",
+    url: "/tax",
+    icon: Calculator,
+  },
+]
+
+// Analytics & Reports
+const analyticsItems = [
+  {
     title: "Reports",
     url: "/reports",
-    icon: FileText,
+    icon: BarChart3,
+  },
+  {
+    title: "Sales Analytics",
+    url: "/analytics",
+    icon: TrendingUp,
+    badge: "Pro"
+  },
+  {
+    title: "Profit Analysis",
+    url: "/profit-analysis",
+    icon: DollarSign,
+  },
+  {
+    title: "Customer Insights",
+    url: "/customer-insights",
+    icon: UserCheck,
+  },
+]
+
+// Communication & Tools
+const toolsItems = [
+  {
+    title: "Notifications",
+    url: "/notifications",
+    icon: Bell,
+    badge: "5"
+  },
+  {
+    title: "Messages",
+    url: "/messages",
+    icon: MessageSquare,
+    badge: "2"
+  },
+  {
+    title: "Calendar",
+    url: "/calendar",
+    icon: Calendar,
+  },
+  {
+    title: "Backup & Sync",
+    url: "/backup",
+    icon: Database,
+  },
+  {
+    title: "API Integration",
+    url: "/api",
+    icon: Zap,
+    badge: "Beta"
   },
 ]
 
@@ -83,6 +187,17 @@ export function AppSidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
+
+  const handleNavigation = (url: string, title: string) => {
+    if (url.startsWith('/')) {
+      navigate(url)
+    } else {
+      toast({
+        title: "Coming Soon",
+        description: `${title} feature will be available in the next update`,
+      });
+    }
+  }
 
   const handleSettingsClick = () => {
     toast({
@@ -104,12 +219,14 @@ export function AppSidebar() {
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      
+      <SidebarContent className="overflow-y-auto">
+        {/* Main Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-slate-700">Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
@@ -117,7 +234,7 @@ export function AppSidebar() {
                     className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
                   >
                     <button
-                      onClick={() => navigate(item.url)}
+                      onClick={() => handleNavigation(item.url, item.title)}
                       className="flex items-center gap-2 w-full text-left text-slate-700"
                     >
                       <item.icon className="h-4 w-4" />
@@ -129,7 +246,143 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Business Operations */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-slate-700">Business Operations</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {businessItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    asChild
+                    isActive={location.pathname === item.url}
+                    className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
+                  >
+                    <button
+                      onClick={() => handleNavigation(item.url, item.title)}
+                      className="flex items-center gap-2 w-full text-left text-slate-700"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="flex-1">{item.title}</span>
+                      {item.badge && (
+                        <Badge 
+                          className={`text-xs ${
+                            item.badge === 'New' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                            item.badge === 'Pro' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                            'bg-blue-100 text-blue-800 border-blue-200'
+                          }`}
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </button>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Financial Management */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-slate-700">Financial Management</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {financeItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    asChild
+                    isActive={location.pathname === item.url}
+                    className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
+                  >
+                    <button
+                      onClick={() => handleNavigation(item.url, item.title)}
+                      className="flex items-center gap-2 w-full text-left text-slate-700"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </button>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Analytics & Reports */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-slate-700">Analytics & Reports</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {analyticsItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    asChild
+                    isActive={location.pathname === item.url}
+                    className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
+                  >
+                    <button
+                      onClick={() => handleNavigation(item.url, item.title)}
+                      className="flex items-center gap-2 w-full text-left text-slate-700"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="flex-1">{item.title}</span>
+                      {item.badge && (
+                        <Badge 
+                          className={`text-xs ${
+                            item.badge === 'Pro' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                            'bg-blue-100 text-blue-800 border-blue-200'
+                          }`}
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </button>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Communication & Tools */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-slate-700">Communication & Tools</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {toolsItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    asChild
+                    isActive={location.pathname === item.url}
+                    className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
+                  >
+                    <button
+                      onClick={() => handleNavigation(item.url, item.title)}
+                      className="flex items-center gap-2 w-full text-left text-slate-700"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="flex-1">{item.title}</span>
+                      {item.badge && (
+                        <Badge 
+                          className={`text-xs ${
+                            item.badge === 'Beta' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                            'bg-red-100 text-red-800 border-red-200'
+                          }`}
+                        >
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </button>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
+      
       <SidebarFooter className="border-t border-slate-200 p-4">
         <SidebarMenu>
           <SidebarMenuItem>
@@ -140,6 +393,17 @@ export function AppSidebar() {
               >
                 <Settings className="h-4 w-4" />
                 <span>Settings</span>
+              </button>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <button 
+                className="flex items-center gap-2 w-full text-left text-slate-700 hover:bg-blue-50"
+                onClick={() => handleNavigation("/help", "Help & Support")}
+              >
+                <HelpCircle className="h-4 w-4" />
+                <span>Help & Support</span>
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>

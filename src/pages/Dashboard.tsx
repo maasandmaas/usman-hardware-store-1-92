@@ -1,6 +1,5 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -35,12 +34,9 @@ const Dashboard = () => {
   return (
     <div className="flex-1 p-6 space-y-6 bg-slate-50 min-h-screen">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <SidebarTrigger />
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-            <p className="text-slate-600">Usman Hardware Store - Furniture Hardware Specialist</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-slate-600">Usman Hardware Store - Furniture Hardware Specialist</p>
         </div>
         <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 px-3 py-1">
           Store Open
