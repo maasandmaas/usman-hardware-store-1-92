@@ -30,14 +30,29 @@ import {
   CreditCard,
   UserCheck,
   Database,
-  Bookmark
+  Bookmark,
+  PieChart,
+  Receipt,
+  Target,
+  MessageSquare,
+  Phone,
+  Mail,
+  FileBarChart
 } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
 
+// Define the menu item type with optional badge
+type MenuItem = {
+  title: string;
+  url: string;
+  icon: React.ComponentType<any>;
+  badge?: string;
+}
+
 // Main Menu items
-const mainItems = [
+const mainItems: MenuItem[] = [
   {
     title: "Dashboard",
     url: "/",
@@ -66,7 +81,7 @@ const mainItems = [
 ]
 
 // Business Operations
-const businessItems = [
+const businessItems: MenuItem[] = [
   {
     title: "Suppliers",
     url: "/suppliers",
@@ -80,7 +95,7 @@ const businessItems = [
   {
     title: "Sales Receipts",
     url: "/sales-receipts", 
-    icon: FileText,
+    icon: Receipt,
   },
   {
     title: "Quotations",
@@ -90,7 +105,7 @@ const businessItems = [
 ]
 
 // Financial Management
-const financeItems = [
+const financeItems: MenuItem[] = [
   {
     title: "Finance Overview",
     url: "/finance",
@@ -109,7 +124,7 @@ const financeItems = [
 ]
 
 // Analytics & Reports
-const analyticsItems = [
+const analyticsItems: MenuItem[] = [
   {
     title: "Reports",
     url: "/reports",
@@ -118,7 +133,7 @@ const analyticsItems = [
   {
     title: "Sales Analytics",
     url: "/sales-analytics",
-    icon: TrendingUp,
+    icon: PieChart,
     badge: "Pro"
   },
   {
@@ -128,8 +143,8 @@ const analyticsItems = [
   },
 ]
 
-// Admin Tools
-const adminItems = [
+// Communication & Tools
+const toolsItems: MenuItem[] = [
   {
     title: "Notifications",
     url: "/notifications",
@@ -168,6 +183,39 @@ export function AppSidebar() {
     navigate("/settings")
   }
 
+  const renderMenuItems = (items: MenuItem[]) => (
+    <SidebarMenu>
+      {items.map((item) => (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton 
+            asChild
+            isActive={location.pathname === item.url}
+            className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
+          >
+            <button
+              onClick={() => handleNavigation(item.url, item.title)}
+              className="flex items-center gap-2 w-full text-left text-slate-700"
+            >
+              <item.icon className="h-4 w-4" />
+              <span className="flex-1">{item.title}</span>
+              {item.badge && (
+                <Badge 
+                  className={`text-xs ${
+                    item.badge === 'New' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                    item.badge === 'Pro' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                    'bg-red-100 text-red-800 border-red-200'
+                  }`}
+                >
+                  {item.badge}
+                </Badge>
+              )}
+            </button>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  )
+
   return (
     <Sidebar className="border-r border-slate-200">
       <SidebarHeader className="border-b border-slate-200 p-4">
@@ -187,25 +235,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-slate-700">Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    isActive={location.pathname === item.url}
-                    className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
-                  >
-                    <button
-                      onClick={() => handleNavigation(item.url, item.title)}
-                      className="flex items-center gap-2 w-full text-left text-slate-700"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            {renderMenuItems(mainItems)}
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -213,36 +243,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-slate-700">Business Operations</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {businessItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    isActive={location.pathname === item.url}
-                    className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
-                  >
-                    <button
-                      onClick={() => handleNavigation(item.url, item.title)}
-                      className="flex items-center gap-2 w-full text-left text-slate-700"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span className="flex-1">{item.title}</span>
-                      {item.badge && (
-                        <Badge 
-                          className={`text-xs ${
-                            item.badge === 'New' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
-                            item.badge === 'Pro' ? 'bg-purple-100 text-purple-800 border-purple-200' :
-                            'bg-blue-100 text-blue-800 border-blue-200'
-                          }`}
-                        >
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            {renderMenuItems(businessItems)}
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -250,25 +251,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-slate-700">Financial Management</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {financeItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    isActive={location.pathname === item.url}
-                    className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
-                  >
-                    <button
-                      onClick={() => handleNavigation(item.url, item.title)}
-                      className="flex items-center gap-2 w-full text-left text-slate-700"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            {renderMenuItems(financeItems)}
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -276,68 +259,15 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="text-slate-700">Analytics & Reports</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {analyticsItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    isActive={location.pathname === item.url}
-                    className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
-                  >
-                    <button
-                      onClick={() => handleNavigation(item.url, item.title)}
-                      className="flex items-center gap-2 w-full text-left text-slate-700"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span className="flex-1">{item.title}</span>
-                      {item.badge && (
-                        <Badge 
-                          className={`text-xs ${
-                            item.badge === 'Pro' ? 'bg-purple-100 text-purple-800 border-purple-200' :
-                            'bg-blue-100 text-blue-800 border-blue-200'
-                          }`}
-                        >
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            {renderMenuItems(analyticsItems)}
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Admin Tools */}
+        {/* Communication & Tools */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-700">Admin Tools</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-slate-700">Communication & Tools</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {adminItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild
-                    isActive={location.pathname === item.url}
-                    className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
-                  >
-                    <button
-                      onClick={() => handleNavigation(item.url, item.title)}
-                      className="flex items-center gap-2 w-full text-left text-slate-700"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span className="flex-1">{item.title}</span>
-                      {item.badge && (
-                        <Badge 
-                          className="text-xs bg-red-100 text-red-800 border-red-200"
-                        >
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
+            {renderMenuItems(toolsItems)}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
