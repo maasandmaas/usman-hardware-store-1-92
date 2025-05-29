@@ -25,17 +25,11 @@ import {
   Calculator,
   Truck,
   Bell,
-  Shield,
   BarChart3,
   Calendar,
-  MessageSquare,
   CreditCard,
-  Archive,
   UserCheck,
-  Globe,
-  HelpCircle,
   Database,
-  Zap,
   Bookmark
 } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
@@ -92,13 +86,6 @@ const businessItems = [
     title: "Quotations",
     url: "/quotations",
     icon: Calculator,
-    badge: "New"
-  },
-  {
-    title: "Return Management",
-    url: "/returns",
-    icon: Archive,
-    badge: "Pro"
   },
 ]
 
@@ -116,13 +103,8 @@ const financeItems = [
   },
   {
     title: "Expense Tracking",
-    url: "/expenses",
+    url: "/expense-tracking",
     icon: TrendingUp,
-  },
-  {
-    title: "Tax Management",
-    url: "/tax",
-    icon: Calculator,
   },
 ]
 
@@ -135,14 +117,9 @@ const analyticsItems = [
   },
   {
     title: "Sales Analytics",
-    url: "/analytics",
+    url: "/sales-analytics",
     icon: TrendingUp,
     badge: "Pro"
-  },
-  {
-    title: "Profit Analysis",
-    url: "/profit-analysis",
-    icon: DollarSign,
   },
   {
     title: "Customer Insights",
@@ -151,19 +128,13 @@ const analyticsItems = [
   },
 ]
 
-// Communication & Tools
-const toolsItems = [
+// Admin Tools
+const adminItems = [
   {
     title: "Notifications",
     url: "/notifications",
     icon: Bell,
     badge: "5"
-  },
-  {
-    title: "Messages",
-    url: "/messages",
-    icon: MessageSquare,
-    badge: "2"
   },
   {
     title: "Calendar",
@@ -174,12 +145,6 @@ const toolsItems = [
     title: "Backup & Sync",
     url: "/backup",
     icon: Database,
-  },
-  {
-    title: "API Integration",
-    url: "/api",
-    icon: Zap,
-    badge: "Beta"
   },
 ]
 
@@ -200,10 +165,7 @@ export function AppSidebar() {
   }
 
   const handleSettingsClick = () => {
-    toast({
-      title: "Settings",
-      description: "Settings panel will be available in the next update",
-    });
+    navigate("/settings")
   }
 
   return (
@@ -215,7 +177,7 @@ export function AppSidebar() {
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900">Usman Hardware</h2>
-            <p className="text-xs text-slate-600">Hafizabad, Punjab</p>
+            <p className="text-xs text-slate-600">Admin Panel</p>
           </div>
         </div>
       </SidebarHeader>
@@ -346,12 +308,12 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Communication & Tools */}
+        {/* Admin Tools */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-700">Communication & Tools</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-slate-700">Admin Tools</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {toolsItems.map((item) => (
+              {adminItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
@@ -366,10 +328,7 @@ export function AppSidebar() {
                       <span className="flex-1">{item.title}</span>
                       {item.badge && (
                         <Badge 
-                          className={`text-xs ${
-                            item.badge === 'Beta' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                            'bg-red-100 text-red-800 border-red-200'
-                          }`}
+                          className="text-xs bg-red-100 text-red-800 border-red-200"
                         >
                           {item.badge}
                         </Badge>
@@ -393,17 +352,6 @@ export function AppSidebar() {
               >
                 <Settings className="h-4 w-4" />
                 <span>Settings</span>
-              </button>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <button 
-                className="flex items-center gap-2 w-full text-left text-slate-700 hover:bg-blue-50"
-                onClick={() => handleNavigation("/help", "Help & Support")}
-              >
-                <HelpCircle className="h-4 w-4" />
-                <span>Help & Support</span>
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
