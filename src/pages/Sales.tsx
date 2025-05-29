@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -144,13 +143,13 @@ const Sales = () => {
   const filteredProducts = getFilteredProducts();
 
   return (
-    <div className="flex-1 p-6 space-y-6 min-h-screen bg-slate-50">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div className="flex-1 p-4 md:p-6 space-y-4 md:space-y-6 min-h-screen bg-slate-50">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Sales System (POS)</h1>
-            <p className="text-slate-600">Usman Hardware - Hafizabad</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Sales System (POS)</h1>
+            <p className="text-slate-600 text-sm md:text-base">Usman Hardware - Hafizabad</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
@@ -210,13 +209,13 @@ const Sales = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Products Section */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
           <Card className="border-slate-200">
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-3 md:pb-4">
               <div className="flex items-center justify-between mb-2">
-                <CardTitle className="flex items-center gap-2 text-slate-900">
+                <CardTitle className="flex items-center gap-2 text-slate-900 text-lg md:text-xl">
                   <Store className="h-5 w-5 text-blue-600" />
                   Products
                 </CardTitle>
@@ -237,11 +236,11 @@ const Sales = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[65vh] overflow-y-auto custom-scrollbar">
                 {filteredProducts.map((product) => (
                   <div
                     key={product.id}
-                    className={`p-4 border rounded-lg hover:shadow-md cursor-pointer transition-all duration-200 relative ${
+                    className={`p-3 border rounded-lg hover:shadow-md cursor-pointer transition-all duration-200 relative ${
                       pinnedProducts.includes(product.id) ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-slate-300'
                     }`}
                     onClick={() => addToCart(product)}
@@ -249,7 +248,7 @@ const Sales = () => {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="absolute top-2 right-2 p-1 h-6 w-6"
+                      className="absolute top-1 right-1 p-1 h-5 w-5"
                       onClick={(e) => {
                         e.stopPropagation();
                         togglePin(product.id);
@@ -263,41 +262,43 @@ const Sales = () => {
                     </Button>
                     
                     {/* Product Header */}
-                    <div className="flex justify-between items-start mb-3 pr-8">
+                    <div className="flex justify-between items-start mb-2 pr-6">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-slate-900 text-base leading-tight">{product.name}</h3>
-                        <p className="text-sm text-slate-500 mt-1">SKU: {product.sku}</p>
+                        <h3 className="font-medium text-slate-900 text-sm leading-tight line-clamp-2">{product.name}</h3>
+                        <p className="text-xs text-slate-500 mt-1">SKU: {product.sku}</p>
                       </div>
+                    </div>
+
+                    {/* Stock and Sales Info */}
+                    <div className="flex items-center justify-between mb-2">
                       <Badge 
                         variant={product.stock > 10 ? "default" : "destructive"} 
-                        className={`text-xs whitespace-nowrap ml-2 ${
+                        className={`text-xs ${
                           product.stock > 10 
                             ? "bg-slate-100 text-slate-700 border-slate-300" 
                             : "bg-red-100 text-red-700 border-red-300"
                         }`}
                       >
-                        {product.stock} {product.unit}{product.stock !== 1 ? 's' : ''}
+                        {product.stock} {product.unit}
                       </Badge>
-                    </div>
-
-                    {/* Sales Info */}
-                    <div className="flex items-center gap-1 text-xs text-slate-400 mb-3">
-                      <BarChart className="h-3 w-3" />
-                      Sales: {product.sales}
+                      <div className="flex items-center gap-1 text-xs text-slate-400">
+                        <BarChart className="h-3 w-3" />
+                        {product.sales}
+                      </div>
                     </div>
 
                     {/* Price and Add Button */}
-                    <div className="flex justify-between items-center mt-4">
-                      <span className="text-lg font-bold text-emerald-600">PKR {product.price.toLocaleString()}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-base font-bold text-emerald-600">PKR {product.price.toLocaleString()}</span>
                       <Button 
                         size="sm" 
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 h-7 text-xs"
                         onClick={(e) => {
                           e.stopPropagation();
                           addToCart(product);
                         }}
                       >
-                        <Plus className="h-4 w-4 mr-1" />
+                        <Plus className="h-3 w-3 mr-1" />
                         Add
                       </Button>
                     </div>
@@ -309,7 +310,7 @@ const Sales = () => {
         </div>
 
         {/* Cart Section */}
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {/* Customer Selection */}
           <Card className="border-slate-200">
             <CardHeader>
@@ -330,7 +331,7 @@ const Sales = () => {
               </div>
               
               {customerSearch && (
-                <div className="max-h-40 overflow-y-auto space-y-2 border rounded-md p-2 border-slate-200">
+                <div className="max-h-40 overflow-y-auto space-y-2 border rounded-md p-2 border-slate-200 custom-scrollbar">
                   {filteredCustomers.map((customer) => (
                     <div
                       key={customer.id}
@@ -391,7 +392,7 @@ const Sales = () => {
                 <p className="text-slate-500 text-center py-8">Cart is empty</p>
               ) : (
                 <>
-                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                  <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
                     {cart.map((item) => (
                       <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-200">
                         <div className="flex-1">

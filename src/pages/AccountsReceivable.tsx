@@ -1,0 +1,245 @@
+
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CreditCard, Search, Phone, AlertCircle, DollarSign, Calendar, FileText } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+const AccountsReceivable = () => {
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  const receivables = [
+    {
+      id: 1,
+      customer: "Ahmad Furniture",
+      phone: "0300-1234567",
+      invoiceNo: "INV-2024-045",
+      amount: 15000,
+      dueDate: "2024-11-30",
+      daysPastDue: 0,
+      status: "due_today"
+    },
+    {
+      id: 2,
+      customer: "Hassan Carpentry",
+      phone: "0301-2345678",
+      invoiceNo: "INV-2024-044",
+      amount: 8500,
+      dueDate: "2024-11-25",
+      daysPastDue: 5,
+      status: "overdue"
+    },
+    {
+      id: 3,
+      customer: "Ali Hardware",
+      phone: "0302-3456789",
+      invoiceNo: "INV-2024-043",
+      amount: 25000,
+      dueDate: "2024-12-05",
+      daysPastDue: -5,
+      status: "upcoming"
+    },
+    {
+      id: 4,
+      customer: "Malik Steel Works",
+      phone: "0303-4567890",
+      invoiceNo: "INV-2024-042",
+      amount: 12500,
+      dueDate: "2024-11-20",
+      daysPastDue: 10,
+      status: "overdue"
+    }
+  ];
+
+  const handleCallCustomer = (customer) => {
+    toast({
+      title: "Calling Customer",
+      description: `Initiating call to ${customer.customer}`,
+    });
+  };
+
+  const handleMarkPaid = (customer) => {
+    toast({
+      title: "Payment Recorded",
+      description: `PKR ${customer.amount.toLocaleString()} payment marked as received from ${customer.customer}`,
+    });
+  };
+
+  const filteredReceivables = receivables.filter(item => {
+    const matchesSearch = item.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.phone.includes(searchTerm) ||
+                         item.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (filterStatus === "all") return matchesSearch;
+    return matchesSearch && item.status === filterStatus;
+  });
+
+  const totalOverdue = receivables
+    .filter(item => item.status === "overdue")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const totalDueToday = receivables
+    .filter(item => item.status === "due_today")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const getStatusBadge = (status, daysPastDue) => {
+    switch (status) {
+      case "overdue":
+        return <Badge className="bg-red-100 text-red-700 border-red-200">
+          <AlertCircle className="h-3 w-3 mr-1" />
+          {daysPastDue} days overdue
+        </Badge>;
+      case "due_today":
+        return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
+          Due Today
+        </Badge>;
+      case "upcoming":
+        return <Badge className="bg-green-100 text-green-700 border-green-200">
+          Due in {Math.abs(daysPastDue)} days
+        </Badge>;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex-1 p-4 md:p-6 space-y-6 min-h-screen bg-slate-50">
+      <div className="flex items-center gap-4 mb-8">
+        <SidebarTrigger />
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Accounts Receivable</h1>
+          <p className="text-slate-600">Track customer payments and outstanding invoices</p>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card className="border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Total Overdue</p>
+                <p className="text-2xl font-bold text-red-600">PKR {totalOverdue.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Calendar className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Due Today</p>
+                <p className="text-2xl font-bold text-yellow-600">PKR {totalDueToday.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <DollarSign className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Total Outstanding</p>
+                <p className="text-2xl font-bold text-blue-600">PKR {receivables.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters and Search */}
+      <Card className="border-slate-200">
+        <CardHeader>
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-blue-600" />
+              Outstanding Invoices
+            </CardTitle>
+            <div className="flex gap-3 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                <Input
+                  placeholder="Search customers or invoices..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                  <SelectItem value="due_today">Due Today</SelectItem>
+                  <SelectItem value="upcoming">Upcoming</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4 custom-scrollbar max-h-96 overflow-y-auto">
+            {filteredReceivables.map((item) => (
+              <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h3 className="font-medium text-slate-900">{item.customer}</h3>
+                    <p className="text-sm text-slate-600">Invoice: {item.invoiceNo}</p>
+                    <p className="text-xs text-slate-500">Due: {new Date(item.dueDate).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-slate-900">PKR {item.amount.toLocaleString()}</p>
+                    {getStatusBadge(item.status, item.daysPastDue)}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCallCustomer(item)}
+                      className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                    >
+                      <Phone className="h-3 w-3 mr-1" />
+                      Call
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleMarkPaid(item)}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <DollarSign className="h-3 w-3 mr-1" />
+                      Mark Paid
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default AccountsReceivable;

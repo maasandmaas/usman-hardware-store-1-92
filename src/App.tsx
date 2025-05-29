@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +25,9 @@ import SalesAnalytics from "./pages/SalesAnalytics";
 import CustomerInsights from "./pages/CustomerInsights";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
+import BackupSync from "./pages/BackupSync";
+import Calendar from "./pages/Calendar";
+import AccountsReceivable from "./pages/AccountsReceivable";
 
 const queryClient = new QueryClient();
 
@@ -38,7 +42,7 @@ const App = () => (
             <AppSidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
               <Header />
-              <main className="flex-1 overflow-auto">
+              <main className="flex-1 overflow-auto custom-scrollbar">
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/products" element={<Products />} />
@@ -54,6 +58,9 @@ const App = () => (
                   <Route path="/customer-insights" element={<CustomerInsights />} />
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/backup" element={<BackupSync />} />
+                  <Route path="/calendar" element={<Calendar />} />
+                  <Route path="/accounts-receivable" element={<AccountsReceivable />} />
                   <Route path="/finance" element={<Finance />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="*" element={<NotFound />} />
