@@ -1,3 +1,4 @@
+
 import {
   Sidebar,
   SidebarContent,
@@ -9,7 +10,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
 import { 
@@ -31,18 +31,13 @@ import {
   CreditCard,
   UserCheck,
   Database,
-  Bookmark,
-  PieChart,
   Receipt,
-  Target,
-  MessageSquare,
-  Phone,
-  Mail,
-  FileBarChart
+  PieChart
 } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 // Define the menu item type with optional badge
 type MenuItem = {
@@ -168,7 +163,7 @@ export function AppSidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
-  const { state } = useSidebar()
+  const { state, toggleSidebar } = useSidebar()
 
   const handleNavigation = (url: string, title: string) => {
     if (url.startsWith('/')) {
@@ -222,9 +217,14 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border bg-sidebar" collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+          >
             <Store className="h-6 w-6" />
-          </div>
+          </Button>
           <div className="group-data-[collapsible=icon]:hidden flex-1">
             <div className="flex items-center justify-between">
               <div>
@@ -233,7 +233,6 @@ export function AppSidebar() {
               </div>
             </div>
           </div>
-          <SidebarTrigger className="h-8 w-8 ml-auto" />
         </div>
       </SidebarHeader>
       
