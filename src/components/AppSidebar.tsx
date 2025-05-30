@@ -1,4 +1,3 @@
-
 import {
   Sidebar,
   SidebarContent,
@@ -11,6 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { 
   Home, 
@@ -168,6 +168,7 @@ export function AppSidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
+  const { state } = useSidebar()
 
   const handleNavigation = (url: string, title: string) => {
     if (url.startsWith('/')) {
@@ -191,20 +192,20 @@ export function AppSidebar() {
           <SidebarMenuButton 
             asChild
             isActive={location.pathname === item.url}
-            className="w-full hover:bg-blue-50 data-[active=true]:bg-blue-100 data-[active=true]:text-blue-900"
+            className="w-full hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
           >
             <button
               onClick={() => handleNavigation(item.url, item.title)}
-              className="flex items-center gap-2 w-full text-left text-slate-700"
+              className="flex items-center gap-2 w-full text-left text-sidebar-foreground"
             >
               <item.icon className="h-4 w-4" />
               <span className="flex-1">{item.title}</span>
               {item.badge && (
                 <Badge 
                   className={`text-xs ${
-                    item.badge === 'New' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
-                    item.badge === 'Pro' ? 'bg-purple-100 text-purple-800 border-purple-200' :
-                    'bg-red-100 text-red-800 border-red-200'
+                    item.badge === 'New' ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900 dark:text-emerald-100' :
+                    item.badge === 'Pro' ? 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-100' :
+                    'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-100'
                   }`}
                 >
                   {item.badge}
@@ -218,31 +219,28 @@ export function AppSidebar() {
   )
 
   return (
-    <Sidebar className="border-r border-slate-200" collapsible="icon">
-      <SidebarHeader className="border-b border-slate-200 p-4">
+    <Sidebar className="border-r border-sidebar-border bg-sidebar" collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-700 text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
             <Store className="h-6 w-6" />
           </div>
           <div className="group-data-[collapsible=icon]:hidden flex-1">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Usman Hardware</h2>
-                <p className="text-xs text-slate-600">Admin Panel</p>
+                <h2 className="text-lg font-bold text-sidebar-foreground">Usman Hardware</h2>
+                <p className="text-xs text-sidebar-foreground/70">Admin Panel</p>
               </div>
-              <SidebarTrigger className="h-8 w-8" />
             </div>
           </div>
-          <div className="group-data-[collapsible=icon]:block hidden">
-            <SidebarTrigger className="h-8 w-8" />
-          </div>
+          <SidebarTrigger className="h-8 w-8 ml-auto" />
         </div>
       </SidebarHeader>
       
       <SidebarContent className="overflow-y-auto">
         {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-700">Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/70">Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             {renderMenuItems(mainItems)}
           </SidebarGroupContent>
@@ -250,7 +248,7 @@ export function AppSidebar() {
 
         {/* Business Operations */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-700">Business Operations</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/70">Business Operations</SidebarGroupLabel>
           <SidebarGroupContent>
             {renderMenuItems(businessItems)}
           </SidebarGroupContent>
@@ -258,7 +256,7 @@ export function AppSidebar() {
 
         {/* Financial Management */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-700">Financial Management</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/70">Financial Management</SidebarGroupLabel>
           <SidebarGroupContent>
             {renderMenuItems(financeItems)}
           </SidebarGroupContent>
@@ -266,7 +264,7 @@ export function AppSidebar() {
 
         {/* Analytics & Reports */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-700">Analytics & Reports</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/70">Analytics & Reports</SidebarGroupLabel>
           <SidebarGroupContent>
             {renderMenuItems(analyticsItems)}
           </SidebarGroupContent>
@@ -274,19 +272,19 @@ export function AppSidebar() {
 
         {/* Communication & Tools */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-700">Communication & Tools</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/70">Communication & Tools</SidebarGroupLabel>
           <SidebarGroupContent>
             {renderMenuItems(toolsItems)}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="border-t border-slate-200 p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-4">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <button 
-                className="flex items-center gap-2 w-full text-left text-slate-700 hover:bg-blue-50"
+                className="flex items-center gap-2 w-full text-left text-sidebar-foreground hover:bg-sidebar-accent"
                 onClick={handleSettingsClick}
               >
                 <Settings className="h-4 w-4" />
