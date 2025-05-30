@@ -217,13 +217,13 @@ export function AppSidebar() {
   )
 
   return (
-    <Sidebar className="border-r border-slate-200">
+    <Sidebar className="border-r border-slate-200" collapsible="icon">
       <SidebarHeader className="border-b border-slate-200 p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-700 text-white">
             <Store className="h-6 w-6" />
           </div>
-          <div>
+          <div className="group-data-[collapsible=icon]:hidden">
             <h2 className="text-lg font-bold text-slate-900">Usman Hardware</h2>
             <p className="text-xs text-slate-600">Admin Panel</p>
           </div>
@@ -281,7 +281,7 @@ export function AppSidebar() {
                 onClick={handleSettingsClick}
               >
                 <Settings className="h-4 w-4" />
-                <span>Settings</span>
+                <span className="group-data-[collapsible=icon]:hidden">Settings</span>
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>

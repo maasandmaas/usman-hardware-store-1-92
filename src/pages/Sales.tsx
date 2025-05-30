@@ -8,11 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingCart, Plus, Minus, Trash2, Search, User, CreditCard, FileText, Pin, PinOff, Store, BarChart } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Trash2, Search, User, CreditCard, FileText, Pin, PinOff, Store, BarChart, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { QuickCustomerForm } from "@/components/QuickCustomerForm";
 
 // Import centralized data
-import { products as allProducts, customers, Product } from "@/data/storeData"; 
+import { products as allProducts, customers as initialCustomers, Product } from "@/data/storeData"; 
 
 const Sales = () => {
   const { toast } = useToast();
@@ -22,7 +23,20 @@ const Sales = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [orders, setOrders] = useState([]);
-  const [pinnedProducts, setPinnedProducts] = useState([1, 2]); // Default pinned products
+  const [pinnedProducts, setPinnedProducts] = useState([1, 2]);
+  const [customers, setCustomers] = useState([
+    ...initialCustomers,
+    // Add walk-in customer option
+    { 
+      id: 0, 
+      name: "Walk-in Customer", 
+      phone: "N/A", 
+      address: "Walk-in", 
+      type: "walk-in",
+      dueAmount: 0 
+    }
+  ]);
+  const [quickCustomerFormOpen, setQuickCustomerFormOpen] = useState(false);
 
   // Filter and sort products: pinned first, then by search
   const getFilteredProducts = () => {
@@ -135,6 +149,20 @@ const Sales = () => {
     });
   };
 
+  const handleCustomerCreated = (newCustomer) => {
+    setCustomers([...customers, newCustomer]);
+    setSelectedCustomer(newCustomer);
+  };
+
+  const getCustomerTypeColor = (type) => {
+    switch (type) {
+      case "special": return "bg-purple-100 text-purple-800 border-purple-200";
+      case "regular": return "bg-blue-100 text-blue-800 border-blue-200";
+      case "walk-in": return "bg-gray-100 text-gray-800 border-gray-200";
+      default: return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
   const filteredCustomers = customers.filter(customer =>
     customer.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
     customer.phone.includes(customerSearch)
@@ -236,19 +264,18 @@ const Sales = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[65vh] overflow-y-auto custom-scrollbar">
+              <div className="space-y-2 max-h-[65vh] overflow-y-auto custom-scrollbar">
                 {filteredProducts.map((product) => (
                   <div
                     key={product.id}
-                    className={`p-3 border rounded-lg hover:shadow-md cursor-pointer transition-all duration-200 relative ${
+                    className={`flex items-center justify-between p-3 border rounded-lg hover:shadow-sm cursor-pointer transition-all duration-200 relative ${
                       pinnedProducts.includes(product.id) ? 'border-blue-300 bg-blue-50' : 'border-slate-200 hover:border-slate-300'
                     }`}
-                    onClick={() => addToCart(product)}
                   >
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="absolute top-1 right-1 p-1 h-5 w-5"
+                      className="absolute top-2 right-2 p-1 h-6 w-6"
                       onClick={(e) => {
                         e.stopPropagation();
                         togglePin(product.id);
@@ -261,46 +288,42 @@ const Sales = () => {
                       )}
                     </Button>
                     
-                    {/* Product Header */}
-                    <div className="flex justify-between items-start mb-2 pr-6">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-slate-900 text-sm leading-tight line-clamp-2">{product.name}</h3>
-                        <p className="text-xs text-slate-500 mt-1">SKU: {product.sku}</p>
+                    {/* Product Info */}
+                    <div className="flex-1 pr-8">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-medium text-slate-900 text-sm">{product.name}</h3>
+                        <span className="text-lg font-bold text-emerald-600">PKR {product.price.toLocaleString()}</span>
                       </div>
-                    </div>
-
-                    {/* Stock and Sales Info */}
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge 
-                        variant={product.stock > 10 ? "default" : "destructive"} 
-                        className={`text-xs ${
-                          product.stock > 10 
-                            ? "bg-slate-100 text-slate-700 border-slate-300" 
-                            : "bg-red-100 text-red-700 border-red-300"
-                        }`}
-                      >
-                        {product.stock} {product.unit}
-                      </Badge>
-                      <div className="flex items-center gap-1 text-xs text-slate-400">
-                        <BarChart className="h-3 w-3" />
-                        {product.sales}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <p className="text-xs text-slate-500">SKU: {product.sku}</p>
+                          <Badge 
+                            variant={product.stock > 10 ? "default" : "destructive"} 
+                            className={`text-xs ${
+                              product.stock > 10 
+                                ? "bg-slate-100 text-slate-700 border-slate-300" 
+                                : "bg-red-100 text-red-700 border-red-300"
+                            }`}
+                          >
+                            {product.stock} {product.unit}
+                          </Badge>
+                          <div className="flex items-center gap-1 text-xs text-slate-400">
+                            <BarChart className="h-3 w-3" />
+                            {product.sales}
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 h-8 text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(product);
+                          }}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add to Cart
+                        </Button>
                       </div>
-                    </div>
-
-                    {/* Price and Add Button */}
-                    <div className="flex justify-between items-center">
-                      <span className="text-base font-bold text-emerald-600">PKR {product.price.toLocaleString()}</span>
-                      <Button 
-                        size="sm" 
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 h-7 text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToCart(product);
-                        }}
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add
-                      </Button>
                     </div>
                   </div>
                 ))}
@@ -314,9 +337,20 @@ const Sales = () => {
           {/* Customer Selection */}
           <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-slate-900">
-                <User className="h-5 w-5 text-blue-600" />
-                Customer
+              <CardTitle className="flex items-center justify-between text-slate-900">
+                <div className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-blue-600" />
+                  Customer
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setQuickCustomerFormOpen(true)}
+                  className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                >
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  Quick Add
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -343,9 +377,16 @@ const Sales = () => {
                         setCustomerSearch("");
                       }}
                     >
-                      <p className="font-medium text-slate-900">{customer.name}</p>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-slate-900">{customer.name}</p>
+                        <Badge variant="outline" className={`text-xs ${getCustomerTypeColor(customer.type || 'regular')}`}>
+                          {customer.type || 'regular'}
+                        </Badge>
+                      </div>
                       <p className="text-sm text-slate-500">{customer.phone}</p>
-                      <p className="text-xs text-slate-400">{customer.address}</p>
+                      {customer.type !== 'walk-in' && (
+                        <p className="text-xs text-slate-400">{customer.address}</p>
+                      )}
                       {customer.dueAmount > 0 && (
                         <Badge variant="destructive" className="mt-1">
                           Due: PKR {customer.dueAmount.toLocaleString()}
@@ -358,9 +399,16 @@ const Sales = () => {
 
               {selectedCustomer && (
                 <div className="p-3 bg-blue-50 rounded border border-blue-200">
-                  <p className="font-medium text-blue-900">{selectedCustomer.name}</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-medium text-blue-900">{selectedCustomer.name}</p>
+                    <Badge variant="outline" className={`text-xs ${getCustomerTypeColor(selectedCustomer.type || 'regular')}`}>
+                      {selectedCustomer.type || 'regular'}
+                    </Badge>
+                  </div>
                   <p className="text-sm text-blue-700">{selectedCustomer.phone}</p>
-                  <p className="text-xs text-blue-600">{selectedCustomer.address}</p>
+                  {selectedCustomer.type !== 'walk-in' && (
+                    <p className="text-xs text-blue-600">{selectedCustomer.address}</p>
+                  )}
                   {selectedCustomer.dueAmount > 0 && (
                     <Badge variant="destructive" className="mt-1">
                       Previous Due: PKR {selectedCustomer.dueAmount.toLocaleString()}
@@ -368,14 +416,6 @@ const Sales = () => {
                   )}
                 </div>
               )}
-
-              <Button
-                variant="outline"
-                className="w-full border-slate-300 text-slate-700 hover:bg-slate-50"
-                onClick={() => setSelectedCustomer(null)}
-              >
-                Cash Sale (Walk-in Customer)
-              </Button>
             </CardContent>
           </Card>
 
@@ -474,6 +514,12 @@ const Sales = () => {
           </Card>
         </div>
       </div>
+
+      <QuickCustomerForm
+        open={quickCustomerFormOpen}
+        onOpenChange={setQuickCustomerFormOpen}
+        onCustomerCreated={handleCustomerCreated}
+      />
     </div>
   );
 };
