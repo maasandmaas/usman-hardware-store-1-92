@@ -1,78 +1,27 @@
 
-import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Clock, Package, User, MapPin } from "lucide-react";
-
-interface PendingOrder {
-  id: string;
-  customerName: string;
-  customerType: "special" | "regular" | "walk-in";
-  items: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-  total: number;
-  createdAt: string;
-  estimatedReady: string;
-  status: "pending" | "preparing" | "ready";
-}
+import { Calendar, Package, User, DollarSign, Trash2 } from "lucide-react";
+import { getPendingOrders, removePendingOrder } from "@/data/storeData";
+import { useToast } from "@/hooks/use-toast";
 
 interface PendingOrdersModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const mockPendingOrders: PendingOrder[] = [
-  {
-    id: "PO-001",
-    customerName: "Ahmad Furniture",
-    customerType: "special",
-    items: [
-      { name: "Heavy Duty Hinges", quantity: 20, price: 125 },
-      { name: "Steel Screws", quantity: 100, price: 5 }
-    ],
-    total: 3000,
-    createdAt: "2024-11-28T10:30:00Z",
-    estimatedReady: "2024-11-29T14:00:00Z",
-    status: "preparing"
-  },
-  {
-    id: "PO-002",
-    customerName: "Hassan Carpentry",
-    customerType: "regular",
-    items: [
-      { name: "Wood Screws", quantity: 50, price: 8 }
-    ],
-    total: 400,
-    createdAt: "2024-11-28T11:15:00Z",
-    estimatedReady: "2024-11-28T16:00:00Z",
-    status: "ready"
-  }
-];
-
 export function PendingOrdersModal({ open, onOpenChange }: PendingOrdersModalProps) {
-  const [pendingOrders] = useState<PendingOrder[]>(mockPendingOrders);
+  const { toast } = useToast();
+  const pendingOrders = getPendingOrders();
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "preparing": return "bg-blue-100 text-blue-800";
-      case "ready": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getCustomerTypeColor = (type: string) => {
-    switch (type) {
-      case "special": return "bg-purple-100 text-purple-800";
-      case "regular": return "bg-blue-100 text-blue-800";
-      case "walk-in": return "bg-gray-100 text-gray-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
+  const handleRemoveOrder = (orderId: string) => {
+    removePendingOrder(orderId);
+    toast({
+      title: "Order Removed",
+      description: "Pending order has been removed successfully",
+    });
   };
 
   return (
@@ -87,59 +36,74 @@ export function PendingOrdersModal({ open, onOpenChange }: PendingOrdersModalPro
         
         <div className="space-y-4">
           {pendingOrders.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No pending orders</p>
+            <div className="text-center py-8">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-500 text-lg">No pending orders</p>
+              <p className="text-gray-400 text-sm">All orders have been processed</p>
+            </div>
           ) : (
             pendingOrders.map((order) => (
-              <div key={order.id} className="border rounded-lg p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">{order.id}</h3>
-                      <Badge className={getStatusColor(order.status)}>
+              <div key={order.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-lg">Order #{order.id}</h3>
+                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
                         {order.status}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                    
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
                       <div className="flex items-center gap-1">
                         <User className="h-4 w-4" />
-                        {order.customerName}
+                        <span>{order.customer}</span>
                       </div>
-                      <Badge variant="outline" className={getCustomerTypeColor(order.customerType)}>
-                        {order.customerType}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{order.orderDate}</span>
+                      </div>
                     </div>
+                    
+                    {order.notes && (
+                      <p className="text-sm text-gray-500 italic">"{order.notes}"</p>
+                    )}
                   </div>
+                  
                   <div className="text-right">
-                    <p className="text-xl font-bold text-green-600">PKR {order.total.toLocaleString()}</p>
-                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <Clock className="h-3 w-3" />
-                      Ready: {new Date(order.estimatedReady).toLocaleString()}
+                    <div className="flex items-center gap-1 text-xl font-bold text-green-600 mb-2">
+                      <DollarSign className="h-5 w-5" />
+                      PKR {order.totalAmount.toLocaleString()}
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 border-red-300 hover:bg-red-50"
+                      onClick={() => handleRemoveOrder(order.id)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
                   </div>
                 </div>
                 
-                <Separator />
+                <Separator className="my-3" />
                 
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm text-gray-700">Items:</h4>
-                  {order.items.map((item, index) => (
-                    <div key={index} className="flex justify-between text-sm">
-                      <span>{item.name} × {item.quantity}</span>
-                      <span>PKR {(item.price * item.quantity).toLocaleString()}</span>
+                  <h4 className="font-medium text-gray-700">Order Items:</h4>
+                  {order.items.map((item: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
+                      <div className="flex-1">
+                        <span className="font-medium">{item.productName}</span>
+                        <span className="text-gray-500 ml-2">x {item.quantity}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-medium">PKR {item.total.toLocaleString()}</span>
+                        <div className="text-xs text-gray-500">
+                          @ PKR {item.unitPrice} each
+                        </div>
+                      </div>
                     </div>
                   ))}
-                </div>
-                
-                <div className="flex gap-2 pt-2">
-                  <Button size="sm" variant="outline">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    View Details
-                  </Button>
-                  {order.status === "ready" && (
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                      Complete Order
-                    </Button>
-                  )}
                 </div>
               </div>
             ))

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,12 +9,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingCart, Plus, Minus, Trash2, Search, User, CreditCard, FileText, Pin, PinOff, Store, BarChart, UserPlus } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Trash2, Search, User, CreditCard, FileText, Pin, PinOff, Store, BarChart, UserPlus, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { QuickCustomerForm } from "@/components/QuickCustomerForm";
 
 // Import centralized data
-import { products as allProducts, customers as initialCustomers, Product } from "@/data/storeData"; 
+import { 
+  products as allProducts, 
+  customers as initialCustomers, 
+  customerTypes,
+  paymentMethods,
+  addPendingOrder,
+  Product, 
+  Customer, 
+  CustomerType 
+} from "@/data/storeData"; 
 
 const Sales = () => {
   const { toast } = useToast();
@@ -32,7 +42,7 @@ const Sales = () => {
       name: "Walk-in Customer", 
       phone: "N/A", 
       address: "Walk-in", 
-      type: "walk-in",
+      type: "walk-in" as CustomerType,
       dueAmount: 0 
     }
   ]);
@@ -122,31 +132,66 @@ const Sales = () => {
     return `ORD-${dateStr}-${timeStr}`;
   };
 
-  const handleCheckout = () => {
-    const orderId = generateOrderId();
-    const order = {
-      id: orderId,
-      items: cart,
-      total: calculateTotal(),
-      customer: selectedCustomer,
-      paymentMethod,
-      timestamp: new Date().toISOString(),
-      type: paymentMethod === "cash" ? "Cash" : "Credit",
-      status: "Completed"
-    };
+  const generatePendingId = () => {
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    const timeStr = Date.now().toString().slice(-4);
+    return `PEND-${dateStr}-${timeStr}`;
+  };
 
-    setOrders([order, ...orders]);
-    console.log("Order completed:", order);
+  const handleCheckout = () => {
+    if (paymentMethod === "pending") {
+      // Add to pending orders
+      const pendingOrder = {
+        id: generatePendingId(),
+        customer: selectedCustomer ? selectedCustomer.name : "Walk-in Customer",
+        items: cart.map(item => ({
+          productId: item.id,
+          productName: item.name,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          total: item.price * item.quantity
+        })),
+        totalAmount: calculateTotal(),
+        orderDate: new Date().toISOString().slice(0, 10),
+        status: "pending",
+        notes: "Order sent to pending"
+      };
+
+      addPendingOrder(pendingOrder);
+      
+      toast({
+        title: "Order Sent to Pending",
+        description: `PKR ${calculateTotal().toLocaleString()} order added to pending orders`,
+        variant: "default"
+      });
+    } else {
+      // Process as regular order
+      const orderId = generateOrderId();
+      const order = {
+        id: orderId,
+        items: cart,
+        total: calculateTotal(),
+        customer: selectedCustomer,
+        paymentMethod,
+        timestamp: new Date().toISOString(),
+        type: paymentMethod === "cash" ? "Cash" : "Credit",
+        status: "Completed"
+      };
+
+      setOrders([order, ...orders]);
+      console.log("Order completed:", order);
+      
+      toast({
+        title: "Order Completed",
+        description: `PKR ${calculateTotal().toLocaleString()} order completed successfully`,
+      });
+    }
     
     // Clear cart and reset
     setCart([]);
     setSelectedCustomer(null);
     setPaymentMethod("cash");
-    
-    toast({
-      title: "Order Completed",
-      description: `PKR ${calculateTotal().toLocaleString()} order completed successfully`,
-    });
   };
 
   const handleCustomerCreated = (newCustomer) => {
@@ -156,9 +201,11 @@ const Sales = () => {
 
   const getCustomerTypeColor = (type) => {
     switch (type) {
-      case "special": return "bg-purple-100 text-purple-800 border-purple-200";
-      case "regular": return "bg-blue-100 text-blue-800 border-blue-200";
-      case "walk-in": return "bg-gray-100 text-gray-800 border-gray-200";
+      case "manufacturer": return "bg-purple-100 text-purple-800 border-purple-200";
+      case "retailer": return "bg-blue-100 text-blue-800 border-blue-200";
+      case "special": return "bg-green-100 text-green-800 border-green-200";
+      case "regular": return "bg-gray-100 text-gray-800 border-gray-200";
+      case "walk-in": return "bg-orange-100 text-orange-800 border-orange-200";
       default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
@@ -289,7 +336,7 @@ const Sales = () => {
                     </Button>
                     
                     {/* Product Info */}
-                    <div className="flex-1 pr-8">
+                    <div className="flex-1 pr-20">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-medium text-slate-900 text-sm">{product.name}</h3>
                         <span className="text-lg font-bold text-emerald-600">PKR {product.price.toLocaleString()}</span>
@@ -380,7 +427,7 @@ const Sales = () => {
                       <div className="flex items-center justify-between mb-1">
                         <p className="font-medium text-slate-900">{customer.name}</p>
                         <Badge variant="outline" className={`text-xs ${getCustomerTypeColor(customer.type || 'regular')}`}>
-                          {customer.type || 'regular'}
+                          {customerTypes.find(t => t.value === customer.type)?.label || 'Regular'}
                         </Badge>
                       </div>
                       <p className="text-sm text-slate-500">{customer.phone}</p>
@@ -402,7 +449,7 @@ const Sales = () => {
                   <div className="flex items-center justify-between mb-1">
                     <p className="font-medium text-blue-900">{selectedCustomer.name}</p>
                     <Badge variant="outline" className={`text-xs ${getCustomerTypeColor(selectedCustomer.type || 'regular')}`}>
-                      {selectedCustomer.type || 'regular'}
+                      {customerTypes.find(t => t.value === selectedCustomer.type)?.label || 'Regular'}
                     </Badge>
                   </div>
                   <p className="text-sm text-blue-700">{selectedCustomer.phone}</p>
@@ -490,8 +537,16 @@ const Sales = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="cash">Cash Payment</SelectItem>
-                        <SelectItem value="credit">Credit Sale</SelectItem>
+                        {paymentMethods.map((method) => (
+                          <SelectItem key={method.value} value={method.value}>
+                            <div className="flex items-center gap-2">
+                              {method.value === "pending" && <Clock className="h-4 w-4" />}
+                              {method.value === "cash" && <CreditCard className="h-4 w-4" />}
+                              {method.value === "credit" && <FileText className="h-4 w-4" />}
+                              {method.label}
+                            </div>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
 
@@ -500,12 +555,25 @@ const Sales = () => {
                     )}
 
                     <Button
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                      className={`w-full text-white ${
+                        paymentMethod === "pending" 
+                          ? "bg-yellow-600 hover:bg-yellow-700" 
+                          : "bg-emerald-600 hover:bg-emerald-700"
+                      }`}
                       onClick={handleCheckout}
                       disabled={cart.length === 0 || (paymentMethod === "credit" && !selectedCustomer)}
                     >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Complete Order - PKR {calculateTotal().toLocaleString()}
+                      {paymentMethod === "pending" ? (
+                        <>
+                          <Clock className="h-4 w-4 mr-2" />
+                          Send to Pending - PKR {calculateTotal().toLocaleString()}
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Complete Order - PKR {calculateTotal().toLocaleString()}
+                        </>
+                      )}
                     </Button>
                   </div>
                 </>

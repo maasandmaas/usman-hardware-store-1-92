@@ -7,65 +7,58 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { customerTypes, Customer, CustomerType } from "@/data/storeData";
 
 interface QuickCustomerFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCustomerCreated: (customer: any) => void;
+  onCustomerCreated: (customer: Customer) => void;
 }
 
 export function QuickCustomerForm({ open, onOpenChange, onCustomerCreated }: QuickCustomerFormProps) {
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [type, setType] = useState<"special" | "regular">("regular");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerType, setCustomerType] = useState<CustomerType>("regular");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim() || !phone.trim()) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Missing Information",
+        description: "Please provide customer name and phone number",
         variant: "destructive"
       });
       return;
     }
 
-    setIsSubmitting(true);
+    const newCustomer: Customer = {
+      id: Date.now(), // Simple ID generation
+      name: name.trim(),
+      phone: phone.trim(),
+      address: customerType === "walk-in" ? "Walk-in" : "Address not provided",
+      dueAmount: 0,
+      type: customerType
+    };
+
+    onCustomerCreated(newCustomer);
     
-    // Simulate API call
-    setTimeout(() => {
-      const newCustomer = {
-        id: Date.now(),
-        name: name.trim(),
-        phone: phone.trim(),
-        type,
-        address: "",
-        dueAmount: 0,
-        createdAt: new Date().toISOString()
-      };
-      
-      onCustomerCreated(newCustomer);
-      
-      toast({
-        title: "Success",
-        description: `Customer ${name} created successfully`,
-      });
-      
-      // Reset form
-      setName("");
-      setPhone("");
-      setType("regular");
-      setIsSubmitting(false);
-      onOpenChange(false);
-    }, 500);
+    // Reset form
+    setName("");
+    setPhone("");
+    setCustomerType("regular");
+    onOpenChange(false);
+
+    toast({
+      title: "Customer Added",
+      description: `${newCustomer.name} has been added successfully`,
+    });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-blue-600" />
@@ -75,56 +68,57 @@ export function QuickCustomerForm({ open, onOpenChange, onCustomerCreated }: Qui
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="customerName">Customer Name *</Label>
+            <Label htmlFor="name">Customer Name *</Label>
             <Input
-              id="customerName"
+              id="name"
+              placeholder="Enter customer name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter customer name"
-              disabled={isSubmitting}
+              className="border-gray-300"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="customerPhone">Phone Number *</Label>
+            <Label htmlFor="phone">Phone Number *</Label>
             <Input
-              id="customerPhone"
+              id="phone"
+              placeholder="Enter phone number"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="Enter phone number"
-              disabled={isSubmitting}
+              className="border-gray-300"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="customerType">Customer Type</Label>
-            <Select value={type} onValueChange={(value: "special" | "regular") => setType(value)} disabled={isSubmitting}>
-              <SelectTrigger>
+            <Label htmlFor="type">Customer Type</Label>
+            <Select value={customerType} onValueChange={(value: CustomerType) => setCustomerType(value)}>
+              <SelectTrigger className="border-gray-300">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="regular">Regular Customer</SelectItem>
-                <SelectItem value="special">Special Customer</SelectItem>
+                {customerTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           
-          <div className="flex gap-2 pt-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+          <div className="flex gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
               className="flex-1"
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="flex-1"
+            <Button
+              type="submit"
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
             >
-              {isSubmitting ? "Creating..." : "Create Customer"}
+              Add Customer
             </Button>
           </div>
         </form>

@@ -10,6 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { 
   Home, 
@@ -223,9 +224,17 @@ export function AppSidebar() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-700 text-white">
             <Store className="h-6 w-6" />
           </div>
-          <div className="group-data-[collapsible=icon]:hidden">
-            <h2 className="text-lg font-bold text-slate-900">Usman Hardware</h2>
-            <p className="text-xs text-slate-600">Admin Panel</p>
+          <div className="group-data-[collapsible=icon]:hidden flex-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Usman Hardware</h2>
+                <p className="text-xs text-slate-600">Admin Panel</p>
+              </div>
+              <SidebarTrigger className="h-8 w-8" />
+            </div>
+          </div>
+          <div className="group-data-[collapsible=icon]:block hidden">
+            <SidebarTrigger className="h-8 w-8" />
           </div>
         </div>
       </SidebarHeader>
