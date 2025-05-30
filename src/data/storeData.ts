@@ -1,4 +1,3 @@
-
 // Centralized data for Usman Hardware store - Furniture Hardware Specialist
 
 // Product Units
@@ -24,6 +23,7 @@ export interface Customer {
   phone: string;
   address: string;
   dueAmount: number;
+  type?: "special" | "regular" | "walk-in";
 }
 
 // Supplier interface
@@ -206,14 +206,14 @@ export const products: Product[] = [
 
 // Customers data
 export const customers: Customer[] = [
-  { id: 1, name: "Furniture Master Hafizabad", phone: "0300-1234567", address: "Sagar Road, Hafizabad", dueAmount: 3240 },
-  { id: 2, name: "Ali Furniture Works", phone: "0321-9876543", address: "Gujranwala Road, Hafizabad", dueAmount: 2890 },
-  { id: 3, name: "Modern Furniture House", phone: "0333-5555555", address: "College Road, Hafizabad", dueAmount: 0 },
-  { id: 4, name: "Royal Cabinet Makers", phone: "0345-1111111", address: "Kolo Road, Hafizabad", dueAmount: 5600 },
-  { id: 5, name: "Khan Furniture Center", phone: "0311-2222222", address: "Vanike Tarar, Hafizabad", dueAmount: 1200 },
-  { id: 6, name: "Elite Wood Works", phone: "0333-3333333", address: "Main Bazaar, Hafizabad", dueAmount: 0 },
-  { id: 7, name: "Classic Furniture", phone: "0302-4444444", address: "GT Road, Hafizabad", dueAmount: 4500 },
-  { id: 8, name: "Wooden Dreams", phone: "0315-5555555", address: "Railway Road, Hafizabad", dueAmount: 890 },
+  { id: 1, name: "Furniture Master Hafizabad", phone: "0300-1234567", address: "Sagar Road, Hafizabad", dueAmount: 3240, type: "special" },
+  { id: 2, name: "Ali Furniture Works", phone: "0321-9876543", address: "Gujranwala Road, Hafizabad", dueAmount: 2890, type: "regular" },
+  { id: 3, name: "Modern Furniture House", phone: "0333-5555555", address: "College Road, Hafizabad", dueAmount: 0, type: "regular" },
+  { id: 4, name: "Royal Cabinet Makers", phone: "0345-1111111", address: "Kolo Road, Hafizabad", dueAmount: 5600, type: "special" },
+  { id: 5, name: "Khan Furniture Center", phone: "0311-2222222", address: "Vanike Tarar, Hafizabad", dueAmount: 1200, type: "regular" },
+  { id: 6, name: "Elite Wood Works", phone: "0333-3333333", address: "Main Bazaar, Hafizabad", dueAmount: 0, type: "regular" },
+  { id: 7, name: "Classic Furniture", phone: "0302-4444444", address: "GT Road, Hafizabad", dueAmount: 4500, type: "special" },
+  { id: 8, name: "Wooden Dreams", phone: "0315-5555555", address: "Railway Road, Hafizabad", dueAmount: 890, type: "regular" },
 ];
 
 // Suppliers data
