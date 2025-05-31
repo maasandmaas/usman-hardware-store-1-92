@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,217 +13,152 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Users, Search, Plus, Edit, CreditCard, Phone, MapPin, Calendar, Mail, Building, IdCard, Receipt, History, AlertCircle, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { customersApi } from "@/services/api";
 
 const Customers = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [customerTypeFilter, setCustomerTypeFilter] = useState("all");
-
-  // Enhanced customer data with Pakistani context
-  const [customers, setCustomers] = useState([
-    {
-      id: 1,
-      name: "Muhammad Ahmed",
-      businessName: "Ahmed Hardware Store",
-      type: "retailer",
-      phone: "0300-1234567",
-      whatsapp: "0300-1234567",
-      email: "ahmed@hardware.com",
-      address: "Shop #45, Main Bazaar, Model Town, Lahore",
-      city: "Lahore",
-      province: "Punjab",
-      cnic: "35202-1234567-1",
-      ntn: "1234567-8",
-      dueAmount: 23400,
-      creditLimit: 50000,
-      totalPurchases: 156000,
-      lastPurchase: "2024-01-15",
-      joinDate: "2023-03-15",
-      status: "active",
-      paymentTerms: 30,
-      discount: 5,
-      transactions: [
-        { id: 1, date: "2024-01-15", type: "sale", amount: 23400, balance: 23400, description: "Door hinges & cabinet handles", orderId: "ORD-001" },
-        { id: 2, date: "2024-01-10", type: "payment", amount: -15000, balance: 0, description: "Cash payment received", orderId: null },
-        { id: 3, date: "2024-01-08", type: "sale", amount: 18600, balance: 15000, description: "Wood screws & bolts", orderId: "ORD-002" },
-      ],
-      notes: "Good customer, pays on time. Prefers cash payments."
-    },
-    {
-      id: 2,
-      name: "Fatima Khan",
-      businessName: "Khan Furniture Works",
-      type: "manufacturer",
-      phone: "0321-9876543",
-      whatsapp: "0321-9876543",
-      email: "fatima@khanfurniture.com",
-      address: "Plot #23, Industrial Area, Gulberg, Lahore",
-      city: "Lahore",
-      province: "Punjab",
-      cnic: "35202-9876543-2",
-      ntn: "9876543-1",
-      dueAmount: 18900,
-      creditLimit: 100000,
-      totalPurchases: 289000,
-      lastPurchase: "2024-01-12",
-      joinDate: "2022-08-20",
-      status: "active",
-      paymentTerms: 45,
-      discount: 8,
-      transactions: [
-        { id: 4, date: "2024-01-12", type: "sale", amount: 18900, balance: 18900, description: "Drawer slides & cabinet fittings", orderId: "ORD-003" },
-      ],
-      notes: "Bulk buyer, manufacturing furniture. Monthly credit customer."
-    },
-    {
-      id: 3,
-      name: "Ali Hassan",
-      businessName: "Hassan Construction",
-      type: "contractor",
-      phone: "0333-5555555",
-      whatsapp: "0333-5555555",
-      email: "ali@hassanconstruction.pk",
-      address: "Office #12, Commercial Area, DHA Phase 5, Karachi",
-      city: "Karachi",
-      province: "Sindh",
-      cnic: "42101-5555555-3",
-      ntn: "5555555-2",
-      dueAmount: 0,
-      creditLimit: 200000,
-      totalPurchases: 567000,
-      lastPurchase: "2024-01-14",
-      joinDate: "2021-11-10",
-      status: "active",
-      paymentTerms: 30,
-      discount: 12,
-      transactions: [
-        { id: 5, date: "2024-01-14", type: "payment", amount: -45000, balance: 0, description: "Bank transfer received", orderId: null },
-      ],
-      notes: "Premium contractor, large orders. Bank transfers preferred."
-    },
-    {
-      id: 4,
-      name: "Shahid Iqbal",
-      businessName: "Walk-in Customer",
-      type: "individual",
-      phone: "0345-1111111",
-      whatsapp: "",
-      email: "",
-      address: "Johar Town, Lahore",
-      city: "Lahore",
-      province: "Punjab",
-      cnic: "",
-      ntn: "",
-      dueAmount: 5600,
-      creditLimit: 10000,
-      totalPurchases: 23400,
-      lastPurchase: "2024-01-13",
-      joinDate: "2024-01-13",
-      status: "active",
-      paymentTerms: 15,
-      discount: 0,
-      transactions: [
-        { id: 6, date: "2024-01-13", type: "sale", amount: 5600, balance: 5600, description: "PVC pipes & fittings", orderId: "ORD-004" },
-      ],
-      notes: "New customer, small orders."
-    }
-  ]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
+  });
 
   const customerTypes = [
     { value: "all", label: "All Customers" },
     { value: "individual", label: "Individual" },
-    { value: "retailer", label: "Retailer" },
-    { value: "manufacturer", label: "Manufacturer" },
-    { value: "contractor", label: "Contractor" },
+    { value: "business", label: "Business" },
   ];
 
+  useEffect(() => {
+    fetchCustomers();
+  }, [searchTerm, customerTypeFilter]);
+
+  const fetchCustomers = async (page = 1) => {
+    try {
+      setLoading(true);
+      const params: any = {
+        page,
+        limit: 20,
+        status: 'active'
+      };
+      
+      if (searchTerm) params.search = searchTerm;
+      if (customerTypeFilter !== 'all') params.type = customerTypeFilter;
+
+      const response = await customersApi.getAll(params);
+      
+      if (response.success) {
+        const customerData = response.data.customers || response.data || [];
+        setCustomers(Array.isArray(customerData) ? customerData : []);
+        
+        if (response.data.pagination) {
+          setPagination(response.data.pagination);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch customers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load customers",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddCustomer = async (formData: any) => {
+    try {
+      const response = await customersApi.create(formData);
+      if (response.success) {
+        setIsDialogOpen(false);
+        fetchCustomers();
+        toast({
+          title: "Customer Added",
+          description: "New customer has been added successfully.",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to add customer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add customer",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateCustomer = async (customerId: number, formData: any) => {
+    try {
+      const response = await customersApi.update(customerId, formData);
+      if (response.success) {
+        fetchCustomers();
+        toast({
+          title: "Customer Updated",
+          description: "Customer has been updated successfully.",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update customer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update customer",
+        variant: "destructive"
+      });
+    }
+  };
+
   const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.phone.includes(searchTerm) ||
-                         customer.businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.email.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!customer) return false;
+    
+    const matchesSearch = customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.phone?.includes(searchTerm) ||
+                         customer.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = customerTypeFilter === "all" || customer.type === customerTypeFilter;
     return matchesSearch && matchesType;
   });
 
-  const totalDues = customers.reduce((sum, customer) => sum + customer.dueAmount, 0);
+  const totalDues = customers.reduce((sum, customer) => sum + (customer.currentBalance || 0), 0);
   const activeCustomers = customers.filter(c => c.status === "active").length;
-  const customersWithDues = customers.filter(c => c.dueAmount > 0).length;
+  const customersWithDues = customers.filter(c => (c.currentBalance || 0) > 0).length;
 
-  const handleAddCustomer = (formData) => {
-    const newCustomer = {
-      id: customers.length + 1,
-      ...formData,
-      creditLimit: parseFloat(formData.creditLimit) || 0,
-      discount: parseFloat(formData.discount) || 0,
-      paymentTerms: parseInt(formData.paymentTerms) || 30,
-      dueAmount: 0,
-      totalPurchases: 0,
-      lastPurchase: null,
-      joinDate: new Date().toISOString().split('T')[0],
-      status: "active",
-      transactions: []
-    };
-    setCustomers([...customers, newCustomer]);
-    setIsDialogOpen(false);
-    toast({
-      title: "Customer Added",
-      description: "New customer has been added successfully.",
-    });
-  };
-
-  const handlePayment = (customerId, amount) => {
-    setCustomers(customers.map(customer => {
-      if (customer.id === customerId) {
-        const newDueAmount = Math.max(0, customer.dueAmount - amount);
-        const newTransaction = {
-          id: Date.now(),
-          date: new Date().toISOString().split('T')[0],
-          type: "payment",
-          amount: -amount,
-          balance: newDueAmount,
-          description: "Payment received",
-          orderId: null
-        };
-        return {
-          ...customer,
-          dueAmount: newDueAmount,
-          transactions: [newTransaction, ...customer.transactions]
-        };
-      }
-      return customer;
-    }));
-    
-    toast({
-      title: "Payment Recorded",
-      description: `Rs.  ${amount.toLocaleString()} payment has been recorded successfully.`,
-    });
-  };
-
-  const getCustomerTypeColor = (type) => {
+  const getCustomerTypeColor = (type: string) => {
     const colors = {
-      individual: "bg-blue-100 text-blue-800",
-      retailer: "bg-green-100 text-green-800",
-      manufacturer: "bg-purple-100 text-purple-800",
-      contractor: "bg-orange-100 text-orange-800",
+      individual: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
+      business: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
     };
-    return colors[type] || "bg-gray-100 text-gray-800";
+    return colors[type] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100";
   };
 
-  const getStatusColor = (status) => {
-    return status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
+  const getStatusColor = (status: string) => {
+    return status === "active" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
   };
+
+  if (loading) {
+    return (
+      <div className="flex-1 p-6 space-y-6 min-h-screen bg-background">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-muted-foreground">Loading customers...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex-1 p-6 space-y-6 min-h-screen">
+    <div className="flex-1 p-6 space-y-6 min-h-screen bg-background">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Customer Management</h1>
-            <p className="text-gray-600">Manage customer profiles, dues, and transactions</p>
+            <h1 className="text-3xl font-bold text-foreground">Customer Management</h1>
+            <p className="text-muted-foreground">Manage customer profiles, dues, and transactions</p>
           </div>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -244,8 +179,8 @@ const Customers = () => {
             <div className="flex items-center gap-3">
               <Users className="h-8 w-8 text-blue-500" />
               <div>
-                <p className="text-sm text-gray-600">Total Customers</p>
-                <p className="text-2xl font-bold text-blue-600">{customers.length}</p>
+                <p className="text-sm text-muted-foreground">Total Customers</p>
+                <p className="text-2xl font-bold text-blue-600">{pagination.totalItems}</p>
               </div>
             </div>
           </CardContent>
@@ -256,8 +191,8 @@ const Customers = () => {
             <div className="flex items-center gap-3">
               <CreditCard className="h-8 w-8 text-red-500" />
               <div>
-                <p className="text-sm text-gray-600">Total Dues</p>
-                <p className="text-2xl font-bold text-red-600">Rs.  {totalDues.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Dues</p>
+                <p className="text-2xl font-bold text-red-600">PKR {totalDues.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -268,7 +203,7 @@ const Customers = () => {
             <div className="flex items-center gap-3">
               <Users className="h-8 w-8 text-green-500" />
               <div>
-                <p className="text-sm text-gray-600">Active Customers</p>
+                <p className="text-sm text-muted-foreground">Active Customers</p>
                 <p className="text-2xl font-bold text-green-600">{activeCustomers}</p>
               </div>
             </div>
@@ -280,7 +215,7 @@ const Customers = () => {
             <div className="flex items-center gap-3">
               <AlertCircle className="h-8 w-8 text-orange-500" />
               <div>
-                <p className="text-sm text-gray-600">Customers with Dues</p>
+                <p className="text-sm text-muted-foreground">Customers with Dues</p>
                 <p className="text-2xl font-bold text-orange-600">{customersWithDues}</p>
               </div>
             </div>
@@ -293,9 +228,9 @@ const Customers = () => {
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search customers by name, phone, business, or email..."
+                placeholder="Search customers by name, phone, or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -319,92 +254,88 @@ const Customers = () => {
 
       {/* Customers Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredCustomers.map((customer) => (
-          <Card key={customer.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <CardTitle className="text-lg">{customer.name}</CardTitle>
-                    <Badge className={`text-xs ${getCustomerTypeColor(customer.type)}`}>
-                      {customer.type}
-                    </Badge>
-                    <Badge className={`text-xs ${getStatusColor(customer.status)}`}>
-                      {customer.status}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-gray-600 font-medium">{customer.businessName}</p>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                    <Phone className="h-4 w-4" />
-                    {customer.phone}
-                  </div>
-                </div>
-                {customer.dueAmount > 0 && (
-                  <Badge variant="destructive" className="ml-2">
-                    Due: Rs.  {customer.dueAmount.toLocaleString()}
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <MapPin className="h-4 w-4" />
-                <span className="truncate">{customer.address}</span>
-              </div>
-
-              {customer.email && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Mail className="h-4 w-4" />
-                  <span className="truncate">{customer.email}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-500">Total Purchases</p>
-                  <p className="font-bold text-green-600">Rs.  {customer.totalPurchases.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Credit Limit</p>
-                  <p className="font-medium">Rs.  {customer.creditLimit.toLocaleString()}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-500">Payment Terms</p>
-                  <p className="font-medium">{customer.paymentTerms} days</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Discount</p>
-                  <p className="font-medium">{customer.discount}%</p>
-                </div>
-              </div>
-
-              {customer.lastPurchase && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="h-4 w-4" />
-                  <span>Last purchase: {customer.lastPurchase}</span>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => setSelectedCustomer(customer)}
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  View Details
-                </Button>
-                {customer.dueAmount > 0 && (
-                  <PaymentDialog customer={customer} onPayment={handlePayment} />
-                )}
+        {filteredCustomers.length === 0 ? (
+          <Card className="col-span-full">
+            <CardContent className="p-8">
+              <div className="text-center">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No customers found</p>
               </div>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          filteredCustomers.map((customer) => (
+            <Card key={customer.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <CardTitle className="text-lg text-foreground">{customer.name}</CardTitle>
+                      <Badge className={`text-xs ${getCustomerTypeColor(customer.type)}`}>
+                        {customer.type}
+                      </Badge>
+                      <Badge className={`text-xs ${getStatusColor(customer.status)}`}>
+                        {customer.status}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                      <Phone className="h-4 w-4" />
+                      {customer.phone}
+                    </div>
+                  </div>
+                  {(customer.currentBalance || 0) > 0 && (
+                    <Badge variant="destructive" className="ml-2">
+                      Due: PKR {customer.currentBalance?.toLocaleString()}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span className="truncate">{customer.address}</span>
+                </div>
+
+                {customer.email && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    <span className="truncate">{customer.email}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Total Purchases</p>
+                    <p className="font-bold text-green-600">PKR {customer.totalPurchases?.toLocaleString() || '0'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Credit Limit</p>
+                    <p className="font-medium text-foreground">PKR {customer.creditLimit?.toLocaleString() || '0'}</p>
+                  </div>
+                </div>
+
+                {customer.lastPurchase && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>Last purchase: {customer.lastPurchase}</span>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setSelectedCustomer(customer)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    View Details
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Customer Details Dialog */}
@@ -412,7 +343,7 @@ const Customers = () => {
         <CustomerDetailsDialog
           customer={selectedCustomer}
           onClose={() => setSelectedCustomer(null)}
-          onPayment={handlePayment}
+          onUpdate={handleUpdateCustomer}
         />
       )}
     </div>
@@ -420,18 +351,26 @@ const Customers = () => {
 };
 
 // Customer Dialog Component
-const CustomerDialog = ({ onSubmit, onClose }) => {
+const CustomerDialog = ({ onSubmit, onClose }: { onSubmit: (data: any) => void; onClose: () => void }) => {
   const [formData, setFormData] = useState({
-    name: "", phone: "", email: "", address: "", gst: "", creditLimit: ""
+    name: "", 
+    phone: "", 
+    email: "", 
+    address: "", 
+    city: "",
+    type: "individual",
+    creditLimit: ""
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
       ...formData,
       creditLimit: parseFloat(formData.creditLimit) || 0
     });
-    setFormData({ name: "", phone: "", email: "", address: "", gst: "", creditLimit: "" });
+    setFormData({ 
+      name: "", phone: "", email: "", address: "", city: "", type: "individual", creditLimit: "" 
+    });
   };
 
   return (
@@ -483,22 +422,35 @@ const CustomerDialog = ({ onSubmit, onClose }) => {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="gst">GST Number</Label>
+            <Label htmlFor="city">City</Label>
             <Input
-              id="gst"
-              value={formData.gst}
-              onChange={(e) => setFormData({...formData, gst: e.target.value})}
+              id="city"
+              value={formData.city}
+              onChange={(e) => setFormData({...formData, city: e.target.value})}
             />
           </div>
           <div>
-            <Label htmlFor="creditLimit">Credit Limit (Rs. )</Label>
-            <Input
-              id="creditLimit"
-              type="number"
-              value={formData.creditLimit}
-              onChange={(e) => setFormData({...formData, creditLimit: e.target.value})}
-            />
+            <Label htmlFor="type">Customer Type</Label>
+            <Select value={formData.type} onValueChange={(value) => setFormData({...formData, type: value})}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="individual">Individual</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+        </div>
+
+        <div>
+          <Label htmlFor="creditLimit">Credit Limit (PKR)</Label>
+          <Input
+            id="creditLimit"
+            type="number"
+            value={formData.creditLimit}
+            onChange={(e) => setFormData({...formData, creditLimit: e.target.value})}
+          />
         </div>
 
         <div className="flex gap-2 pt-4">
@@ -510,61 +462,16 @@ const CustomerDialog = ({ onSubmit, onClose }) => {
   );
 };
 
-// Payment Dialog Component
-const PaymentDialog = ({ customer, onPayment }) => {
-  const [amount, setAmount] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-
-  const handlePayment = () => {
-    const paymentAmount = parseFloat(amount);
-    if (paymentAmount > 0 && paymentAmount <= customer.dueAmount) {
-      onPayment(customer.id, paymentAmount);
-      setAmount("");
-      setIsOpen(false);
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="bg-green-600 hover:bg-green-700">
-          <CreditCard className="h-4 w-4 mr-1" />
-          Pay
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Record Payment - {customer.name}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm text-gray-600">Outstanding Amount: <span className="font-bold text-red-600">Rs. {customer.dueAmount}</span></p>
-          </div>
-          <div>
-            <Label htmlFor="amount">Payment Amount (Rs. )</Label>
-            <Input
-              id="amount"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              max={customer.dueAmount}
-              placeholder="Enter payment amount"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handlePayment} className="flex-1" disabled={!amount || parseFloat(amount) <= 0}>
-              Record Payment
-            </Button>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
 // Customer Details Dialog Component
-const CustomerDetailsDialog = ({ customer, onClose, onPayment }) => {
+const CustomerDetailsDialog = ({ 
+  customer, 
+  onClose, 
+  onUpdate 
+}: { 
+  customer: any; 
+  onClose: () => void; 
+  onUpdate: (id: number, data: any) => void;
+}) => {
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -574,7 +481,6 @@ const CustomerDetailsDialog = ({ customer, onClose, onPayment }) => {
         <Tabs defaultValue="info" className="space-y-4">
           <TabsList>
             <TabsTrigger value="info">Information</TabsTrigger>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
           </TabsList>
           
           <TabsContent value="info" className="space-y-4">
@@ -584,9 +490,10 @@ const CustomerDetailsDialog = ({ customer, onClose, onPayment }) => {
                   <Label>Contact Information</Label>
                   <div className="mt-2 space-y-2 text-sm">
                     <p><strong>Phone:</strong> {customer.phone}</p>
-                    <p><strong>Email:</strong> {customer.email}</p>
+                    <p><strong>Email:</strong> {customer.email || 'N/A'}</p>
                     <p><strong>Address:</strong> {customer.address}</p>
-                    <p><strong>GST:</strong> {customer.gst}</p>
+                    <p><strong>City:</strong> {customer.city}</p>
+                    <p><strong>Type:</strong> {customer.type}</p>
                   </div>
                 </div>
               </div>
@@ -594,39 +501,13 @@ const CustomerDetailsDialog = ({ customer, onClose, onPayment }) => {
                 <div>
                   <Label>Account Summary</Label>
                   <div className="mt-2 space-y-2 text-sm">
-                    <p><strong>Total Purchases:</strong> Rs. {customer.totalPurchases.toLocaleString()}</p>
-                    <p><strong>Credit Limit:</strong> Rs. {customer.creditLimit.toLocaleString()}</p>
-                    <p><strong>Outstanding Amount:</strong> <span className="text-red-600 font-bold">Rs. {customer.dueAmount.toLocaleString()}</span></p>
-                    <p><strong>Available Credit:</strong> Rs. {(customer.creditLimit - customer.dueAmount).toLocaleString()}</p>
+                    <p><strong>Total Purchases:</strong> PKR {customer.totalPurchases?.toLocaleString() || '0'}</p>
+                    <p><strong>Credit Limit:</strong> PKR {customer.creditLimit?.toLocaleString() || '0'}</p>
+                    <p><strong>Outstanding Amount:</strong> <span className="text-red-600 font-bold">PKR {customer.currentBalance?.toLocaleString() || '0'}</span></p>
+                    <p><strong>Available Credit:</strong> PKR {((customer.creditLimit || 0) - (customer.currentBalance || 0)).toLocaleString()}</p>
+                    <p><strong>Last Purchase:</strong> {customer.lastPurchase || 'N/A'}</p>
                   </div>
                 </div>
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="transactions">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Transaction History</h3>
-                {customer.dueAmount > 0 && (
-                  <PaymentDialog customer={customer} onPayment={onPayment} />
-                )}
-              </div>
-              <div className="space-y-2">
-                {customer.transactions.map((transaction) => (
-                  <div key={transaction.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <div>
-                      <p className="font-medium">{transaction.description}</p>
-                      <p className="text-sm text-gray-500">{transaction.date}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className={`font-bold ${transaction.type === 'payment' ? 'text-green-600' : 'text-red-600'}`}>
-                        {transaction.type === 'payment' ? '+' : ''}Rs. {Math.abs(transaction.amount).toLocaleString()}
-                      </p>
-                      <p className="text-sm text-gray-500">Balance: Rs. {transaction.balance.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           </TabsContent>

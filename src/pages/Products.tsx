@@ -10,16 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Package, Search, Plus, Edit, Trash2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { productsApi } from "@/services/api";
-
-// Static data for units
-const units = [
-  { value: "pieces", label: "Pieces" },
-  { value: "kg", label: "Kilograms" },
-  { value: "meters", label: "Meters" },
-  { value: "liters", label: "Liters" },
-  { value: "sets", label: "Sets" },
-];
+import { productsApi, categoriesApi, unitsApi } from "@/services/api";
 
 const Products = () => {
   const { toast } = useToast();
@@ -27,10 +18,15 @@ const Products = () => {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isUnitDialogOpen, setIsUnitDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [units, setUnits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newCategory, setNewCategory] = useState("");
+  const [newUnit, setNewUnit] = useState({ name: "", label: "" });
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -41,11 +37,12 @@ const Products = () => {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchUnits();
   }, [searchTerm, categoryFilter]);
 
   const fetchCategories = async () => {
     try {
-      const response = await productsApi.getCategories();
+      const response = await categoriesApi.getAll();
       if (response.success) {
         const categoryList = [
           { value: "all", label: "All Categories" },
@@ -54,7 +51,8 @@ const Products = () => {
         setCategories(categoryList);
       }
     } catch (error) {
-      // Use fallback categories if API fails
+      console.error('Failed to fetch categories:', error);
+      // Fallback categories
       setCategories([
         { value: "all", label: "All Categories" },
         { value: "hinges", label: "Hinges & Hardware" },
@@ -63,6 +61,25 @@ const Products = () => {
         { value: "fasteners", label: "Fasteners & Screws" },
         { value: "sliding", label: "Sliding Systems" },
         { value: "tools", label: "Tools & Equipment" }
+      ]);
+    }
+  };
+
+  const fetchUnits = async () => {
+    try {
+      const response = await unitsApi.getAll();
+      if (response.success) {
+        setUnits(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch units:', error);
+      // Fallback units
+      setUnits([
+        { value: "pieces", label: "Pieces" },
+        { value: "kg", label: "Kilograms" },
+        { value: "meters", label: "Meters" },
+        { value: "liters", label: "Liters" },
+        { value: "sets", label: "Sets" },
       ]);
     }
   };
@@ -82,7 +99,9 @@ const Products = () => {
       const response = await productsApi.getAll(params);
       
       if (response.success) {
-        setProducts(response.data.products || response.data || []);
+        const productData = response.data.products || response.data || [];
+        setProducts(Array.isArray(productData) ? productData : []);
+        
         if (response.data.pagination) {
           setPagination(response.data.pagination);
         }
@@ -143,6 +162,8 @@ const Products = () => {
   };
 
   const handleDeleteProduct = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    
     try {
       const response = await productsApi.delete(id);
       if (response.success) {
@@ -157,6 +178,54 @@ const Products = () => {
       toast({
         title: "Error",
         description: "Failed to delete product",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategory.trim()) return;
+    
+    try {
+      const response = await categoriesApi.create({ name: newCategory });
+      if (response.success) {
+        setNewCategory("");
+        setIsCategoryDialogOpen(false);
+        fetchCategories();
+        toast({
+          title: "Category Added",
+          description: "New category has been added successfully.",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to add category:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add category",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddUnit = async () => {
+    if (!newUnit.name.trim() || !newUnit.label.trim()) return;
+    
+    try {
+      const response = await unitsApi.create(newUnit);
+      if (response.success) {
+        setNewUnit({ name: "", label: "" });
+        setIsUnitDialogOpen(false);
+        fetchUnits();
+        toast({
+          title: "Unit Added",
+          description: "New unit has been added successfully.",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to add unit:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add unit",
         variant: "destructive"
       });
     }
@@ -183,7 +252,7 @@ const Products = () => {
 
   if (loading && products.length === 0) {
     return (
-      <div className="flex-1 p-6 space-y-6 min-h-screen">
+      <div className="flex-1 p-6 space-y-6 min-h-screen bg-background">
         <div className="flex items-center justify-center h-64">
           <div className="text-lg text-muted-foreground">Loading products...</div>
         </div>
@@ -201,15 +270,89 @@ const Products = () => {
             <p className="text-muted-foreground">Manage your inventory and product catalog</p>
           </div>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Button>
-          </DialogTrigger>
-          <ProductDialog onSubmit={handleAddProduct} onClose={() => setIsDialogOpen(false)} categories={categories} />
-        </Dialog>
+        <div className="flex gap-2">
+          <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Category
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Category</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="categoryName">Category Name</Label>
+                  <Input
+                    id="categoryName"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="Enter category name"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleAddCategory} className="flex-1">Add Category</Button>
+                  <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancel</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isUnitDialogOpen} onOpenChange={setIsUnitDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Unit
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Unit</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="unitName">Unit Name</Label>
+                  <Input
+                    id="unitName"
+                    value={newUnit.name}
+                    onChange={(e) => setNewUnit({...newUnit, name: e.target.value})}
+                    placeholder="e.g., kg, pieces"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="unitLabel">Unit Label</Label>
+                  <Input
+                    id="unitLabel"
+                    value={newUnit.label}
+                    onChange={(e) => setNewUnit({...newUnit, label: e.target.value})}
+                    placeholder="e.g., Kilograms, Pieces"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleAddUnit} className="flex-1">Add Unit</Button>
+                  <Button variant="outline" onClick={() => setIsUnitDialogOpen(false)}>Cancel</Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Button>
+            </DialogTrigger>
+            <ProductDialog 
+              onSubmit={handleAddProduct} 
+              onClose={() => setIsDialogOpen(false)} 
+              categories={categories} 
+              units={units}
+            />
+          </Dialog>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -374,6 +517,7 @@ const Products = () => {
               setSelectedProduct(null);
             }}
             categories={categories}
+            units={units}
             initialData={selectedProduct}
             isEdit={true}
           />
@@ -388,12 +532,14 @@ const ProductDialog = ({
   onSubmit, 
   onClose, 
   categories, 
+  units,
   initialData = null, 
   isEdit = false 
 }: { 
   onSubmit: (data: any) => void; 
   onClose: () => void; 
   categories: any[];
+  units: any[];
   initialData?: any;
   isEdit?: boolean;
 }) => {
@@ -515,7 +661,9 @@ const ProductDialog = ({
               </SelectTrigger>
               <SelectContent>
                 {units.map((unit) => (
-                  <SelectItem key={unit.value} value={unit.value}>{unit.label}</SelectItem>
+                  <SelectItem key={unit.value || unit.name} value={unit.value || unit.name}>
+                    {unit.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

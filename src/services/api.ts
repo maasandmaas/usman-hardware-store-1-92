@@ -1,3 +1,4 @@
+
 const BASE_URL = 'https://zaidawn.site/wp-json/ims/v1';
 
 // API response types
@@ -21,31 +22,19 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// Get JWT token from localStorage
-const getAuthToken = (): string | null => {
-  return localStorage.getItem('jwt_token');
-};
-
-// Create headers with authentication
-const createHeaders = (): HeadersInit => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
-  };
-};
-
 // Generic API request function
 const apiRequest = async <T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> => {
   const url = `${BASE_URL}${endpoint}`;
-  const headers = createHeaders();
 
   try {
     const response = await fetch(url, {
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
       ...options,
     });
 
@@ -111,9 +100,26 @@ export const productsApi = {
       method: 'POST',
       body: JSON.stringify(adjustment),
     }),
-  
-  getCategories: () => 
-    apiRequest<ApiResponse<string[]>>('/products/categories'),
+};
+
+// Categories API
+export const categoriesApi = {
+  getAll: () => apiRequest<ApiResponse<string[]>>('/categories'),
+  create: (category: { name: string }) =>
+    apiRequest<ApiResponse<any>>('/categories', {
+      method: 'POST',
+      body: JSON.stringify(category),
+    }),
+};
+
+// Units API
+export const unitsApi = {
+  getAll: () => apiRequest<ApiResponse<any[]>>('/units'),
+  create: (unit: { name: string; label: string }) =>
+    apiRequest<ApiResponse<any>>('/units', {
+      method: 'POST',
+      body: JSON.stringify(unit),
+    }),
 };
 
 // Customers API
@@ -132,7 +138,7 @@ export const customersApi = {
       });
     }
     const query = queryParams.toString();
-    return apiRequest<PaginatedResponse<any>>(`/customers${query ? `?${query}` : ''}`);
+    return apiRequest<any>(`/customers${query ? `?${query}` : ''}`);
   },
   
   getById: (id: number) => apiRequest<ApiResponse<any>>(`/customers/${id}`),
@@ -167,7 +173,7 @@ export const salesApi = {
       });
     }
     const query = queryParams.toString();
-    return apiRequest<PaginatedResponse<any>>(`/sales${query ? `?${query}` : ''}`);
+    return apiRequest<any>(`/sales${query ? `?${query}` : ''}`);
   },
   
   getById: (id: number) => apiRequest<ApiResponse<any>>(`/sales/${id}`),
@@ -201,7 +207,7 @@ export const inventoryApi = {
       });
     }
     const query = queryParams.toString();
-    return apiRequest<PaginatedResponse<any>>(`/inventory${query ? `?${query}` : ''}`);
+    return apiRequest<any>(`/inventory${query ? `?${query}` : ''}`);
   },
   
   getMovements: (params?: {
@@ -219,7 +225,7 @@ export const inventoryApi = {
       });
     }
     const query = queryParams.toString();
-    return apiRequest<PaginatedResponse<any>>(`/inventory/movements${query ? `?${query}` : ''}`);
+    return apiRequest<any>(`/inventory/movements${query ? `?${query}` : ''}`);
   },
   
   restock: (restock: any) =>
@@ -227,178 +233,6 @@ export const inventoryApi = {
       method: 'POST',
       body: JSON.stringify(restock),
     }),
-};
-
-// Suppliers API
-export const suppliersApi = {
-  getAll: (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-  }) => {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value.toString());
-      });
-    }
-    const query = queryParams.toString();
-    return apiRequest<PaginatedResponse<any>>(`/suppliers${query ? `?${query}` : ''}`);
-  },
-  
-  getById: (id: number) => apiRequest<ApiResponse<any>>(`/suppliers/${id}`),
-  
-  create: (supplier: any) =>
-    apiRequest<ApiResponse<any>>('/suppliers', {
-      method: 'POST',
-      body: JSON.stringify(supplier),
-    }),
-};
-
-// Purchase Orders API
-export const purchaseOrdersApi = {
-  getAll: (params?: {
-    page?: number;
-    limit?: number;
-    supplierId?: number;
-    status?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  }) => {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value.toString());
-      });
-    }
-    const query = queryParams.toString();
-    return apiRequest<PaginatedResponse<any>>(`/purchase-orders${query ? `?${query}` : ''}`);
-  },
-  
-  create: (purchaseOrder: any) =>
-    apiRequest<ApiResponse<any>>('/purchase-orders', {
-      method: 'POST',
-      body: JSON.stringify(purchaseOrder),
-    }),
-  
-  receive: (id: number, receiveData: any) =>
-    apiRequest<ApiResponse<any>>(`/purchase-orders/${id}/receive`, {
-      method: 'PUT',
-      body: JSON.stringify(receiveData),
-    }),
-};
-
-// Quotations API
-export const quotationsApi = {
-  getAll: (params?: {
-    page?: number;
-    limit?: number;
-    customerId?: number;
-    status?: string;
-  }) => {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value.toString());
-      });
-    }
-    const query = queryParams.toString();
-    return apiRequest<PaginatedResponse<any>>(`/quotations${query ? `?${query}` : ''}`);
-  },
-  
-  create: (quotation: any) =>
-    apiRequest<ApiResponse<any>>('/quotations', {
-      method: 'POST',
-      body: JSON.stringify(quotation),
-    }),
-  
-  convertToSale: (id: number) =>
-    apiRequest<ApiResponse<any>>(`/quotations/${id}/convert-to-sale`, {
-      method: 'PUT',
-    }),
-};
-
-// Finance API
-export const financeApi = {
-  getOverview: (period?: string) => {
-    const query = period ? `?period=${period}` : '';
-    return apiRequest<ApiResponse<any>>(`/finance/overview${query}`);
-  },
-  
-  getAccountsReceivable: (params?: {
-    page?: number;
-    limit?: number;
-    overdue?: boolean;
-    customerId?: number;
-  }) => {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) queryParams.append(key, value.toString());
-      });
-    }
-    const query = queryParams.toString();
-    return apiRequest<PaginatedResponse<any>>(`/finance/accounts-receivable${query ? `?${query}` : ''}`);
-  },
-  
-  getExpenses: (params?: {
-    page?: number;
-    limit?: number;
-    category?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  }) => {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value.toString());
-      });
-    }
-    const query = queryParams.toString();
-    return apiRequest<PaginatedResponse<any>>(`/finance/expenses${query ? `?${query}` : ''}`);
-  },
-  
-  recordPayment: (payment: any) =>
-    apiRequest<ApiResponse<any>>('/finance/payments', {
-      method: 'POST',
-      body: JSON.stringify(payment),
-    }),
-};
-
-// Reports API
-export const reportsApi = {
-  getSalesReport: (params?: {
-    period?: string;
-    dateFrom?: string;
-    dateTo?: string;
-    groupBy?: string;
-  }) => {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value.toString());
-      });
-    }
-    const query = queryParams.toString();
-    return apiRequest<ApiResponse<any>>(`/reports/sales${query ? `?${query}` : ''}`);
-  },
-  
-  getInventoryReport: () => apiRequest<ApiResponse<any>>('/reports/inventory'),
-  
-  getFinancialReport: (params?: {
-    period?: string;
-    year?: number;
-  }) => {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value.toString());
-      });
-    }
-    const query = queryParams.toString();
-    return apiRequest<ApiResponse<any>>(`/reports/financial${query ? `?${query}` : ''}`);
-  },
 };
 
 // Notifications API
@@ -427,71 +261,5 @@ export const notificationsApi = {
   markAllAsRead: () =>
     apiRequest<ApiResponse<any>>('/notifications/mark-all-read', {
       method: 'PUT',
-    }),
-};
-
-// Calendar API
-export const calendarApi = {
-  getEvents: (params?: {
-    date?: string;
-    month?: string;
-    type?: string;
-  }) => {
-    const queryParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value.toString());
-      });
-    }
-    const query = queryParams.toString();
-    return apiRequest<ApiResponse<any>>(`/calendar/events${query ? `?${query}` : ''}`);
-  },
-  
-  createEvent: (event: any) =>
-    apiRequest<ApiResponse<any>>('/calendar/events', {
-      method: 'POST',
-      body: JSON.stringify(event),
-    }),
-};
-
-// Backup API
-export const backupApi = {
-  getStatus: () => apiRequest<ApiResponse<any>>('/backup/status'),
-  
-  createBackup: () =>
-    apiRequest<ApiResponse<any>>('/backup/create', {
-      method: 'POST',
-    }),
-  
-  getHistory: () => apiRequest<ApiResponse<any>>('/backup/history'),
-};
-
-// Settings API
-export const settingsApi = {
-  get: () => apiRequest<ApiResponse<any>>('/settings'),
-  
-  update: (settings: any) =>
-    apiRequest<ApiResponse<any>>('/settings', {
-      method: 'PUT',
-      body: JSON.stringify(settings),
-    }),
-};
-
-// Authentication API
-export const authApi = {
-  login: (credentials: { email: string; password: string }) =>
-    apiRequest<ApiResponse<any>>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    }),
-  
-  logout: () =>
-    apiRequest<ApiResponse<any>>('/auth/logout', {
-      method: 'POST',
-    }),
-  
-  refresh: () =>
-    apiRequest<ApiResponse<any>>('/auth/refresh', {
-      method: 'POST',
     }),
 };
