@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -724,7 +725,7 @@ const EditProductDialog = ({
 
         <div className="flex gap-2">
           <Button type="submit" className="flex-1">Update Product</Button>
-          <Button type="button" variant="outline" onClick={onClose">Cancel</Button>
+          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
         </div>
       </form>
     </DialogContent>
