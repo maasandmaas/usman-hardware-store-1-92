@@ -1,4 +1,3 @@
-
 const BASE_URL = 'https://zaidawn.site/wp-json/ims/v1';
 
 // API response types
@@ -11,8 +10,7 @@ export interface ApiResponse<T> {
 export interface PaginatedResponse<T> {
   success: boolean;
   data: {
-    [key: string]: T[];
-    pagination: {
+    [key: string]: T[] | {
       currentPage: number;
       totalPages: number;
       totalItems: number;
@@ -86,7 +84,7 @@ export const productsApi = {
       });
     }
     const query = queryParams.toString();
-    return apiRequest<PaginatedResponse<any>>(`/products${query ? `?${query}` : ''}`);
+    return apiRequest<any>(`/products${query ? `?${query}` : ''}`);
   },
   
   getById: (id: number) => apiRequest<ApiResponse<any>>(`/products/${id}`),
@@ -113,6 +111,9 @@ export const productsApi = {
       method: 'POST',
       body: JSON.stringify(adjustment),
     }),
+  
+  getCategories: () => 
+    apiRequest<ApiResponse<string[]>>('/products/categories'),
 };
 
 // Customers API
@@ -415,7 +416,7 @@ export const notificationsApi = {
       });
     }
     const query = queryParams.toString();
-    return apiRequest<PaginatedResponse<any>>(`/notifications${query ? `?${query}` : ''}`);
+    return apiRequest<any>(`/notifications${query ? `?${query}` : ''}`);
   },
   
   markAsRead: (id: number) =>

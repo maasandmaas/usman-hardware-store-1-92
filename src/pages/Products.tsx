@@ -12,17 +12,7 @@ import { Package, Search, Plus, Edit, Trash2, AlertTriangle } from "lucide-react
 import { useToast } from "@/hooks/use-toast";
 import { productsApi } from "@/services/api";
 
-// Static data for categories and units (these could be fetched from API too)
-const categories = [
-  { value: "all", label: "All Categories" },
-  { value: "hinges", label: "Hinges & Hardware" },
-  { value: "locks", label: "Locks & Security" },
-  { value: "handles", label: "Handles & Knobs" },
-  { value: "fasteners", label: "Fasteners & Screws" },
-  { value: "sliding", label: "Sliding Systems" },
-  { value: "tools", label: "Tools & Equipment" },
-];
-
+// Static data for units
 const units = [
   { value: "pieces", label: "Pieces" },
   { value: "kg", label: "Kilograms" },
@@ -36,7 +26,10 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -47,7 +40,32 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, [searchTerm, categoryFilter]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await productsApi.getCategories();
+      if (response.success) {
+        const categoryList = [
+          { value: "all", label: "All Categories" },
+          ...response.data.map((cat: string) => ({ value: cat, label: cat }))
+        ];
+        setCategories(categoryList);
+      }
+    } catch (error) {
+      // Use fallback categories if API fails
+      setCategories([
+        { value: "all", label: "All Categories" },
+        { value: "hinges", label: "Hinges & Hardware" },
+        { value: "locks", label: "Locks & Security" },
+        { value: "handles", label: "Handles & Knobs" },
+        { value: "fasteners", label: "Fasteners & Screws" },
+        { value: "sliding", label: "Sliding Systems" },
+        { value: "tools", label: "Tools & Equipment" }
+      ]);
+    }
+  };
 
   const fetchProducts = async (page = 1) => {
     try {
@@ -64,8 +82,10 @@ const Products = () => {
       const response = await productsApi.getAll(params);
       
       if (response.success) {
-        setProducts(response.data.products || []);
-        setPagination(response.data.pagination);
+        setProducts(response.data.products || response.data || []);
+        if (response.data.pagination) {
+          setPagination(response.data.pagination);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch products:', error);
@@ -100,6 +120,28 @@ const Products = () => {
     }
   };
 
+  const handleEditProduct = async (formData: any) => {
+    try {
+      const response = await productsApi.update(selectedProduct.id, formData);
+      if (response.success) {
+        setIsEditDialogOpen(false);
+        setSelectedProduct(null);
+        fetchProducts();
+        toast({
+          title: "Product Updated",
+          description: "Product has been updated successfully.",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleDeleteProduct = async (id: number) => {
     try {
       const response = await productsApi.delete(id);
@@ -120,16 +162,21 @@ const Products = () => {
     }
   };
 
+  const openEditDialog = (product: any) => {
+    setSelectedProduct(product);
+    setIsEditDialogOpen(true);
+  };
+
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
-      hinges: "bg-blue-100 text-blue-800",
-      locks: "bg-green-100 text-green-800",
-      handles: "bg-orange-100 text-orange-800",
-      fasteners: "bg-gray-100 text-gray-800",
-      sliding: "bg-purple-100 text-purple-800",
-      tools: "bg-red-100 text-red-800",
+      hinges: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
+      locks: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
+      handles: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100",
+      fasteners: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100",
+      sliding: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100",
+      tools: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
     };
-    return colors[category] || "bg-gray-100 text-gray-800";
+    return colors[category] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100";
   };
 
   const lowStockProducts = products.filter(product => product.stock <= product.minStock);
@@ -145,13 +192,13 @@ const Products = () => {
   }
 
   return (
-    <div className="flex-1 p-6 space-y-6 min-h-screen">
+    <div className="flex-1 p-6 space-y-6 min-h-screen bg-background">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Products Management</h1>
-            <p className="text-gray-600">Manage your inventory and product catalog</p>
+            <h1 className="text-3xl font-bold text-foreground">Products Management</h1>
+            <p className="text-muted-foreground">Manage your inventory and product catalog</p>
           </div>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -161,7 +208,7 @@ const Products = () => {
               Add Product
             </Button>
           </DialogTrigger>
-          <ProductDialog onSubmit={handleAddProduct} onClose={() => setIsDialogOpen(false)} />
+          <ProductDialog onSubmit={handleAddProduct} onClose={() => setIsDialogOpen(false)} categories={categories} />
         </Dialog>
       </div>
 
@@ -172,7 +219,7 @@ const Products = () => {
             <div className="flex items-center gap-3">
               <Package className="h-8 w-8 text-blue-500" />
               <div>
-                <p className="text-sm text-gray-600">Total Products</p>
+                <p className="text-sm text-muted-foreground">Total Products</p>
                 <p className="text-2xl font-bold text-blue-600">{pagination.totalItems}</p>
               </div>
             </div>
@@ -184,7 +231,7 @@ const Products = () => {
             <div className="flex items-center gap-3">
               <Package className="h-8 w-8 text-green-500" />
               <div>
-                <p className="text-sm text-gray-600">In Stock</p>
+                <p className="text-sm text-muted-foreground">In Stock</p>
                 <p className="text-2xl font-bold text-green-600">{products.filter(p => p.stock > p.minStock).length}</p>
               </div>
             </div>
@@ -196,7 +243,7 @@ const Products = () => {
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-8 w-8 text-red-500" />
               <div>
-                <p className="text-sm text-gray-600">Low Stock</p>
+                <p className="text-sm text-muted-foreground">Low Stock</p>
                 <p className="text-2xl font-bold text-red-600">{lowStockProducts.length}</p>
               </div>
             </div>
@@ -208,7 +255,7 @@ const Products = () => {
             <div className="flex items-center gap-3">
               <Package className="h-8 w-8 text-purple-500" />
               <div>
-                <p className="text-sm text-gray-600">Categories</p>
+                <p className="text-sm text-muted-foreground">Categories</p>
                 <p className="text-2xl font-bold text-purple-600">{categories.length - 1}</p>
               </div>
             </div>
@@ -221,7 +268,7 @@ const Products = () => {
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search products by name or SKU..."
                 value={searchTerm}
@@ -267,17 +314,17 @@ const Products = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <h3 className="font-medium text-gray-900 text-sm">{product.name}</h3>
-                          <p className="text-xs text-gray-500">SKU: {product.sku}</p>
+                          <h3 className="font-medium text-foreground text-sm">{product.name}</h3>
+                          <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
                         </div>
                         <Badge className={`text-xs ${getCategoryColor(product.category)}`}>
-                          {categories.find(c => c.value === product.category)?.label.split(' ')[0] || product.category}
+                          {product.category}
                         </Badge>
                       </div>
                       
                       <div className="flex justify-between items-center">
                         <span className="text-lg font-bold text-green-600">PKR {product.price?.toLocaleString()}</span>
-                        <span className="text-xs text-gray-500">per {product.unit}</span>
+                        <span className="text-xs text-muted-foreground">per {product.unit}</span>
                       </div>
                       
                       <div className="flex justify-between items-center">
@@ -290,7 +337,12 @@ const Products = () => {
                       </div>
                       
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="flex-1">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={() => openEditDialog(product)}
+                        >
                           <Edit className="h-3 w-3 mr-1" />
                           Edit
                         </Button>
@@ -311,29 +363,79 @@ const Products = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Product Dialog */}
+      {selectedProduct && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <ProductDialog 
+            onSubmit={handleEditProduct} 
+            onClose={() => {
+              setIsEditDialogOpen(false);
+              setSelectedProduct(null);
+            }}
+            categories={categories}
+            initialData={selectedProduct}
+            isEdit={true}
+          />
+        </Dialog>
+      )}
     </div>
   );
 };
 
 // Product Dialog Component
-const ProductDialog = ({ onSubmit, onClose }: { onSubmit: (data: any) => void; onClose: () => void }) => {
+const ProductDialog = ({ 
+  onSubmit, 
+  onClose, 
+  categories, 
+  initialData = null, 
+  isEdit = false 
+}: { 
+  onSubmit: (data: any) => void; 
+  onClose: () => void; 
+  categories: any[];
+  initialData?: any;
+  isEdit?: boolean;
+}) => {
   const [formData, setFormData] = useState({
-    name: "", sku: "", price: "", stock: "", category: "", unit: "", minStock: ""
+    name: initialData?.name || "",
+    sku: initialData?.sku || "",
+    price: initialData?.price?.toString() || "",
+    stock: initialData?.stock?.toString() || "",
+    category: initialData?.category || "",
+    unit: initialData?.unit || "",
+    minStock: initialData?.minStock?.toString() || "",
+    description: initialData?.description || "",
+    costPrice: initialData?.costPrice?.toString() || "",
+    maxStock: initialData?.maxStock?.toString() || ""
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
-    setFormData({ name: "", sku: "", price: "", stock: "", category: "", unit: "", minStock: "" });
+    const submitData = {
+      ...formData,
+      price: parseFloat(formData.price),
+      stock: parseInt(formData.stock),
+      minStock: parseInt(formData.minStock),
+      costPrice: parseFloat(formData.costPrice),
+      maxStock: parseInt(formData.maxStock)
+    };
+    onSubmit(submitData);
+    if (!isEdit) {
+      setFormData({ 
+        name: "", sku: "", price: "", stock: "", category: "", 
+        unit: "", minStock: "", description: "", costPrice: "", maxStock: "" 
+      });
+    }
   };
 
   return (
     <DialogContent className="max-w-2xl">
       <DialogHeader>
-        <DialogTitle>Add New Product</DialogTitle>
+        <DialogTitle>{isEdit ? 'Edit Product' : 'Add New Product'}</DialogTitle>
       </DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
           <div>
             <Label htmlFor="name">Product Name</Label>
             <Input
@@ -352,9 +454,6 @@ const ProductDialog = ({ onSubmit, onClose }: { onSubmit: (data: any) => void; o
               required
             />
           </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
           <div>
             <Label htmlFor="price">Price (PKR)</Label>
             <Input
@@ -362,6 +461,16 @@ const ProductDialog = ({ onSubmit, onClose }: { onSubmit: (data: any) => void; o
               type="number"
               value={formData.price}
               onChange={(e) => setFormData({...formData, price: e.target.value})}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="costPrice">Cost Price (PKR)</Label>
+            <Input
+              id="costPrice"
+              type="number"
+              value={formData.costPrice}
+              onChange={(e) => setFormData({...formData, costPrice: e.target.value})}
               required
             />
           </div>
@@ -385,9 +494,6 @@ const ProductDialog = ({ onSubmit, onClose }: { onSubmit: (data: any) => void; o
               required
             />
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="category">Category</Label>
             <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
@@ -395,7 +501,7 @@ const ProductDialog = ({ onSubmit, onClose }: { onSubmit: (data: any) => void; o
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {categories.slice(1).map((category) => (
+                {categories.filter(cat => cat.value !== "all").map((category) => (
                   <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>
                 ))}
               </SelectContent>
@@ -414,10 +520,21 @@ const ProductDialog = ({ onSubmit, onClose }: { onSubmit: (data: any) => void; o
               </SelectContent>
             </Select>
           </div>
+          <div className="col-span-2">
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              placeholder="Enter product description"
+            />
+          </div>
         </div>
 
         <div className="flex gap-2 pt-4">
-          <Button type="submit" className="flex-1">Add Product</Button>
+          <Button type="submit" className="flex-1">
+            {isEdit ? 'Update Product' : 'Add Product'}
+          </Button>
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
         </div>
       </form>

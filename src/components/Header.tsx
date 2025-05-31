@@ -10,22 +10,38 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PendingOrdersModal } from "@/components/PendingOrdersModal";
+import { NotificationsModal } from "@/components/NotificationsModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { getPendingOrders } from "@/data/storeData";
+import { notificationsApi } from "@/services/api";
 
 export function Header() {
-  const { toast } = useToast();
   const [showPendingOrders, setShowPendingOrders] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const pendingOrdersCount = getPendingOrders().length;
 
+  useEffect(() => {
+    fetchUnreadCount();
+  }, []);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await notificationsApi.getAll({ read: false, limit: 100 });
+      if (response.success) {
+        const notifications = response.data.notifications || response.data || [];
+        setUnreadCount(notifications.length);
+      }
+    } catch (error) {
+      // Fallback to demo count
+      setUnreadCount(3);
+    }
+  };
+
   const handleNotificationClick = () => {
-    toast({
-      title: "Notifications",
-      description: "You have 3 new notifications",
-    });
+    setShowNotifications(true);
   };
 
   return (
@@ -66,9 +82,11 @@ export function Header() {
               onClick={handleNotificationClick}
             >
               <Bell className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-destructive text-destructive-foreground">
-                3
-              </Badge>
+              {unreadCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-destructive text-destructive-foreground">
+                  {unreadCount}
+                </Badge>
+              )}
             </Button>
 
             {/* Theme Toggle */}
@@ -104,6 +122,11 @@ export function Header() {
       <PendingOrdersModal 
         open={showPendingOrders} 
         onOpenChange={setShowPendingOrders} 
+      />
+
+      <NotificationsModal 
+        open={showNotifications} 
+        onOpenChange={setShowNotifications} 
       />
     </>
   );

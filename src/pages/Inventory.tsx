@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,17 +8,18 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Package, Plus, Search, Edit, Trash2, AlertTriangle, TrendingUp, ArrowUp, ArrowDown } from "lucide-react";
+import { Package, Plus, Search, Edit, Trash2, AlertTriangle, TrendingUp, ArrowUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { products as allProducts, categories, units, Product } from "@/data/storeData";
+import { productsApi } from "@/services/api";
 
 const Inventory = () => {
   const { toast } = useToast();
-  const [products, setProducts] = useState(allProducts);
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -28,106 +29,216 @@ const Inventory = () => {
     stock: "",
     category: "",
     unit: "",
-    minStock: ""
+    minStock: "",
+    description: "",
+    costPrice: "",
+    maxStock: ""
   });
 
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, [searchTerm, selectedCategory]);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const params: any = { limit: 100, status: 'active' };
+      if (searchTerm) params.search = searchTerm;
+      if (selectedCategory !== 'all') params.category = selectedCategory;
+
+      const response = await productsApi.getAll(params);
+      console.log('Products response:', response);
+      
+      if (response.success) {
+        setProducts(response.data.products || response.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load products",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await productsApi.getCategories();
+      if (response.success) {
+        const categoryList = [
+          { value: "all", label: "All Categories" },
+          ...response.data.map((cat: string) => ({ value: cat, label: cat }))
+        ];
+        setCategories(categoryList);
+      }
+    } catch (error) {
+      // Use fallback categories if API fails
+      setCategories([
+        { value: "all", label: "All Categories" },
+        { value: "hinges", label: "Hinges & Hardware" },
+        { value: "locks", label: "Locks & Security" },
+        { value: "handles", label: "Handles & Knobs" },
+        { value: "fasteners", label: "Fasteners & Screws" },
+        { value: "sliding", label: "Sliding Systems" },
+        { value: "tools", label: "Tools & Equipment" }
+      ]);
+    }
+  };
+
+  const openEditDialog = (product: any) => {
+    setSelectedProduct(product);
+    setEditForm({
+      name: product.name,
+      sku: product.sku,
+      price: product.price?.toString() || "",
+      stock: product.stock?.toString() || "",
+      category: product.category,
+      unit: product.unit,
+      minStock: product.minStock?.toString() || "",
+      description: product.description || "",
+      costPrice: product.costPrice?.toString() || "",
+      maxStock: product.maxStock?.toString() || ""
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async () => {
+    if (!selectedProduct) return;
+
+    try {
+      const updatedProduct = {
+        name: editForm.name,
+        sku: editForm.sku,
+        price: parseFloat(editForm.price),
+        stock: parseInt(editForm.stock),
+        category: editForm.category,
+        unit: editForm.unit,
+        minStock: parseInt(editForm.minStock),
+        description: editForm.description,
+        costPrice: parseFloat(editForm.costPrice),
+        maxStock: parseInt(editForm.maxStock)
+      };
+
+      const response = await productsApi.update(selectedProduct.id, updatedProduct);
+      
+      if (response.success) {
+        setIsEditDialogOpen(false);
+        fetchProducts();
+        toast({
+          title: "Product Updated",
+          description: `${editForm.name} has been updated successfully.`,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddSubmit = async () => {
+    try {
+      const newProduct = {
+        name: editForm.name,
+        sku: editForm.sku,
+        price: parseFloat(editForm.price),
+        stock: parseInt(editForm.stock),
+        category: editForm.category,
+        unit: editForm.unit,
+        minStock: parseInt(editForm.minStock),
+        description: editForm.description,
+        costPrice: parseFloat(editForm.costPrice),
+        maxStock: parseInt(editForm.maxStock)
+      };
+
+      const response = await productsApi.create(newProduct);
+      
+      if (response.success) {
+        setIsAddDialogOpen(false);
+        fetchProducts();
+        setEditForm({
+          name: "",
+          sku: "",
+          price: "",
+          stock: "",
+          category: "",
+          unit: "",
+          minStock: "",
+          description: "",
+          costPrice: "",
+          maxStock: ""
+        });
+        toast({
+          title: "Product Added",
+          description: `${editForm.name} has been added successfully.`,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to add product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add product",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDelete = async (productId: number) => {
+    try {
+      const response = await productsApi.delete(productId);
+      if (response.success) {
+        fetchProducts();
+        toast({
+          title: "Product Deleted",
+          description: "Product has been removed from inventory.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive"
+      });
+    }
+  };
+
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.sku?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   const lowStockCount = products.filter(product => product.stock <= product.minStock).length;
-  const totalValue = products.reduce((sum, product) => sum + (product.price * product.stock), 0);
+  const totalValue = products.reduce((sum, product) => sum + ((product.price || 0) * (product.stock || 0)), 0);
 
-  const openEditDialog = (product: Product) => {
-    setSelectedProduct(product);
-    setEditForm({
-      name: product.name,
-      sku: product.sku,
-      price: product.price.toString(),
-      stock: product.stock.toString(),
-      category: product.category,
-      unit: product.unit,
-      minStock: product.minStock.toString()
-    });
-    setIsEditDialogOpen(true);
-  };
-
-  const handleEditSubmit = () => {
-    if (!selectedProduct) return;
-
-    const updatedProducts = products.map(product =>
-      product.id === selectedProduct.id
-        ? {
-            ...product,
-            name: editForm.name,
-            sku: editForm.sku,
-            price: parseFloat(editForm.price),
-            stock: parseInt(editForm.stock),
-            category: editForm.category,
-            unit: editForm.unit as any,
-            minStock: parseInt(editForm.minStock)
-          }
-        : product
+  if (loading) {
+    return (
+      <div className="flex-1 p-6 space-y-6 bg-background min-h-screen">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-muted-foreground">Loading inventory...</div>
+        </div>
+      </div>
     );
-
-    setProducts(updatedProducts);
-    setIsEditDialogOpen(false);
-    toast({
-      title: "Product Updated",
-      description: `${editForm.name} has been updated successfully.`,
-    });
-  };
-
-  const handleAddSubmit = () => {
-    const newProduct: Product = {
-      id: Math.max(...products.map(p => p.id)) + 1,
-      name: editForm.name,
-      sku: editForm.sku,
-      price: parseFloat(editForm.price),
-      stock: parseInt(editForm.stock),
-      category: editForm.category,
-      unit: editForm.unit as any,
-      minStock: parseInt(editForm.minStock),
-      sales: 0
-    };
-
-    setProducts([...products, newProduct]);
-    setIsAddDialogOpen(false);
-    setEditForm({
-      name: "",
-      sku: "",
-      price: "",
-      stock: "",
-      category: "",
-      unit: "",
-      minStock: ""
-    });
-    toast({
-      title: "Product Added",
-      description: `${editForm.name} has been added successfully.`,
-    });
-  };
-
-  const handleDelete = (productId: number) => {
-    setProducts(products.filter(product => product.id !== productId));
-    toast({
-      title: "Product Deleted",
-      description: "Product has been removed from inventory.",
-      variant: "destructive"
-    });
-  };
+  }
 
   return (
-    <div className="flex-1 p-6 space-y-6 bg-slate-50 min-h-screen">
+    <div className="flex-1 p-6 space-y-6 bg-background min-h-screen">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <SidebarTrigger />
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Inventory Management</h1>
-            <p className="text-slate-600">Usman Hardware Store - Hafizabad</p>
+            <h1 className="text-3xl font-bold text-foreground">Inventory Management</h1>
+            <p className="text-muted-foreground">Usman Hardware Store - Hafizabad</p>
           </div>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -141,7 +252,7 @@ const Inventory = () => {
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
               <div className="space-y-2">
                 <Label htmlFor="add-name">Product Name</Label>
                 <Input
@@ -171,6 +282,16 @@ const Inventory = () => {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="add-costPrice">Cost Price (PKR)</Label>
+                <Input
+                  id="add-costPrice"
+                  type="number"
+                  value={editForm.costPrice}
+                  onChange={(e) => setEditForm({...editForm, costPrice: e.target.value})}
+                  placeholder="Enter cost price"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="add-stock">Stock Quantity</Label>
                 <Input
                   id="add-stock"
@@ -179,6 +300,21 @@ const Inventory = () => {
                   onChange={(e) => setEditForm({...editForm, stock: e.target.value})}
                   placeholder="Enter stock quantity"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="add-unit">Unit</Label>
+                <Select value={editForm.unit} onValueChange={(value) => setEditForm({...editForm, unit: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pieces">Pieces</SelectItem>
+                    <SelectItem value="kg">Kilograms</SelectItem>
+                    <SelectItem value="meters">Meters</SelectItem>
+                    <SelectItem value="liters">Liters</SelectItem>
+                    <SelectItem value="sets">Sets</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="add-category">Category</Label>
@@ -196,21 +332,6 @@ const Inventory = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="add-unit">Unit</Label>
-                <Select value={editForm.unit} onValueChange={(value) => setEditForm({...editForm, unit: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {units.map((unit) => (
-                      <SelectItem key={unit.value} value={unit.value}>
-                        {unit.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 col-span-2">
                 <Label htmlFor="add-minStock">Minimum Stock Level</Label>
                 <Input
                   id="add-minStock"
@@ -218,6 +339,15 @@ const Inventory = () => {
                   value={editForm.minStock}
                   onChange={(e) => setEditForm({...editForm, minStock: e.target.value})}
                   placeholder="Enter minimum stock level"
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="add-description">Description</Label>
+                <Input
+                  id="add-description"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                  placeholder="Enter product description"
                 />
               </div>
             </div>
@@ -237,11 +367,11 @@ const Inventory = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-l-4 border-l-blue-600 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Products</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Products</CardTitle>
             <Package className="h-5 w-5 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{products.length}</div>
+            <div className="text-2xl font-bold text-foreground">{products.length}</div>
             <div className="flex items-center text-xs text-green-600 mt-1">
               <ArrowUp className="h-3 w-3 mr-1" />
               Active inventory
@@ -251,12 +381,12 @@ const Inventory = () => {
 
         <Card className="border-l-4 border-l-orange-500 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Low Stock Items</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Low Stock Items</CardTitle>
             <AlertTriangle className="h-5 w-5 text-orange-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{lowStockCount}</div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-muted-foreground mt-1">
               Need reordering
             </div>
           </CardContent>
@@ -264,12 +394,12 @@ const Inventory = () => {
 
         <Card className="border-l-4 border-l-green-600 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Value</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Value</CardTitle>
             <TrendingUp className="h-5 w-5 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">PKR {totalValue.toLocaleString()}</div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-muted-foreground mt-1">
               Inventory worth
             </div>
           </CardContent>
@@ -277,12 +407,12 @@ const Inventory = () => {
 
         <Card className="border-l-4 border-l-purple-600 hover:shadow-lg transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Categories</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Categories</CardTitle>
             <Package className="h-5 w-5 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">{categories.length - 1}</div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-muted-foreground mt-1">
               Product categories
             </div>
           </CardContent>
@@ -292,8 +422,8 @@ const Inventory = () => {
       {/* Filters */}
       <Card className="hover:shadow-lg transition-shadow duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-slate-900">
-            <Search className="h-5 w-5 text-slate-700" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Search className="h-5 w-5 text-muted-foreground" />
             Search & Filter Products
           </CardTitle>
         </CardHeader>
@@ -301,7 +431,7 @@ const Inventory = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
                   placeholder="Search by product name or SKU..."
                   value={searchTerm}
@@ -329,8 +459,8 @@ const Inventory = () => {
       {/* Products Table */}
       <Card className="hover:shadow-lg transition-shadow duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-slate-900">
-            <Package className="h-5 w-5 text-slate-700" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Package className="h-5 w-5 text-muted-foreground" />
             Products ({filteredProducts.length})
           </CardTitle>
         </CardHeader>
@@ -338,35 +468,35 @@ const Inventory = () => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="text-left py-3 px-4 font-medium text-slate-700">Product</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-700">SKU</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-700">Category</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-700">Price</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-700">Stock</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-700">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-slate-700">Actions</th>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Product</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">SKU</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Category</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Price</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Stock</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredProducts.map((product) => (
-                  <tr key={product.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <tr key={product.id} className="border-b border-border hover:bg-accent/50 transition-colors">
                     <td className="py-3 px-4">
                       <div>
-                        <p className="font-medium text-slate-900">{product.name}</p>
-                        <p className="text-sm text-slate-500">{product.unit}</p>
+                        <p className="font-medium text-foreground">{product.name}</p>
+                        <p className="text-sm text-muted-foreground">{product.unit}</p>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-slate-700">{product.sku}</td>
+                    <td className="py-3 px-4 text-foreground">{product.sku}</td>
                     <td className="py-3 px-4">
-                      <Badge variant="outline" className="text-slate-600 border-slate-300">
-                        {categories.find(cat => cat.value === product.category)?.label}
+                      <Badge variant="outline" className="text-muted-foreground border-border">
+                        {product.category}
                       </Badge>
                     </td>
-                    <td className="py-3 px-4 font-medium text-slate-900">PKR {product.price.toLocaleString()}</td>
+                    <td className="py-3 px-4 font-medium text-foreground">PKR {product.price?.toLocaleString()}</td>
                     <td className="py-3 px-4">
                       <span className={`font-medium ${
-                        product.stock <= product.minStock ? 'text-red-600' : 'text-slate-900'
+                        product.stock <= product.minStock ? 'text-red-600' : 'text-foreground'
                       }`}>
                         {product.stock}
                       </span>
@@ -375,8 +505,8 @@ const Inventory = () => {
                       <Badge 
                         variant={product.stock > product.minStock ? "default" : "destructive"}
                         className={product.stock > product.minStock 
-                          ? "bg-green-100 text-green-800 border-green-300" 
-                          : "bg-red-100 text-red-800 border-red-300"
+                          ? "bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-100" 
+                          : "bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-100"
                         }
                       >
                         {product.stock > product.minStock ? "In Stock" : "Low Stock"}
@@ -388,7 +518,7 @@ const Inventory = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => openEditDialog(product)}
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                          className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900"
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
@@ -396,7 +526,7 @@ const Inventory = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => handleDelete(product.id)}
-                          className="text-red-600 border-red-300 hover:bg-red-50"
+                          className="text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-900"
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -416,7 +546,7 @@ const Inventory = () => {
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
             <div className="space-y-2">
               <Label htmlFor="edit-name">Product Name</Label>
               <Input
@@ -443,6 +573,15 @@ const Inventory = () => {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="edit-costPrice">Cost Price (PKR)</Label>
+              <Input
+                id="edit-costPrice"
+                type="number"
+                value={editForm.costPrice}
+                onChange={(e) => setEditForm({...editForm, costPrice: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="edit-stock">Stock Quantity</Label>
               <Input
                 id="edit-stock"
@@ -450,6 +589,21 @@ const Inventory = () => {
                 value={editForm.stock}
                 onChange={(e) => setEditForm({...editForm, stock: e.target.value})}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-unit">Unit</Label>
+              <Select value={editForm.unit} onValueChange={(value) => setEditForm({...editForm, unit: value})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pieces">Pieces</SelectItem>
+                  <SelectItem value="kg">Kilograms</SelectItem>
+                  <SelectItem value="meters">Meters</SelectItem>
+                  <SelectItem value="liters">Liters</SelectItem>
+                  <SelectItem value="sets">Sets</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-category">Category</Label>
@@ -467,27 +621,20 @@ const Inventory = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-unit">Unit</Label>
-              <Select value={editForm.unit} onValueChange={(value) => setEditForm({...editForm, unit: value})}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {units.map((unit) => (
-                    <SelectItem key={unit.value} value={unit.value}>
-                      {unit.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 col-span-2">
               <Label htmlFor="edit-minStock">Minimum Stock Level</Label>
               <Input
                 id="edit-minStock"
                 type="number"
                 value={editForm.minStock}
                 onChange={(e) => setEditForm({...editForm, minStock: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Input
+                id="edit-description"
+                value={editForm.description}
+                onChange={(e) => setEditForm({...editForm, description: e.target.value})}
               />
             </div>
           </div>
