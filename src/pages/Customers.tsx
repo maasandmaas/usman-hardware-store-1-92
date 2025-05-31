@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,15 +54,29 @@ const Customers = () => {
       const response = await customersApi.getAll(params);
       
       if (response.success) {
-        const customerData = response.data.customers || response.data || [];
-        setCustomers(Array.isArray(customerData) ? customerData : []);
+        const customerData = response.data?.customers || response.data || [];
+        console.log('Customers response:', response.data);
         
-        if (response.data.pagination) {
+        // Ensure we're working with an array
+        const customersArray = Array.isArray(customerData) ? customerData : [];
+        setCustomers(customersArray);
+        
+        // Update pagination if available
+        if (response.data?.pagination) {
           setPagination(response.data.pagination);
+        } else {
+          // Set basic pagination info if not provided
+          setPagination({
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: customersArray.length,
+            itemsPerPage: 20
+          });
         }
       }
     } catch (error) {
       console.error('Failed to fetch customers:', error);
+      setCustomers([]);
       toast({
         title: "Error",
         description: "Failed to load customers",
@@ -125,9 +138,9 @@ const Customers = () => {
     return matchesSearch && matchesType;
   });
 
-  const totalDues = customers.reduce((sum, customer) => sum + (customer.currentBalance || 0), 0);
-  const activeCustomers = customers.filter(c => c.status === "active").length;
-  const customersWithDues = customers.filter(c => (c.currentBalance || 0) > 0).length;
+  const totalDues = customers.reduce((sum, customer) => sum + (customer.currentBalance || customer.dueAmount || 0), 0);
+  const activeCustomers = customers.filter(c => c.status === "active" || !c.status).length;
+  const customersWithDues = customers.filter(c => (c.currentBalance || customer.dueAmount || 0) > 0).length;
 
   const getCustomerTypeColor = (type: string) => {
     const colors = {
@@ -138,7 +151,7 @@ const Customers = () => {
   };
 
   const getStatusColor = (status: string) => {
-    return status === "active" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
+    return status === "active" || !status ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
   };
 
   if (loading) {
@@ -271,11 +284,11 @@ const Customers = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <CardTitle className="text-lg text-foreground">{customer.name}</CardTitle>
-                      <Badge className={`text-xs ${getCustomerTypeColor(customer.type)}`}>
-                        {customer.type}
+                      <Badge className={`text-xs ${getCustomerTypeColor(customer.type || 'individual')}`}>
+                        {customer.type || 'individual'}
                       </Badge>
                       <Badge className={`text-xs ${getStatusColor(customer.status)}`}>
-                        {customer.status}
+                        {customer.status || 'active'}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
@@ -283,9 +296,9 @@ const Customers = () => {
                       {customer.phone}
                     </div>
                   </div>
-                  {(customer.currentBalance || 0) > 0 && (
+                  {(customer.currentBalance || customer.dueAmount || 0) > 0 && (
                     <Badge variant="destructive" className="ml-2">
-                      Due: PKR {customer.currentBalance?.toLocaleString()}
+                      Due: PKR {(customer.currentBalance || customer.dueAmount)?.toLocaleString()}
                     </Badge>
                   )}
                 </div>
@@ -293,7 +306,7 @@ const Customers = () => {
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4" />
-                  <span className="truncate">{customer.address}</span>
+                  <span className="truncate">{customer.address || 'Address not provided'}</span>
                 </div>
 
                 {customer.email && (
@@ -503,8 +516,8 @@ const CustomerDetailsDialog = ({
                   <div className="mt-2 space-y-2 text-sm">
                     <p><strong>Total Purchases:</strong> PKR {customer.totalPurchases?.toLocaleString() || '0'}</p>
                     <p><strong>Credit Limit:</strong> PKR {customer.creditLimit?.toLocaleString() || '0'}</p>
-                    <p><strong>Outstanding Amount:</strong> <span className="text-red-600 font-bold">PKR {customer.currentBalance?.toLocaleString() || '0'}</span></p>
-                    <p><strong>Available Credit:</strong> PKR {((customer.creditLimit || 0) - (customer.currentBalance || 0)).toLocaleString()}</p>
+                    <p><strong>Outstanding Amount:</strong> <span className="text-red-600 font-bold">PKR {(customer.currentBalance || customer.dueAmount || 0)?.toLocaleString()}</span></p>
+                    <p><strong>Available Credit:</strong> PKR {((customer.creditLimit || 0) - (customer.currentBalance || customer.dueAmount || 0)).toLocaleString()}</p>
                     <p><strong>Last Purchase:</strong> {customer.lastPurchase || 'N/A'}</p>
                   </div>
                 </div>

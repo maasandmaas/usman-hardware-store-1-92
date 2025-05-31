@@ -56,11 +56,13 @@ const Sales = () => {
         limit: 50
       });
       
-      if (response.success && response.data.sales) {
-        setSales(response.data.sales);
+      if (response.success) {
+        const salesData = response.data?.sales || response.data || [];
+        setSales(Array.isArray(salesData) ? salesData : []);
       }
     } catch (error) {
       console.error('Failed to fetch sales:', error);
+      setSales([]);
       toast({
         title: "Error",
         description: "Failed to load sales data",
@@ -74,22 +76,26 @@ const Sales = () => {
   const fetchProducts = async () => {
     try {
       const response = await productsApi.getAll({ limit: 50, status: 'active' });
-      if (response.success && response.data.products) {
-        setProducts(response.data.products);
+      if (response.success) {
+        const productsData = response.data?.products || response.data || [];
+        setProducts(Array.isArray(productsData) ? productsData : []);
       }
     } catch (error) {
       console.error('Failed to fetch products:', error);
+      setProducts([]);
     }
   };
 
   const fetchCustomers = async () => {
     try {
       const response = await customersApi.getAll({ limit: 100, status: 'active' });
-      if (response.success && response.data.customers) {
-        setCustomers(response.data.customers);
+      if (response.success) {
+        const customersData = response.data?.customers || response.data || [];
+        setCustomers(Array.isArray(customersData) ? customersData : []);
       }
     } catch (error) {
       console.error('Failed to fetch customers:', error);
+      setCustomers([]);
     }
   };
 
@@ -199,10 +205,27 @@ const Sales = () => {
     }
   };
 
-  const handleQuickCustomerAdded = (customer: any) => {
-    setSelectedCustomer(customer);
-    setIsQuickCustomerOpen(false);
-    fetchCustomers(); // Refresh customer list
+  const handleQuickCustomerAdded = async (customerData: any) => {
+    try {
+      const response = await customersApi.create(customerData);
+      if (response.success) {
+        const newCustomer = response.data;
+        setSelectedCustomer(newCustomer);
+        setIsQuickCustomerOpen(false);
+        fetchCustomers(); // Refresh customer list
+        toast({
+          title: "Customer Added",
+          description: "New customer has been added successfully.",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to add customer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add customer",
+        variant: "destructive"
+      });
+    }
   };
 
   const filteredProducts = products.filter(product =>

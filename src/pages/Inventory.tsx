@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,8 +19,14 @@ const Inventory = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [inventory, setInventory] = useState<any[]>([]);
   const [movements, setMovements] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [units, setUnits] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([
+    { value: "all", label: "All Categories" },
+    { value: "hinges", label: "Hinges & Hardware" }
+  ]);
+  const [units, setUnits] = useState<any[]>([
+    { value: "pieces", label: "Pieces" },
+    { value: "kg", label: "Kilograms" }
+  ]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -52,15 +57,34 @@ const Inventory = () => {
       const response = await inventoryApi.getAll(params);
       
       if (response.success) {
-        const inventoryData = response.data.inventory || [];
-        setInventory(inventoryData);
+        const inventoryData = response.data?.inventory || response.data || [];
+        console.log('Inventory response:', response.data);
         
-        if (response.data.summary) {
+        // Ensure we're working with an array
+        const inventoryArray = Array.isArray(inventoryData) ? inventoryData : [];
+        setInventory(inventoryArray);
+        
+        // Update summary if available
+        if (response.data?.summary) {
           setSummary(response.data.summary);
+        } else {
+          // Calculate basic summary from inventory data
+          const totalProducts = inventoryArray.length;
+          const totalValue = inventoryArray.reduce((sum, item) => sum + (item.value || 0), 0);
+          const lowStockItems = inventoryArray.filter(item => (item.currentStock || 0) <= (item.minStock || 0)).length;
+          const outOfStockItems = inventoryArray.filter(item => (item.currentStock || 0) === 0).length;
+          
+          setSummary({
+            totalProducts,
+            totalValue,
+            lowStockItems,
+            outOfStockItems
+          });
         }
       }
     } catch (error) {
       console.error('Failed to fetch inventory:', error);
+      setInventory([]);
       toast({
         title: "Error",
         description: "Failed to load inventory",
@@ -75,45 +99,69 @@ const Inventory = () => {
     try {
       const response = await inventoryApi.getMovements({ limit: 20 });
       if (response.success) {
-        const movementData = response.data.movements || [];
-        setMovements(movementData);
+        const movementData = response.data?.movements || response.data || [];
+        setMovements(Array.isArray(movementData) ? movementData : []);
       }
     } catch (error) {
       console.error('Failed to fetch movements:', error);
+      setMovements([]);
     }
   };
 
   const fetchCategories = async () => {
     try {
       const response = await categoriesApi.getAll();
-      if (response.success) {
+      if (response.success && response.data) {
         const categoryList = [
-          { value: "all", label: "All Categories" },
-          ...response.data.map((cat: string) => ({ value: cat, label: cat }))
+          { value: "all", label: "All Categories" }
         ];
+        
+        // Handle if response.data is an array of objects or strings
+        if (Array.isArray(response.data)) {
+          response.data.forEach((cat: any) => {
+            if (typeof cat === 'string') {
+              categoryList.push({ value: cat, label: cat });
+            } else if (cat && typeof cat === 'object' && cat.name) {
+              categoryList.push({ value: cat.name, label: cat.name });
+            }
+          });
+        }
+        
         setCategories(categoryList);
       }
     } catch (error) {
       console.error('Failed to fetch categories:', error);
-      setCategories([
-        { value: "all", label: "All Categories" },
-        { value: "hinges", label: "Hinges & Hardware" }
-      ]);
+      // Keep default categories on error
     }
   };
 
   const fetchUnits = async () => {
     try {
       const response = await unitsApi.getAll();
-      if (response.success) {
-        setUnits(response.data);
+      if (response.success && response.data) {
+        const unitsList: any[] = [];
+        
+        // Handle if response.data is an array of objects or strings
+        if (Array.isArray(response.data)) {
+          response.data.forEach((unit: any) => {
+            if (typeof unit === 'string') {
+              unitsList.push({ value: unit, label: unit });
+            } else if (unit && typeof unit === 'object') {
+              unitsList.push({ 
+                value: unit.name || unit.value, 
+                label: unit.label || unit.name || unit.value 
+              });
+            }
+          });
+        }
+        
+        if (unitsList.length > 0) {
+          setUnits(unitsList);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch units:', error);
-      setUnits([
-        { value: "pieces", label: "Pieces" },
-        { value: "kg", label: "Kilograms" }
-      ]);
+      // Keep default units on error
     }
   };
 
@@ -332,14 +380,14 @@ const Inventory = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredInventory.map((item) => {
-                    const stockStatus = getStockStatus(item.currentStock, item.minStock);
+                    const stockStatus = getStockStatus(item.currentStock || 0, item.minStock || 0);
                     return (
-                      <Card key={item.productId} className="hover:shadow-md transition-shadow">
+                      <Card key={item.productId || item.id} className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="space-y-3">
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
-                                <h4 className="font-medium text-foreground">{item.productName}</h4>
+                                <h4 className="font-medium text-foreground">{item.productName || item.name}</h4>
                                 <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
                                 <p className="text-sm text-muted-foreground">Category: {item.category}</p>
                               </div>
@@ -351,15 +399,15 @@ const Inventory = () => {
                             <div className="space-y-2">
                               <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Current Stock:</span>
-                                <span className="font-medium text-foreground">{item.currentStock} {item.unit}</span>
+                                <span className="font-medium text-foreground">{item.currentStock || 0} {item.unit}</span>
                               </div>
                               <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Min Stock:</span>
-                                <span className="text-foreground">{item.minStock} {item.unit}</span>
+                                <span className="text-foreground">{item.minStock || 0} {item.unit}</span>
                               </div>
                               <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Value:</span>
-                                <span className="font-medium text-green-600">PKR {item.value?.toLocaleString()}</span>
+                                <span className="font-medium text-green-600">PKR {item.value?.toLocaleString() || '0'}</span>
                               </div>
                             </div>
 
@@ -391,7 +439,7 @@ const Inventory = () => {
                                 size="sm"
                                 variant="outline"
                                 className="text-red-600 hover:text-red-700"
-                                onClick={() => handleDeleteProduct(item.productId)}
+                                onClick={() => handleDeleteProduct(item.productId || item.id)}
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
@@ -511,7 +559,7 @@ const StockAdjustmentDialog = ({
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Stock Adjustment - {product.productName}</DialogTitle>
+        <DialogTitle>Stock Adjustment - {product.productName || product.name}</DialogTitle>
       </DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -540,7 +588,7 @@ const StockAdjustmentDialog = ({
             required
           />
           <p className="text-sm text-muted-foreground mt-1">
-            Current stock: {product.currentStock} {product.unit}
+            Current stock: {product.currentStock || 0} {product.unit}
           </p>
         </div>
 
@@ -589,7 +637,7 @@ const EditProductDialog = ({
   onClose: () => void;
 }) => {
   const [formData, setFormData] = useState({
-    name: product.productName || "",
+    name: product.productName || product.name || "",
     category: product.category || "",
     minStock: product.minStock?.toString() || "",
     maxStock: product.maxStock?.toString() || "",
@@ -608,7 +656,7 @@ const EditProductDialog = ({
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Edit Product - {product.productName}</DialogTitle>
+        <DialogTitle>Edit Product - {product.productName || product.name}</DialogTitle>
       </DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -676,7 +724,7 @@ const EditProductDialog = ({
 
         <div className="flex gap-2">
           <Button type="submit" className="flex-1">Update Product</Button>
-          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="outline" onClick={onClose">Cancel</Button>
         </div>
       </form>
     </DialogContent>
