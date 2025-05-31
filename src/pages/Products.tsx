@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,11 +42,23 @@ const Products = () => {
   const fetchCategories = async () => {
     try {
       const response = await categoriesApi.getAll();
-      if (response.success) {
+      if (response.success && response.data) {
+        console.log('Categories response:', response.data);
         const categoryList = [
-          { value: "all", label: "All Categories" },
-          ...response.data.map((cat: string) => ({ value: cat, label: cat }))
+          { value: "all", label: "All Categories" }
         ];
+        
+        // Handle if response.data is an array of objects or strings
+        if (Array.isArray(response.data)) {
+          response.data.forEach((cat: any) => {
+            if (typeof cat === 'string') {
+              categoryList.push({ value: cat, label: cat });
+            } else if (cat && typeof cat === 'object' && cat.name) {
+              categoryList.push({ value: cat.name, label: cat.name });
+            }
+          });
+        }
+        
         setCategories(categoryList);
       }
     } catch (error) {
@@ -68,8 +79,25 @@ const Products = () => {
   const fetchUnits = async () => {
     try {
       const response = await unitsApi.getAll();
-      if (response.success) {
-        setUnits(response.data);
+      if (response.success && response.data) {
+        console.log('Units response:', response.data);
+        const unitsList: any[] = [];
+        
+        // Handle if response.data is an array of objects or strings
+        if (Array.isArray(response.data)) {
+          response.data.forEach((unit: any) => {
+            if (typeof unit === 'string') {
+              unitsList.push({ value: unit, label: unit });
+            } else if (unit && typeof unit === 'object') {
+              unitsList.push({ 
+                value: unit.name || unit.value, 
+                label: unit.label || unit.name || unit.value 
+              });
+            }
+          });
+        }
+        
+        setUnits(unitsList);
       }
     } catch (error) {
       console.error('Failed to fetch units:', error);
