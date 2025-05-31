@@ -1,221 +1,305 @@
 
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ArrowUpIcon, ArrowDownIcon, Package, DollarSign, Users, AlertTriangle } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { dashboardApi } from "@/services/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ArrowUp, ArrowDown, Users, Package, ShoppingCart, Database, TrendingUp, AlertTriangle } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, ResponsiveContainer, Legend } from "recharts";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  dashboardStats, 
+  salesData, 
+  categoryData, 
+  monthlyTrend, 
+  recentSales, 
+  lowStockItems 
+} from "@/data/storeData";
 
 const Dashboard = () => {
-  const [dashboardData, setDashboardData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const response = await dashboardApi.getStats();
-      
-      if (response.success) {
-        setDashboardData(response.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
-      // Fallback data for demo
-      setDashboardData({
-        totalRevenue: 1450000,
-        totalOrders: 342,
-        totalCustomers: 156,
-        lowStockItems: 12,
-        recentSales: [
-          { id: 1, customerName: "Ahmad Furniture", amount: 15000, date: "2024-11-28", items: 3 }
-        ],
-        monthlyRevenue: [
-          { month: "Jan", revenue: 145000 },
-          { month: "Feb", revenue: 165000 }
-        ],
-        topProducts: [
-          { id: 1, name: "Heavy Duty Hinges", sales: 45000, quantity: 120 }
-        ]
-      });
-    } finally {
-      setLoading(false);
-    }
+  const chartConfig = {
+    cash: { label: "Cash Sales", color: "#1e40af" },
+    credit: { label: "Credit Sales", color: "#3b82f6" },
+    sales: { label: "Sales", color: "#1e3a8a" }
   };
 
-  if (loading) {
-    return (
-      <div className="flex-1 p-6 space-y-6 min-h-screen bg-background">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg text-muted-foreground">Loading dashboard...</div>
-        </div>
-      </div>
-    );
-  }
+  const handleInstantOrder = (productName: string, productId: number) => {
+    toast({
+      title: "Order Initiated",
+      description: `Creating purchase order for ${productName}`,
+    });
+  };
 
   return (
-    <div className="flex-1 p-6 space-y-6 min-h-screen bg-background">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger />
+    <div className="flex-1 p-6 space-y-6 bg-slate-50 min-h-screen">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome to Usman Hardware Management System</p>
+          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-slate-600">Usman Hardware Store - Furniture Hardware Specialist</p>
         </div>
+        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 px-3 py-1">
+          Store Open
+        </Badge>
       </div>
 
-      {/* Stats Cards */}
+      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-l-4 border-l-green-500">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <DollarSign className="h-8 w-8 text-green-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold text-green-600">
-                  PKR {dashboardData?.totalRevenue?.toLocaleString() || '0'}
-                </p>
-                <div className="flex items-center gap-1 text-sm text-green-600">
-                  <ArrowUpIcon className="h-4 w-4" />
-                  <span>+12.5%</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-blue-500">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Package className="h-8 w-8 text-blue-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Orders</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {dashboardData?.totalOrders || 0}
-                </p>
-                <div className="flex items-center gap-1 text-sm text-blue-600">
-                  <ArrowUpIcon className="h-4 w-4" />
-                  <span>+8.2%</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-purple-500">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-purple-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Customers</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {dashboardData?.totalCustomers || 0}
-                </p>
-                <div className="flex items-center gap-1 text-sm text-purple-600">
-                  <ArrowUpIcon className="h-4 w-4" />
-                  <span>+15.3%</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-red-500">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-8 w-8 text-red-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Low Stock Items</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {dashboardData?.lowStockItems || 0}
-                </p>
-                <div className="flex items-center gap-1 text-sm text-red-600">
-                  <ArrowDownIcon className="h-4 w-4" />
-                  <span>-2.1%</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Monthly Revenue Trend</CardTitle>
+        <Card className="border-l-4 border-l-blue-700 hover:shadow-lg transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Today's Sales</CardTitle>
+            <ShoppingCart className="h-5 w-5 text-blue-700" />
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={dashboardData?.monthlyRevenue || []}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="month" className="text-muted-foreground" />
-                <YAxis className="text-muted-foreground" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--background))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
+            <div className="text-2xl font-bold text-slate-900">Rs. {dashboardStats.totalSales.toLocaleString()}</div>
+            <div className="flex items-center text-xs text-emerald-600 mt-1">
+              <ArrowUp className="h-3 w-3 mr-1" />
+              15% from yesterday
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-indigo-700 hover:shadow-lg transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Cash Sales</CardTitle>
+            <Database className="h-5 w-5 text-indigo-700" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-900">Rs. {dashboardStats.cashSales.toLocaleString()}</div>
+            <div className="text-xs text-slate-500 mt-1">
+              {((dashboardStats.cashSales / dashboardStats.totalSales) * 100).toFixed(1)}% of total
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-purple-700 hover:shadow-lg transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Credit Sales</CardTitle>
+            <Users className="h-5 w-5 text-purple-700" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-slate-900">Rs. {dashboardStats.creditSales.toLocaleString()}</div>
+            <div className="text-xs text-slate-500 mt-1">
+              {((dashboardStats.creditSales / dashboardStats.totalSales) * 100).toFixed(1)}% of total
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-red-700 hover:shadow-lg transition-all duration-300">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-slate-600">Pending Dues</CardTitle>
+            <ArrowDown className="h-5 w-5 text-red-700" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-700">Rs. {dashboardStats.customersDue.toLocaleString()}</div>
+            <div className="text-xs text-slate-500 mt-1">
+              From {dashboardStats.totalCustomers} customers
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Section - Responsive Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Weekly Sales Chart */}
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-slate-900">
+              <TrendingUp className="h-5 w-5 text-blue-700" />
+              Weekly Sales Overview
+            </CardTitle>
+            <p className="text-sm text-slate-500">Cash vs Credit sales comparison for the week</p>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={salesData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 11, fill: '#64748b' }}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 11, fill: '#64748b' }}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                    label={{ value: 'Amount (PKR)', angle: -90, position: 'insideLeft', style: { fontSize: 10 } }}
+                  />
+                  <ChartTooltip 
+                    content={<ChartTooltipContent />}
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend wrapperStyle={{ paddingTop: '15px', fontSize: '12px' }} />
+                  <Bar dataKey="cash" fill="#1e40af" name="Cash Sales" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="credit" fill="#3b82f6" name="Credit Sales" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Category Distribution */}
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-slate-900">
+              <Package className="h-5 w-5 text-blue-700" />
+              Sales by Category
+            </CardTitle>
+            <p className="text-sm text-slate-500">Distribution of sales across furniture hardware categories</p>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={100}
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                    style={{ fontSize: '11px' }}
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip 
+                    content={<ChartTooltipContent />}
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Monthly Trend - Full Width */}
+      <Card className="hover:shadow-lg transition-shadow duration-300">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-slate-900">
+            <TrendingUp className="h-5 w-5 text-blue-700" />
+            Monthly Sales Trend
+          </CardTitle>
+          <p className="text-sm text-slate-500">Sales performance over the last 6 months</p>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyTrend} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  axisLine={{ stroke: '#cbd5e1' }}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  axisLine={{ stroke: '#cbd5e1' }}
+                  label={{ value: 'Sales (PKR)', angle: -90, position: 'insideLeft' }}
+                />
+                <ChartTooltip 
+                  content={<ChartTooltipContent />}
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px'
                   }}
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="revenue" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2} 
+                  dataKey="sales" 
+                  stroke="#1e3a8a" 
+                  strokeWidth={3}
+                  dot={{ fill: "#1e3a8a", strokeWidth: 2, r: 5 }}
+                  activeDot={{ r: 7, fill: "#1e3a8a" }}
+                  name="Monthly Sales"
                 />
               </LineChart>
             </ResponsiveContainer>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Sales */}
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-slate-900">
+              <ShoppingCart className="h-5 w-5 text-blue-700" />
+              Recent Sales Today
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentSales.map((sale) => (
+                <div key={sale.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+                  <div>
+                    <p className="font-medium text-slate-900">{sale.customer}</p>
+                    <p className="text-sm text-slate-500">{sale.time}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-slate-900">Rs. {sale.amount.toLocaleString()}</p>
+                    <Badge 
+                      className={sale.type === 'cash' 
+                        ? 'bg-slate-100 text-slate-800 border-slate-300' 
+                        : 'bg-blue-100 text-blue-800 border-blue-300'
+                      }
+                    >
+                      {sale.type.toUpperCase()}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Low Stock Alerts */}
+        <Card className="hover:shadow-lg transition-shadow duration-300 border-red-200">
           <CardHeader>
-            <CardTitle>Top Products</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-slate-900">
+              <AlertTriangle className="h-5 w-5 text-red-700" />
+              Low Stock Alerts
+              <Badge className="bg-red-100 text-red-800 border-red-300">
+                {lowStockItems.length}
+              </Badge>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dashboardData?.topProducts || []}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="name" className="text-muted-foreground" />
-                <YAxis className="text-muted-foreground" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--background))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
-                  }}
-                />
-                <Bar dataKey="sales" fill="hsl(var(--primary))" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="space-y-4">
+              {lowStockItems.map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200 hover:bg-red-100 transition-colors">
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">{item.name}</p>
+                    <p className="text-sm text-red-700">Current: {item.current} | Min: {item.minimum}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-blue-700 hover:bg-blue-800 text-white"
+                    onClick={() => handleInstantOrder(item.name, item.id)}
+                  >
+                    Order Now
+                  </Button>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Recent Sales */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Sales</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {dashboardData?.recentSales?.map((sale: any) => (
-              <div key={sale.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                <div>
-                  <p className="font-medium text-foreground">{sale.customerName}</p>
-                  <p className="text-sm text-muted-foreground">{sale.date} • {sale.items} items</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-green-600">PKR {sale.amount?.toLocaleString()}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

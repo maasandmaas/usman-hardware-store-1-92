@@ -1,10 +1,10 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { ThemeProvider } from "@/components/ThemeProvider";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -33,47 +33,45 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="system" storageKey="hardware-store-theme">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <SidebarProvider>
-            <div className="min-h-screen flex w-full bg-background">
-              <AppSidebar />
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <Header />
-                <main className="flex-1 overflow-auto custom-scrollbar">
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/products" element={<Products />} />
-                    <Route path="/sales" element={<Sales />} />
-                    <Route path="/customers" element={<Customers />} />
-                    <Route path="/inventory" element={<Inventory />} />
-                    <Route path="/suppliers" element={<Suppliers />} />
-                    <Route path="/purchase-orders" element={<PurchaseOrders />} />
-                    <Route path="/sales-receipts" element={<SalesReceipts />} />
-                    <Route path="/quotations" element={<Quotations />} />
-                    <Route path="/expense-tracking" element={<ExpenseTracking />} />
-                    <Route path="/sales-analytics" element={<SalesAnalytics />} />
-                    <Route path="/customer-insights" element={<CustomerInsights />} />
-                    <Route path="/notifications" element={<Notifications />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/backup" element={<BackupSync />} />
-                    <Route path="/calendar" element={<Calendar />} />
-                    <Route path="/accounts-receivable" element={<AccountsReceivable />} />
-                    <Route path="/finance" element={<Finance />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </main>
-                <Footer />
-              </div>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <SidebarProvider>
+          <div className="min-h-screen flex w-full bg-gray-50">
+            <AppSidebar />
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <Header />
+              <main className="flex-1 overflow-auto custom-scrollbar">
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/sales" element={<Sales />} />
+                  <Route path="/customers" element={<Customers />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/suppliers" element={<Suppliers />} />
+                  <Route path="/purchase-orders" element={<PurchaseOrders />} />
+                  <Route path="/sales-receipts" element={<SalesReceipts />} />
+                  <Route path="/quotations" element={<Quotations />} />
+                  <Route path="/expense-tracking" element={<ExpenseTracking />} />
+                  <Route path="/sales-analytics" element={<SalesAnalytics />} />
+                  <Route path="/customer-insights" element={<CustomerInsights />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/backup" element={<BackupSync />} />
+                  <Route path="/calendar" element={<Calendar />} />
+                  <Route path="/accounts-receivable" element={<AccountsReceivable />} />
+                  <Route path="/finance" element={<Finance />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+              <Footer />
             </div>
-          </SidebarProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
+          </div>
+        </SidebarProvider>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 

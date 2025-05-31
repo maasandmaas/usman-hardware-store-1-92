@@ -126,6 +126,7 @@ const Calendar = () => {
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs text-slate-500">Due: {task.dueDate}</span>
                       <Badge 
+                        size="sm"
                         className={`${
                           task.priority === "high" ? "bg-red-100 text-red-700 border-red-200" :
                           task.priority === "medium" ? "bg-yellow-100 text-yellow-700 border-yellow-200" :
