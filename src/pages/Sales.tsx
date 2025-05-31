@@ -206,8 +206,8 @@ const Sales = () => {
   };
 
   const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+    product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totals = calculateTotal();
@@ -299,14 +299,13 @@ const Sales = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    <QuickCustomerForm 
-                      trigger={
-                        <Button variant="outline" size="icon">
-                          <User className="h-4 w-4" />
-                        </Button>
-                      }
-                      onCustomerAdded={handleQuickCustomerAdded}
-                    />
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setIsQuickCustomerOpen(true)}
+                    >
+                      <User className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
 
@@ -412,6 +411,13 @@ const Sales = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* QuickCustomerForm Modal */}
+      <QuickCustomerForm 
+        open={isQuickCustomerOpen}
+        onOpenChange={setIsQuickCustomerOpen}
+        onCustomerCreated={handleQuickCustomerAdded}
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
