@@ -4,6 +4,9 @@
 // Product Units
 export type ProductUnit = "piece" | "pair" | "box" | "kg" | "liter" | "set" | "pack";
 
+// Customer Types
+export type CustomerType = "manufacturer" | "retailer" | "special" | "regular" | "walk-in";
+
 // Product interface
 export interface Product {
   id: number;
@@ -24,6 +27,7 @@ export interface Customer {
   phone: string;
   address: string;
   dueAmount: number;
+  type?: CustomerType;
 }
 
 // Supplier interface
@@ -133,6 +137,15 @@ export interface LowStockItem {
   id: number;
 }
 
+// Customer Types for dropdown
+export const customerTypes = [
+  { value: "manufacturer", label: "Manufacturer" },
+  { value: "retailer", label: "Retailer" },
+  { value: "special", label: "Special Customer" },
+  { value: "regular", label: "Regular Customer" },
+  { value: "walk-in", label: "Walk-in Customer" }
+];
+
 // Product Categories - Furniture Hardware Focus
 export const categories = [
   { value: "all", label: "All Categories" },
@@ -155,6 +168,13 @@ export const units = [
   { value: "liter", label: "Liter" },
   { value: "set", label: "Set" },
   { value: "pack", label: "Pack" },
+];
+
+// Payment Methods
+export const paymentMethods = [
+  { value: "cash", label: "Cash Payment" },
+  { value: "credit", label: "Credit Sale" },
+  { value: "pending", label: "Send to Pending Orders" }
 ];
 
 // Products data - Furniture Hardware Focus
@@ -206,14 +226,14 @@ export const products: Product[] = [
 
 // Customers data
 export const customers: Customer[] = [
-  { id: 1, name: "Furniture Master Hafizabad", phone: "0300-1234567", address: "Sagar Road, Hafizabad", dueAmount: 3240 },
-  { id: 2, name: "Ali Furniture Works", phone: "0321-9876543", address: "Gujranwala Road, Hafizabad", dueAmount: 2890 },
-  { id: 3, name: "Modern Furniture House", phone: "0333-5555555", address: "College Road, Hafizabad", dueAmount: 0 },
-  { id: 4, name: "Royal Cabinet Makers", phone: "0345-1111111", address: "Kolo Road, Hafizabad", dueAmount: 5600 },
-  { id: 5, name: "Khan Furniture Center", phone: "0311-2222222", address: "Vanike Tarar, Hafizabad", dueAmount: 1200 },
-  { id: 6, name: "Elite Wood Works", phone: "0333-3333333", address: "Main Bazaar, Hafizabad", dueAmount: 0 },
-  { id: 7, name: "Classic Furniture", phone: "0302-4444444", address: "GT Road, Hafizabad", dueAmount: 4500 },
-  { id: 8, name: "Wooden Dreams", phone: "0315-5555555", address: "Railway Road, Hafizabad", dueAmount: 890 },
+  { id: 1, name: "Furniture Master Hafizabad", phone: "0300-1234567", address: "Sagar Road, Hafizabad", dueAmount: 3240, type: "manufacturer" },
+  { id: 2, name: "Ali Furniture Works", phone: "0321-9876543", address: "Gujranwala Road, Hafizabad", dueAmount: 2890, type: "retailer" },
+  { id: 3, name: "Modern Furniture House", phone: "0333-5555555", address: "College Road, Hafizabad", dueAmount: 0, type: "special" },
+  { id: 4, name: "Royal Cabinet Makers", phone: "0345-1111111", address: "Kolo Road, Hafizabad", dueAmount: 5600, type: "manufacturer" },
+  { id: 5, name: "Khan Furniture Center", phone: "0311-2222222", address: "Vanike Tarar, Hafizabad", dueAmount: 1200, type: "regular" },
+  { id: 6, name: "Elite Wood Works", phone: "0333-3333333", address: "Main Bazaar, Hafizabad", dueAmount: 0, type: "retailer" },
+  { id: 7, name: "Classic Furniture", phone: "0302-4444444", address: "GT Road, Hafizabad", dueAmount: 4500, type: "special" },
+  { id: 8, name: "Wooden Dreams", phone: "0315-5555555", address: "Railway Road, Hafizabad", dueAmount: 890, type: "regular" },
 ];
 
 // Suppliers data
@@ -309,6 +329,48 @@ export const purchaseOrders: PurchaseOrder[] = [
     notes: "Urgent order for low stock items"
   }
 ];
+
+// Pending Orders data - New addition for pending orders functionality
+export let pendingOrders: any[] = [
+  {
+    id: "PEND-001",
+    customer: "Walk-in Customer - Ahmed",
+    items: [
+      { productId: 1, productName: "Piano Hinges - 1.5m", quantity: 2, unitPrice: 850, total: 1700 },
+      { productId: 5, productName: "Cabinet Handles - Stainless Steel", quantity: 10, unitPrice: 250, total: 2500 }
+    ],
+    totalAmount: 4200,
+    orderDate: "2024-01-22",
+    status: "pending",
+    notes: "Customer will collect tomorrow"
+  },
+  {
+    id: "PEND-002", 
+    customer: "Royal Cabinet Makers",
+    items: [
+      { productId: 16, productName: "Soft Close Drawer Slides - 18 inch", quantity: 5, unitPrice: 950, total: 4750 }
+    ],
+    totalAmount: 4750,
+    orderDate: "2024-01-21",
+    status: "pending", 
+    notes: "Waiting for payment confirmation"
+  }
+];
+
+// Function to add pending order
+export const addPendingOrder = (order: any) => {
+  pendingOrders.push(order);
+};
+
+// Function to get pending orders
+export const getPendingOrders = () => {
+  return pendingOrders;
+};
+
+// Function to remove pending order
+export const removePendingOrder = (orderId: string) => {
+  pendingOrders = pendingOrders.filter(order => order.id !== orderId);
+};
 
 // Sales Receipts data - More detailed with authentication elements
 export const salesReceipts: SalesReceipt[] = [
