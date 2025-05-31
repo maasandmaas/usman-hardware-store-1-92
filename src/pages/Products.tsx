@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,69 +7,142 @@ import { Badge } from "@/components/ui/badge";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Package, Search, Plus, Edit, Trash2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { productsApi } from "@/services/api";
 
-// Import centralized data
-import { products as initialProducts, categories, units, Product } from "@/data/storeData";
+// Static data for categories and units (these could be fetched from API too)
+const categories = [
+  { value: "all", label: "All Categories" },
+  { value: "hinges", label: "Hinges & Hardware" },
+  { value: "locks", label: "Locks & Security" },
+  { value: "handles", label: "Handles & Knobs" },
+  { value: "fasteners", label: "Fasteners & Screws" },
+  { value: "sliding", label: "Sliding Systems" },
+  { value: "tools", label: "Tools & Equipment" },
+];
+
+const units = [
+  { value: "pieces", label: "Pieces" },
+  { value: "kg", label: "Kilograms" },
+  { value: "meters", label: "Meters" },
+  { value: "liters", label: "Liters" },
+  { value: "sets", label: "Sets" },
+];
 
 const Products = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  // Use centralized products data
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 20
   });
 
-  const lowStockProducts = products.filter(product => product.stock <= product.minStock);
+  useEffect(() => {
+    fetchProducts();
+  }, [searchTerm, categoryFilter]);
 
-  const handleAddProduct = (formData) => {
-    const newProduct = {
-      id: products.length + 1,
-      ...formData,
-      price: parseFloat(formData.price),
-      stock: parseInt(formData.stock),
-      minStock: parseInt(formData.minStock),
-      sales: 0
-    };
-    setProducts([...products, newProduct]);
-    setIsDialogOpen(false);
-    toast({
-      title: "Product Added",
-      description: "New product has been added successfully.",
-    });
+  const fetchProducts = async (page = 1) => {
+    try {
+      setLoading(true);
+      const params: any = {
+        page,
+        limit: 20,
+        status: 'active'
+      };
+      
+      if (searchTerm) params.search = searchTerm;
+      if (categoryFilter !== 'all') params.category = categoryFilter;
+
+      const response = await productsApi.getAll(params);
+      
+      if (response.success) {
+        setProducts(response.data.products || []);
+        setPagination(response.data.pagination);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load products",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteProduct = (id) => {
-    setProducts(products.filter(product => product.id !== id));
-    toast({
-      title: "Product Deleted",
-      description: "Product has been removed from inventory.",
-    });
+  const handleAddProduct = async (formData: any) => {
+    try {
+      const response = await productsApi.create(formData);
+      if (response.success) {
+        setIsDialogOpen(false);
+        fetchProducts();
+        toast({
+          title: "Product Added",
+          description: "New product has been added successfully.",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to add product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add product",
+        variant: "destructive"
+      });
+    }
   };
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      hardware: "bg-blue-100 text-blue-800",
-      fasteners: "bg-green-100 text-green-800",
-      oils: "bg-orange-100 text-orange-800",
-      cement: "bg-gray-100 text-gray-800",
-      paints: "bg-purple-100 text-purple-800",
+  const handleDeleteProduct = async (id: number) => {
+    try {
+      const response = await productsApi.delete(id);
+      if (response.success) {
+        fetchProducts();
+        toast({
+          title: "Product Deleted",
+          description: "Product has been removed from inventory.",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getCategoryColor = (category: string) => {
+    const colors: { [key: string]: string } = {
+      hinges: "bg-blue-100 text-blue-800",
+      locks: "bg-green-100 text-green-800",
+      handles: "bg-orange-100 text-orange-800",
+      fasteners: "bg-gray-100 text-gray-800",
+      sliding: "bg-purple-100 text-purple-800",
       tools: "bg-red-100 text-red-800",
-      plumbing: "bg-cyan-100 text-cyan-800",
     };
     return colors[category] || "bg-gray-100 text-gray-800";
   };
+
+  const lowStockProducts = products.filter(product => product.stock <= product.minStock);
+
+  if (loading && products.length === 0) {
+    return (
+      <div className="flex-1 p-6 space-y-6 min-h-screen">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-muted-foreground">Loading products...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 p-6 space-y-6 min-h-screen">
@@ -100,7 +173,7 @@ const Products = () => {
               <Package className="h-8 w-8 text-blue-500" />
               <div>
                 <p className="text-sm text-gray-600">Total Products</p>
-                <p className="text-2xl font-bold text-blue-600">{products.length}</p>
+                <p className="text-2xl font-bold text-blue-600">{pagination.totalItems}</p>
               </div>
             </div>
           </CardContent>
@@ -178,54 +251,64 @@ const Products = () => {
           <CardTitle>Product Inventory</CardTitle>
         </CardHeader>
         <CardContent className="pb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
-            {filteredProducts.map((product) => (
-              <Card key={product.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 text-sm">{product.name}</h3>
-                        <p className="text-xs text-gray-500">SKU: {product.sku}</p>
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-lg text-muted-foreground">Loading...</div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-lg text-muted-foreground">No products found</div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
+              {products.map((product) => (
+                <Card key={product.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h3 className="font-medium text-gray-900 text-sm">{product.name}</h3>
+                          <p className="text-xs text-gray-500">SKU: {product.sku}</p>
+                        </div>
+                        <Badge className={`text-xs ${getCategoryColor(product.category)}`}>
+                          {categories.find(c => c.value === product.category)?.label.split(' ')[0] || product.category}
+                        </Badge>
                       </div>
-                      <Badge className={`text-xs ${getCategoryColor(product.category)}`}>
-                        {categories.find(c => c.value === product.category)?.label.split(' ')[0]}
-                      </Badge>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold text-green-600">PKR {product.price?.toLocaleString()}</span>
+                        <span className="text-xs text-gray-500">per {product.unit}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <Badge variant={product.stock <= product.minStock ? "destructive" : "default"}>
+                          {product.stock} {product.unit}s
+                        </Badge>
+                        {product.stock <= product.minStock && (
+                          <AlertTriangle className="h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" className="flex-1">
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteProduct(product.id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold text-green-600">PKR {product.price}</span>
-                      <span className="text-xs text-gray-500">per {product.unit}</span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <Badge variant={product.stock <= product.minStock ? "destructive" : "default"}>
-                        {product.stock} {product.unit}s
-                      </Badge>
-                      {product.stock <= product.minStock && (
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                      )}
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="flex-1">
-                        <Edit className="h-3 w-3 mr-1" />
-                        Edit
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => handleDeleteProduct(product.id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -233,12 +316,12 @@ const Products = () => {
 };
 
 // Product Dialog Component
-const ProductDialog = ({ onSubmit, onClose }) => {
+const ProductDialog = ({ onSubmit, onClose }: { onSubmit: (data: any) => void; onClose: () => void }) => {
   const [formData, setFormData] = useState({
     name: "", sku: "", price: "", stock: "", category: "", unit: "", minStock: ""
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
     setFormData({ name: "", sku: "", price: "", stock: "", category: "", unit: "", minStock: "" });
