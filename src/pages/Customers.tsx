@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -140,7 +141,7 @@ const Customers = () => {
 
   const totalDues = customers.reduce((sum, customer) => sum + (customer.currentBalance || customer.dueAmount || 0), 0);
   const activeCustomers = customers.filter(c => c.status === "active" || !c.status).length;
-  const customersWithDues = customers.filter(c => (c.currentBalance || customer.dueAmount || 0) > 0).length;
+  const customersWithDues = customers.filter(c => (c.currentBalance || c.dueAmount || 0) > 0).length;
 
   const getCustomerTypeColor = (type: string) => {
     const colors = {
@@ -193,7 +194,7 @@ const Customers = () => {
               <Users className="h-8 w-8 text-blue-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Total Customers</p>
-                <p className="text-2xl font-bold text-blue-600">{pagination.totalItems}</p>
+                <p className="text-2xl font-bold text-blue-600">{customers.length}</p>
               </div>
             </div>
           </CardContent>
