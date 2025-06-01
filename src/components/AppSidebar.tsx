@@ -215,17 +215,17 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r border-sidebar-border bg-sidebar" collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center gap-3">
+      <SidebarHeader className="border-b border-sidebar-border p-2">
+        <div className="flex items-center justify-center w-full">
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
-            className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
+            className="h-10 w-10 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 rounded-lg flex items-center justify-center"
           >
             <Store className="h-6 w-6" />
           </Button>
-          <div className="group-data-[collapsible=icon]:hidden flex-1">
+          <div className="group-data-[collapsible=icon]:hidden flex-1 ml-3">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-sidebar-foreground">Usman Hardware</h2>
@@ -278,20 +278,22 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       
-      <SidebarFooter className="border-t border-sidebar-border p-4">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <button 
-                className="flex items-center gap-2 w-full text-left text-sidebar-foreground hover:bg-sidebar-accent"
-                onClick={handleSettingsClick}
-              >
-                <Settings className="h-4 w-4" />
-                <span className="group-data-[collapsible=icon]:hidden">Settings</span>
-              </button>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarFooter className="border-t border-sidebar-border p-2">
+        <div className="flex items-center justify-center w-full">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSettingsClick}
+            className={`h-10 w-10 rounded-lg flex items-center justify-center transition-colors ${
+              state === 'collapsed' 
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90' 
+                : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+            }`}
+          >
+            <Settings className="h-4 w-4" />
+            <span className="group-data-[collapsible=icon]:hidden ml-2 text-sm font-medium">Settings</span>
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

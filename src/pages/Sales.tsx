@@ -1,16 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Package, Search } from "lucide-react";
+import { Package, Search, Plus, Minus, Pin, PinOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { salesApi, customersApi, productsApi } from "@/services/api";
 import { QuickCustomerForm } from "@/components/QuickCustomerForm";
-import { ProductCard } from "@/components/sales/ProductCard";
-import { CartSidebar } from "@/components/sales/CartSidebar";
 import { TodaysOrdersModal } from "@/components/sales/TodaysOrdersModal";
 
 interface CartItem {
@@ -29,12 +27,12 @@ const Sales = () => {
   const [customers, setCustomers] = useState<any[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
-  const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isQuickCustomerOpen, setIsQuickCustomerOpen] = useState(false);
   const [isTodaysOrdersOpen, setIsTodaysOrdersOpen] = useState(false);
   const [todaysOrders, setTodaysOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [pinnedProducts, setPinnedProducts] = useState<number[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [orderStatus, setOrderStatus] = useState("completed");
   const [quantityInputs, setQuantityInputs] = useState<{[key: number]: string}>({});
 
@@ -45,7 +43,12 @@ const Sales = () => {
     // Load pinned products from localStorage
     const saved = localStorage.getItem('pinnedProducts');
     if (saved) {
-      setPinnedProducts(JSON.parse(saved));
+      try {
+        setPinnedProducts(JSON.parse(saved));
+      } catch (error) {
+        console.error('Error parsing pinned products from localStorage:', error);
+        setPinnedProducts([]);
+      }
     }
   }, []);
 
@@ -54,10 +57,14 @@ const Sales = () => {
       setLoading(true);
       const response = await productsApi.getAll({ limit: 100 });
       if (response.success) {
-        setProducts(response.data.products || []);
+        const productsData = response.data?.products || response.data || [];
+        setProducts(Array.isArray(productsData) ? productsData : []);
+      } else {
+        setProducts([]);
       }
     } catch (error) {
       console.error('Failed to fetch products:', error);
+      setProducts([]);
       toast({
         title: "Error",
         description: "Failed to load products",
@@ -72,10 +79,14 @@ const Sales = () => {
     try {
       const response = await customersApi.getAll({ limit: 100 });
       if (response.success) {
-        setCustomers(response.data.customers || []);
+        const customersData = response.data?.customers || response.data || [];
+        setCustomers(Array.isArray(customersData) ? customersData : []);
+      } else {
+        setCustomers([]);
       }
     } catch (error) {
       console.error('Failed to fetch customers:', error);
+      setCustomers([]);
     }
   };
 
@@ -88,10 +99,14 @@ const Sales = () => {
         limit: 50
       });
       if (response.success) {
-        setTodaysOrders(response.data.sales || []);
+        const ordersData = response.data?.sales || response.data || [];
+        setTodaysOrders(Array.isArray(ordersData) ? ordersData : []);
+      } else {
+        setTodaysOrders([]);
       }
     } catch (error) {
       console.error('Failed to fetch today\'s orders:', error);
+      setTodaysOrders([]);
     }
   };
 
@@ -196,12 +211,12 @@ const Sales = () => {
           unitPrice: item.price
         })),
         discount: 0,
-        paymentMethod: "cash",
-        status: orderStatus, // This should now properly use the selected status
+        paymentMethod: paymentMethod,
+        status: orderStatus,
         notes: selectedCustomer ? `Sale to ${selectedCustomer.name}` : "Walk-in customer sale"
       };
 
-      console.log('Sending sale data:', saleData); // Debug log to verify status
+      console.log('Sending sale data:', saleData);
 
       const response = await salesApi.create(saleData);
       
@@ -209,6 +224,7 @@ const Sales = () => {
         setCart([]);
         setSelectedCustomer(null);
         setQuantityInputs({});
+        setPaymentMethod("cash");
         fetchTodaysOrders();
         toast({
           title: "Sale Completed",
@@ -226,8 +242,8 @@ const Sales = () => {
   };
 
   const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+    product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product?.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Sort products: pinned first, then by name
@@ -237,8 +253,11 @@ const Sales = () => {
     
     if (aIsPinned && !bIsPinned) return -1;
     if (!aIsPinned && bIsPinned) return 1;
-    return a.name.localeCompare(b.name);
+    return (a.name || '').localeCompare(b.name || '');
   });
+
+  // Calculate total cart items
+  const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   if (loading) {
     return (
@@ -269,7 +288,7 @@ const Sales = () => {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                {cart.length} items
+                {totalCartItems} items
               </span>
               <Button 
                 size="sm" 
@@ -304,40 +323,222 @@ const Sales = () => {
             </div>
           </div>
 
-          {/* Enhanced Responsive Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+          {/* Enhanced Responsive Products Grid with reduced height cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
             {sortedProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                isPinned={pinnedProducts.includes(product.id)}
-                quantityInput={quantityInputs[product.id] || ""}
-                onTogglePin={togglePinProduct}
-                onQuantityChange={handleQuantityInputChange}
-                onAddToCart={addToCartWithCustomQuantity}
-                onAddCustomQuantity={addCustomQuantityToCart}
-              />
+              <Card key={product.id} className={`relative transition-all hover:shadow-md ${pinnedProducts.includes(product.id) ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950' : ''}`}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-sm font-medium text-foreground line-clamp-1">
+                        {product.name}
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">{product.sku}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={() => togglePinProduct(product.id)}
+                    >
+                      {pinnedProducts.includes(product.id) ? 
+                        <PinOff className="h-3 w-3 text-blue-600" /> : 
+                        <Pin className="h-3 w-3 text-muted-foreground" />
+                      }
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0 pb-3">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-bold text-green-600">PKR {product.price}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {product.stock} {product.unit}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="text"
+                        placeholder="Qty"
+                        value={quantityInputs[product.id] || ""}
+                        onChange={(e) => handleQuantityInputChange(product.id, e.target.value)}
+                        className="h-8 text-xs flex-1"
+                      />
+                      <Button 
+                        size="sm" 
+                        className="h-8 px-2"
+                        onClick={() => addCustomQuantityToCart(product)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    
+                    <Button 
+                      size="sm" 
+                      className="w-full h-7 text-xs"
+                      onClick={() => addToCartWithCustomQuantity(product, 1)}
+                    >
+                      Add to Cart
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Cart Sidebar */}
-      <CartSidebar
-        cart={cart}
-        selectedCustomer={selectedCustomer}
-        customers={customers}
-        orderStatus={orderStatus}
-        isCustomerDialogOpen={isCustomerDialogOpen}
-        isQuickCustomerOpen={isQuickCustomerOpen}
-        onSetSelectedCustomer={setSelectedCustomer}
-        onSetIsCustomerDialogOpen={setIsCustomerDialogOpen}
-        onSetIsQuickCustomerOpen={setIsQuickCustomerOpen}
-        onSetOrderStatus={setOrderStatus}
-        onUpdateCartQuantity={updateCartQuantity}
-        onRemoveFromCart={removeFromCart}
-        onCheckout={handleCheckout}
-      />
+      {/* Cart Sidebar with Payment Method Selection */}
+      <div className="w-80 bg-background border-l shadow-lg flex flex-col">
+        <div className="p-4 border-b">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Cart</h2>
+          
+          {/* Customer Selection */}
+          <div className="space-y-3 mb-4">
+            <Select 
+              value={selectedCustomer?.id?.toString() || "walk-in"} 
+              onValueChange={(value) => {
+                if (value === "walk-in") {
+                  setSelectedCustomer(null);
+                } else {
+                  const customer = customers.find(c => c.id.toString() === value);
+                  setSelectedCustomer(customer || null);
+                }
+              }}
+            >
+              <SelectTrigger className="w-full h-9">
+                <SelectValue placeholder="Select Customer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="walk-in">Walk-in Customer</SelectItem>
+                {customers.map((customer) => (
+                  <SelectItem key={customer.id} value={customer.id.toString()}>
+                    {customer.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full h-8"
+              onClick={() => setIsQuickCustomerOpen(true)}
+            >
+              + Add New Customer
+            </Button>
+          </div>
+
+          {/* Payment Method Selection */}
+          <div className="space-y-2 mb-4">
+            <label className="text-sm font-medium text-foreground">Payment Method</label>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <SelectTrigger className="w-full h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cash">Cash</SelectItem>
+                <SelectItem value="credit">Credit</SelectItem>
+                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                <SelectItem value="card">Card</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Order Status */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Order Status</label>
+            <Select value={orderStatus} onValueChange={setOrderStatus}>
+              <SelectTrigger className="w-full h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Cart Items */}
+        <div className="flex-1 overflow-auto p-4">
+          {cart.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+              <p>No items in cart</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {cart.map((item) => (
+                <Card key={item.productId} className="p-3">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">{item.name}</h4>
+                      <p className="text-xs text-muted-foreground">{item.sku}</p>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-6 w-6 p-0 text-red-500"
+                      onClick={() => removeFromCart(item.productId)}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-6 w-6 p-0"
+                        onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="text-sm font-medium">{item.quantity} {item.unit}</span>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-6 w-6 p-0"
+                        onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <span className="font-bold text-green-600">PKR {(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Cart Total & Checkout */}
+        {cart.length > 0 && (
+          <div className="p-4 border-t bg-background">
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal:</span>
+                <span>PKR {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-bold text-lg">
+                <span>Total:</span>
+                <span className="text-green-600">PKR {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+              </div>
+            </div>
+            
+            <Button 
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              onClick={handleCheckout}
+            >
+              Complete Sale ({paymentMethod})
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Today's Orders Modal */}
       <TodaysOrdersModal

@@ -22,11 +22,20 @@ export function Header() {
   const { toast } = useToast();
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const pendingOrders = getPendingOrders();
-  const pendingOrdersCount = pendingOrders.length;
+  const [pendingOrders, setPendingOrders] = useState<any[]>([]);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
 
   useEffect(() => {
     fetchNotifications();
+    fetchPendingOrders();
+    
+    // Set up polling for real-time updates
+    const interval = setInterval(() => {
+      fetchNotifications();
+      fetchPendingOrders();
+    }, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchNotifications = async () => {
@@ -35,18 +44,25 @@ export function Header() {
       if (response.success) {
         const notificationData = response.data.notifications || response.data || [];
         setNotifications(Array.isArray(notificationData) ? notificationData : []);
-        setUnreadCount(notificationData.length);
+        setUnreadCount(response.data.unreadCount || notificationData.length || 0);
       }
     } catch (error) {
+      console.error('Failed to fetch notifications:', error);
       // Fallback to demo notifications
       const demoNotifications = [
-        { id: 1, title: "Low Stock Alert", message: "Product ABC is running low", type: "warning", time: "2 min ago" },
-        { id: 2, title: "New Order", message: "Order #123 received", type: "info", time: "5 min ago" },
-        { id: 3, title: "Payment Received", message: "Payment of PKR 5000 received", type: "success", time: "10 min ago" }
+        { id: 1, title: "Low Stock Alert", message: "Product ABC is running low", type: "warning", createdAt: new Date().toISOString() },
+        { id: 2, title: "New Order", message: "Order #123 received", type: "info", createdAt: new Date().toISOString() },
+        { id: 3, title: "Payment Received", message: "Payment of PKR 5000 received", type: "success", createdAt: new Date().toISOString() }
       ];
       setNotifications(demoNotifications);
       setUnreadCount(3);
     }
+  };
+
+  const fetchPendingOrders = () => {
+    const orders = getPendingOrders();
+    setPendingOrders(orders);
+    setPendingOrdersCount(orders.length);
   };
 
   const handleMarkAsRead = async (notificationId: number) => {
@@ -54,15 +70,33 @@ export function Header() {
       await notificationsApi.markAsRead(notificationId);
       setNotifications(notifications.filter(n => n.id !== notificationId));
       setUnreadCount(Math.max(0, unreadCount - 1));
+      toast({
+        title: "Notification marked as read",
+      });
     } catch (error) {
+      console.error('Failed to mark notification as read:', error);
       // Fallback for demo
       setNotifications(notifications.filter(n => n.id !== notificationId));
       setUnreadCount(Math.max(0, unreadCount - 1));
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationsApi.markAllAsRead();
+      setNotifications([]);
+      setUnreadCount(0);
+      toast({
+        title: "All notifications marked as read",
+      });
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
+  };
+
   const handleRemoveOrder = (orderId: string) => {
     removePendingOrder(orderId);
+    fetchPendingOrders(); // Refresh the list
     toast({
       title: "Order Removed",
       description: "Pending order has been removed successfully",
@@ -71,11 +105,25 @@ export function Header() {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'warning': return '⚠️';
+      case 'warning': 
+      case 'low_stock': return '⚠️';
       case 'success': return '✅';
       case 'error': return '❌';
+      case 'new_order': return '📦';
+      case 'overdue_payment': return '💰';
       default: return '📢';
     }
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
   return (
@@ -108,10 +156,12 @@ export function Header() {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto bg-background border shadow-lg">
-              <DropdownMenuLabel className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-blue-600" />
-                Pending Orders ({pendingOrdersCount})
+            <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto bg-background border shadow-lg z-50">
+              <DropdownMenuLabel className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-blue-600" />
+                  Pending Orders ({pendingOrdersCount})
+                </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {pendingOrders.length === 0 ? (
@@ -170,10 +220,22 @@ export function Header() {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto bg-background border shadow-lg">
-              <DropdownMenuLabel className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-blue-600" />
-                Notifications ({unreadCount})
+            <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto bg-background border shadow-lg z-50">
+              <DropdownMenuLabel className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-blue-600" />
+                  Notifications ({unreadCount})
+                </div>
+                {notifications.length > 0 && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleMarkAllAsRead}
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    Mark all read
+                  </Button>
+                )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {notifications.length === 0 ? (
@@ -205,18 +267,10 @@ export function Header() {
                           ×
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground">{notification.time}</p>
+                      <p className="text-xs text-muted-foreground">{formatTime(notification.createdAt)}</p>
                     </div>
                   </DropdownMenuItem>
                 ))
-              )}
-              {notifications.length > 0 && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-center text-sm text-blue-600 hover:text-blue-800">
-                    Mark all as read
-                  </DropdownMenuItem>
-                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -234,7 +288,7 @@ export function Header() {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-background border shadow-lg" align="end" forceMount>
+            <DropdownMenuContent className="w-56 bg-background border shadow-lg z-50" align="end" forceMount>
               <DropdownMenuItem>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>

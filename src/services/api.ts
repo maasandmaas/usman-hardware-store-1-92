@@ -145,6 +145,10 @@ const apiRequest = async <T>(
 export const dashboardApi = {
   getStats: () => apiRequest<ApiResponse<any>>('/dashboard/stats'),
   getEnhancedStats: () => apiRequest<ApiResponse<EnhancedDashboardData>>('/dashboard/enhanced-stats'),
+  getRevenueTrend: () => apiRequest<ApiResponse<any>>('/dashboard/revenue-trend'),
+  getCategoryPerformance: () => apiRequest<ApiResponse<any>>('/dashboard/category-performance'),
+  getDailySales: () => apiRequest<ApiResponse<any>>('/dashboard/daily-sales'),
+  getInventoryStatus: () => apiRequest<ApiResponse<any>>('/dashboard/inventory-status'),
 };
 
 // Products API
@@ -353,5 +357,78 @@ export const notificationsApi = {
   markAllAsRead: () =>
     apiRequest<ApiResponse<any>>('/notifications/mark-all-read', {
       method: 'PUT',
+    }),
+};
+
+// Suppliers API
+export const suppliersApi = {
+  getAll: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) queryParams.append(key, value.toString());
+      });
+    }
+    const query = queryParams.toString();
+    return apiRequest<any>(`/suppliers${query ? `?${query}` : ''}`);
+  },
+  
+  getById: (id: number) => apiRequest<ApiResponse<any>>(`/suppliers/${id}`),
+  
+  create: (supplier: any) =>
+    apiRequest<ApiResponse<any>>('/suppliers', {
+      method: 'POST',
+      body: JSON.stringify(supplier),
+    }),
+  
+  update: (id: number, supplier: any) =>
+    apiRequest<ApiResponse<any>>(`/suppliers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(supplier),
+    }),
+  
+  delete: (id: number) =>
+    apiRequest<ApiResponse<any>>(`/suppliers/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+// Purchase Orders API
+export const purchaseOrdersApi = {
+  getAll: (params?: {
+    page?: number;
+    limit?: number;
+    supplierId?: number;
+    status?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) queryParams.append(key, value.toString());
+      });
+    }
+    const query = queryParams.toString();
+    return apiRequest<any>(`/purchase-orders${query ? `?${query}` : ''}`);
+  },
+  
+  getById: (id: number) => apiRequest<ApiResponse<any>>(`/purchase-orders/${id}`),
+  
+  create: (order: any) =>
+    apiRequest<ApiResponse<any>>('/purchase-orders', {
+      method: 'POST',
+      body: JSON.stringify(order),
+    }),
+  
+  receive: (id: number, data: any) =>
+    apiRequest<ApiResponse<any>>(`/purchase-orders/${id}/receive`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     }),
 };
