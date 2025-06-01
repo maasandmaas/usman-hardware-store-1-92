@@ -1,76 +1,57 @@
+
 import { Bell, CheckCircle, AlertTriangle, Info, Clock, Trash2, Mail } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const notifications = [
-  {
-    id: 1,
-    type: "urgent",
-    title: "Payment Due Today",
-    message: "Ahmad Furniture needs to pay Rs. 15,000 for invoice #INV-2024-045. Contact immediately to avoid overdue status.",
-    time: "Due today",
-    read: false,
-    actionRequired: true
-  },
-  {
-    id: 2,
-    type: "warning", 
-    title: "Low Stock Alert",
-    message: "Heavy Duty Hinges (Gold Finish) - Only 3 units remaining in inventory. Consider reordering from supplier.",
-    time: "30 minutes ago",
-    read: false,
-    actionRequired: true
-  },
-  {
-    id: 3,
-    type: "info",
-    title: "Customer Follow-up Required",
-    message: "Hassan Carpentry requested a follow-up call regarding their quotation for drawer slides. Best time to call: 2-4 PM.",
-    time: "2 hours ago", 
-    read: false,
-    actionRequired: true
-  },
-  {
-    id: 4,
-    type: "success",
-    title: "Daily Target Achievement",
-    message: "Congratulations! You've achieved 85% of today's sales target. Rs. 7,500 more needed to reach daily goal.",
-    time: "4 hours ago",
-    read: true,
-    actionRequired: false
-  },
-  {
-    id: 5,
-    type: "urgent",
-    title: "Overdue Payment Alert",
-    message: "Classic Furniture has an overdue payment of Rs. 25,000 (7 days overdue). Immediate action required.",
-    time: "Yesterday",
-    read: false,
-    actionRequired: true
-  },
-  {
-    id: 6,
-    type: "info",
-    title: "New Order Received",
-    message: "Modern Wood Works placed a new order #ORD-2024-125 worth Rs. 18,500. Order processing required.",
-    time: "Yesterday",
-    read: true,
-    actionRequired: false
-  }
-];
-
-const urgentNotifications = notifications.filter(n => n.type === "urgent");
-const actionRequired = notifications.filter(n => n.actionRequired);
-const unreadNotifications = notifications.filter(n => !n.read);
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { notificationsApi, NotificationData } from "@/services/notificationsApi";
+import { useToast } from "@/hooks/use-toast";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function Notifications() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: notificationsData, isLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => notificationsApi.getAll({ limit: 50 }),
+  });
+
+  const markAsReadMutation = useMutation({
+    mutationFn: (id: number) => notificationsApi.markAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({
+        title: "Success",
+        description: "Notification marked as read",
+      });
+    },
+  });
+
+  const markAllAsReadMutation = useMutation({
+    mutationFn: () => notificationsApi.markAllAsRead(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({
+        title: "Success",
+        description: "All notifications marked as read",
+      });
+    },
+  });
+
+  const notifications = notificationsData?.data.notifications || [];
+  const unreadCount = notificationsData?.data.unreadCount || 0;
+  
+  const urgentNotifications = notifications.filter(n => n.type === "overdue_payment");
+  const actionRequired = notifications.filter(n => !n.read);
+  const unreadNotifications = notifications.filter(n => !n.read);
+
   const getIcon = (type: string) => {
     switch (type) {
-      case 'urgent': return <AlertTriangle className="h-5 w-5 text-red-600" />;
-      case 'warning': return <Clock className="h-5 w-5 text-amber-600" />;
-      case 'success': return <CheckCircle className="h-5 w-5 text-green-600" />;
+      case 'overdue_payment': return <AlertTriangle className="h-5 w-5 text-red-600" />;
+      case 'low_stock': return <Clock className="h-5 w-5 text-amber-600" />;
+      case 'new_order': return <CheckCircle className="h-5 w-5 text-green-600" />;
       default: return <Info className="h-5 w-5 text-blue-600" />;
     }
   };
@@ -78,24 +59,60 @@ export default function Notifications() {
   const getBgColor = (type: string, read: boolean) => {
     if (!read) {
       switch (type) {
-        case 'urgent': return 'bg-red-50 border-red-200';
-        case 'warning': return 'bg-amber-50 border-amber-200'; 
-        case 'success': return 'bg-green-50 border-green-200';
+        case 'overdue_payment': return 'bg-red-50 border-red-200';
+        case 'low_stock': return 'bg-amber-50 border-amber-200'; 
+        case 'new_order': return 'bg-green-50 border-green-200';
         default: return 'bg-blue-50 border-blue-200';
       }
     }
     return 'bg-white border-gray-200';
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffHours < 1) return "Just now";
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays === 1) return "Yesterday";
+    return `${diffDays} days ago`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+            <p className="text-gray-600">Loading notifications...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-          <p className="text-gray-600">Stay updated with important business alerts</p>
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+            <p className="text-gray-600">Stay updated with important business alerts</p>
+          </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">Mark All Read</Button>
+          <Button 
+            variant="outline" 
+            onClick={() => markAllAsReadMutation.mutate()}
+            disabled={markAllAsReadMutation.isPending}
+          >
+            Mark All Read
+          </Button>
           <Button className="bg-blue-600 hover:bg-blue-700">
             <Bell className="h-4 w-4 mr-2" />
             Settings
@@ -141,7 +158,7 @@ export default function Notifications() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Unread</p>
-                <p className="text-2xl font-bold text-gray-900">{unreadNotifications.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{unreadCount}</p>
               </div>
             </div>
           </CardContent>
@@ -186,13 +203,23 @@ export default function Notifications() {
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-semibold text-gray-900">{notification.title}</h4>
                           {!notification.read && <Badge className="bg-red-500">New</Badge>}
-                          {notification.actionRequired && <Badge variant="outline" className="text-orange-600 border-orange-600">Action Required</Badge>}
+                          {!notification.read && <Badge variant="outline" className="text-orange-600 border-orange-600">Action Required</Badge>}
                         </div>
                         <p className="text-gray-700 text-sm mb-2">{notification.message}</p>
-                        <p className="text-gray-500 text-xs">{notification.time}</p>
+                        <p className="text-gray-500 text-xs">{formatDate(notification.createdAt)}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
+                      {!notification.read && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => markAsReadMutation.mutate(notification.id)}
+                          disabled={markAsReadMutation.isPending}
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost">
                         <Mail className="h-4 w-4" />
                       </Button>
@@ -217,7 +244,7 @@ export default function Notifications() {
                           {!notification.read && <Badge className="bg-red-500">New</Badge>}
                         </div>
                         <p className="text-gray-700 text-sm mb-2">{notification.message}</p>
-                        <p className="text-gray-500 text-xs">{notification.time}</p>
+                        <p className="text-gray-500 text-xs">{formatDate(notification.createdAt)}</p>
                       </div>
                     </div>
                   </div>
@@ -237,7 +264,7 @@ export default function Notifications() {
                           <Badge className="bg-red-500">New</Badge>
                         </div>
                         <p className="text-gray-700 text-sm mb-2">{notification.message}</p>
-                        <p className="text-gray-500 text-xs">{notification.time}</p>
+                        <p className="text-gray-500 text-xs">{formatDate(notification.createdAt)}</p>
                       </div>
                     </div>
                   </div>
@@ -257,7 +284,7 @@ export default function Notifications() {
                           <Badge variant="outline" className="text-orange-600 border-orange-600">Action Required</Badge>
                         </div>
                         <p className="text-gray-700 text-sm mb-2">{notification.message}</p>
-                        <p className="text-gray-500 text-xs">{notification.time}</p>
+                        <p className="text-gray-500 text-xs">{formatDate(notification.createdAt)}</p>
                       </div>
                     </div>
                   </div>

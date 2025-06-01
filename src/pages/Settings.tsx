@@ -7,18 +7,95 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { settingsApi, SettingsData } from "@/services/settingsApi";
+import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 export default function Settings() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [formData, setFormData] = useState<SettingsData | null>(null);
+
+  const { data: settingsData, isLoading } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => settingsApi.getSettings(),
+  });
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: (settings: Partial<SettingsData>) => settingsApi.updateSettings(settings),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
+      toast({
+        title: "Settings Updated",
+        description: "Your settings have been saved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (settingsData?.data) {
+      setFormData(settingsData.data);
+    }
+  }, [settingsData]);
+
+  const handleSave = () => {
+    if (formData) {
+      updateSettingsMutation.mutate(formData);
+    }
+  };
+
+  const updateField = (section: keyof SettingsData, field: string, value: any) => {
+    if (formData) {
+      setFormData({
+        ...formData,
+        [section]: {
+          ...formData[section],
+          [field]: value,
+        },
+      });
+    }
+  };
+
+  if (isLoading || !formData) {
+    return (
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+            <p className="text-gray-600">Loading settings...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600">Configure your system preferences</p>
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+            <p className="text-gray-600">Configure your system preferences</p>
+          </div>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={handleSave}
+          disabled={updateSettingsMutation.isPending}
+        >
           <Save className="h-4 w-4 mr-2" />
-          Save Changes
+          {updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
 
@@ -42,33 +119,32 @@ export default function Settings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
-                  <Input id="fullName" defaultValue="Usman Hardware" />
+                  <Input 
+                    id="fullName" 
+                    value={formData.profile.name}
+                    onChange={(e) => updateField('profile', 'name', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" defaultValue="admin@usmanhardware.pk" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={formData.profile.email}
+                    onChange={(e) => updateField('profile', 'email', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" defaultValue="+92 300 1234567" />
+                  <Input 
+                    id="phone" 
+                    value={formData.profile.phone}
+                    onChange={(e) => updateField('profile', 'phone', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
-                  <Input id="role" defaultValue="Administrator" disabled />
-                </div>
-              </div>
-              <Separator />
-              <div className="space-y-4">
-                <h4 className="font-medium">Security Preferences</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="twoFactor">Two-Factor Authentication</Label>
-                    <Switch id="twoFactor" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="sessionTimeout">Auto Logout (30 min)</Label>
-                    <Switch id="sessionTimeout" defaultChecked />
-                  </div>
+                  <Input id="role" value={formData.profile.role} disabled />
                 </div>
               </div>
             </CardContent>
@@ -87,24 +163,46 @@ export default function Settings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="storeName">Store Name</Label>
-                  <Input id="storeName" defaultValue="Usman Hardware" />
+                  <Input 
+                    id="storeName" 
+                    value={formData.store.name}
+                    onChange={(e) => updateField('store', 'name', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="currency">Currency</Label>
-                  <Input id="currency" defaultValue="PKR (Rs.)" />
+                  <Input 
+                    id="currency" 
+                    value={formData.store.currency}
+                    onChange={(e) => updateField('store', 'currency', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="taxRate">Tax Rate (%)</Label>
-                  <Input id="taxRate" type="number" defaultValue="17" />
+                  <Input 
+                    id="taxRate" 
+                    type="number" 
+                    value={formData.store.taxRate}
+                    onChange={(e) => updateField('store', 'taxRate', parseFloat(e.target.value))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lowStockThreshold">Low Stock Alert Threshold</Label>
-                  <Input id="lowStockThreshold" type="number" defaultValue="5" />
+                  <Input 
+                    id="lowStockThreshold" 
+                    type="number" 
+                    value={formData.store.lowStockThreshold}
+                    onChange={(e) => updateField('store', 'lowStockThreshold', parseInt(e.target.value))}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="storeAddress">Store Address</Label>
-                <Input id="storeAddress" defaultValue="Main Bazaar, Hafizabad, Punjab, Pakistan" />
+                <Input 
+                  id="storeAddress" 
+                  value={formData.store.address}
+                  onChange={(e) => updateField('store', 'address', e.target.value)}
+                />
               </div>
               <Separator />
               <div className="space-y-4">
@@ -112,11 +210,21 @@ export default function Settings() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="openTime">Opening Time</Label>
-                    <Input id="openTime" type="time" defaultValue="08:00" />
+                    <Input 
+                      id="openTime" 
+                      type="time" 
+                      value={formData.store.openTime}
+                      onChange={(e) => updateField('store', 'openTime', e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="closeTime">Closing Time</Label>
-                    <Input id="closeTime" type="time" defaultValue="20:00" />
+                    <Input 
+                      id="closeTime" 
+                      type="time" 
+                      value={formData.store.closeTime}
+                      onChange={(e) => updateField('store', 'closeTime', e.target.value)}
+                    />
                   </div>
                 </div>
               </div>
@@ -134,47 +242,39 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <h4 className="font-medium">Sales Notifications</h4>
+                <h4 className="font-medium">Business Notifications</h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="newOrder">New Order Alerts</Label>
-                    <Switch id="newOrder" defaultChecked />
+                    <Switch 
+                      id="newOrder" 
+                      checked={formData.notifications.newOrder}
+                      onCheckedChange={(checked) => updateField('notifications', 'newOrder', checked)}
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <Label htmlFor="dailyTarget">Daily Target Updates</Label>
-                    <Switch id="dailyTarget" defaultChecked />
+                    <Switch 
+                      id="dailyTarget" 
+                      checked={formData.notifications.dailyTarget}
+                      onCheckedChange={(checked) => updateField('notifications', 'dailyTarget', checked)}
+                    />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="paymentReceived">Payment Confirmations</Label>
-                    <Switch id="paymentReceived" defaultChecked />
-                  </div>
-                </div>
-              </div>
-              <Separator />
-              <div className="space-y-4">
-                <h4 className="font-medium">Inventory Notifications</h4>
-                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="lowStock">Low Stock Alerts</Label>
-                    <Switch id="lowStock" defaultChecked />
+                    <Switch 
+                      id="lowStock" 
+                      checked={formData.notifications.lowStock}
+                      onCheckedChange={(checked) => updateField('notifications', 'lowStock', checked)}
+                    />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="outOfStock">Out of Stock Alerts</Label>
-                    <Switch id="outOfStock" defaultChecked />
-                  </div>
-                </div>
-              </div>
-              <Separator />
-              <div className="space-y-4">
-                <h4 className="font-medium">Customer Notifications</h4>
-                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="paymentDue">Payment Due Reminders</Label>
-                    <Switch id="paymentDue" defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="followUp">Follow-up Reminders</Label>
-                    <Switch id="followUp" defaultChecked />
+                    <Switch 
+                      id="paymentDue" 
+                      checked={formData.notifications.paymentDue}
+                      onCheckedChange={(checked) => updateField('notifications', 'paymentDue', checked)}
+                    />
                   </div>
                 </div>
               </div>
@@ -196,25 +296,19 @@ export default function Settings() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="autoBackup">Automatic Daily Backup</Label>
-                    <Switch id="autoBackup" defaultChecked />
+                    <Switch 
+                      id="autoBackup" 
+                      checked={formData.system.autoBackup}
+                      onCheckedChange={(checked) => updateField('system', 'autoBackup', checked)}
+                    />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="dataRetention">30-day Data Retention</Label>
-                    <Switch id="dataRetention" defaultChecked />
-                  </div>
-                </div>
-              </div>
-              <Separator />
-              <div className="space-y-4">
-                <h4 className="font-medium">Performance</h4>
-                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="cacheEnabled">Enable Caching</Label>
-                    <Switch id="cacheEnabled" defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="analytics">Usage Analytics</Label>
-                    <Switch id="analytics" defaultChecked />
+                    <Switch 
+                      id="cacheEnabled" 
+                      checked={formData.system.cacheEnabled}
+                      onCheckedChange={(checked) => updateField('system', 'cacheEnabled', checked)}
+                    />
                   </div>
                 </div>
               </div>
@@ -224,11 +318,11 @@ export default function Settings() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="darkMode">Dark Mode</Label>
-                    <Switch id="darkMode" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="compactView">Compact View</Label>
-                    <Switch id="compactView" />
+                    <Switch 
+                      id="darkMode" 
+                      checked={formData.system.darkMode}
+                      onCheckedChange={(checked) => updateField('system', 'darkMode', checked)}
+                    />
                   </div>
                 </div>
               </div>

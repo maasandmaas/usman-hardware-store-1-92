@@ -58,7 +58,7 @@ export default function Quotations() {
         limit: itemsPerPage,
       };
 
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== "all") {
         params.status = statusFilter;
       }
 
@@ -270,7 +270,7 @@ export default function Quotations() {
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="sent">Sent</SelectItem>
                 <SelectItem value="accepted">Accepted</SelectItem>

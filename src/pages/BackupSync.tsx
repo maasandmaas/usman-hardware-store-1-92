@@ -6,15 +6,44 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Database, Cloud, Download, Upload, CheckCircle, AlertCircle, Clock, HardDrive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { backupApi } from "@/services/backupApi";
 
 const BackupSync = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: backupStatus, isLoading: statusLoading } = useQuery({
+    queryKey: ['backup-status'],
+    queryFn: () => backupApi.getStatus(),
+  });
+
+  const { data: backupHistory, isLoading: historyLoading } = useQuery({
+    queryKey: ['backup-history'],
+    queryFn: () => backupApi.getHistory(),
+  });
+
+  const createBackupMutation = useMutation({
+    mutationFn: () => backupApi.createBackup(),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['backup-status'] });
+      queryClient.invalidateQueries({ queryKey: ['backup-history'] });
+      toast({
+        title: "Backup Started",
+        description: data.message || "Your data backup has been initiated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to start backup. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleBackup = () => {
-    toast({
-      title: "Backup Started",
-      description: "Your data backup has been initiated successfully.",
-    });
+    createBackupMutation.mutate();
   };
 
   const handleSync = () => {
@@ -23,6 +52,34 @@ const BackupSync = () => {
       description: "Data synchronized with cloud storage.",
     });
   };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString();
+  };
+
+  const getStoragePercentage = () => {
+    if (!backupStatus?.data) return 0;
+    const used = parseFloat(backupStatus.data.storageUsed.replace(' GB', ''));
+    const limit = parseFloat(backupStatus.data.storageLimit.replace(' GB', ''));
+    return Math.round((used / limit) * 100);
+  };
+
+  if (statusLoading || historyLoading) {
+    return (
+      <div className="flex-1 p-4 md:p-6 space-y-6 min-h-screen bg-slate-50">
+        <div className="flex items-center gap-4 mb-8">
+          <SidebarTrigger />
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Backup & Sync</h1>
+            <p className="text-slate-600">Loading backup information...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const status = backupStatus?.data;
+  const history = backupHistory?.data.backups || [];
 
   return (
     <div className="flex-1 p-4 md:p-6 space-y-6 min-h-screen bg-slate-50">
@@ -48,21 +105,27 @@ const BackupSync = () => {
               <span className="text-sm text-slate-600">Last Backup</span>
               <Badge variant="outline" className="text-green-600 border-green-200">
                 <CheckCircle className="h-3 w-3 mr-1" />
-                Today, 2:30 AM
+                {status ? formatDate(status.lastBackup) : 'Never'}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-600">Backup Size</span>
-              <span className="text-sm font-medium">2.4 GB</span>
+              <span className="text-sm font-medium">{status?.backupSize || 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-600">Storage Used</span>
-              <span className="text-sm font-medium">15.6 GB / 50 GB</span>
+              <span className="text-sm font-medium">
+                {status ? `${status.storageUsed} / ${status.storageLimit}` : 'N/A'}
+              </span>
             </div>
-            <Progress value={31} className="w-full" />
-            <Button onClick={handleBackup} className="w-full">
+            <Progress value={getStoragePercentage()} className="w-full" />
+            <Button 
+              onClick={handleBackup} 
+              className="w-full"
+              disabled={createBackupMutation.isPending}
+            >
               <Upload className="h-4 w-4 mr-2" />
-              Create Backup Now
+              {createBackupMutation.isPending ? 'Creating Backup...' : 'Create Backup Now'}
             </Button>
           </CardContent>
         </Card>
@@ -80,16 +143,20 @@ const BackupSync = () => {
               <span className="text-sm text-slate-600">Sync Status</span>
               <Badge variant="outline" className="text-green-600 border-green-200">
                 <CheckCircle className="h-3 w-3 mr-1" />
-                Up to Date
+                {status?.syncStatus === 'up_to_date' ? 'Up to Date' : status?.syncStatus || 'Unknown'}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-600">Last Sync</span>
-              <span className="text-sm font-medium">5 minutes ago</span>
+              <span className="text-sm font-medium">
+                {status ? formatDate(status.lastSync) : 'Never'}
+              </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-600">Auto Sync</span>
-              <Badge className="text-green-600 bg-green-100 border-green-200">Enabled</Badge>
+              <span className="text-sm text-slate-600">Auto Backup</span>
+              <Badge className={status?.autoBackupEnabled ? "text-green-600 bg-green-100 border-green-200" : "text-red-600 bg-red-100 border-red-200"}>
+                {status?.autoBackupEnabled ? 'Enabled' : 'Disabled'}
+              </Badge>
             </div>
             <Button onClick={handleSync} variant="outline" className="w-full">
               <Download className="h-4 w-4 mr-2" />
@@ -108,30 +175,48 @@ const BackupSync = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {[
-                { date: "Today, 2:30 AM", size: "2.4 GB", status: "success" },
-                { date: "Yesterday, 2:30 AM", size: "2.3 GB", status: "success" },
-                { date: "Nov 26, 2:30 AM", size: "2.2 GB", status: "success" },
-                { date: "Nov 25, 2:30 AM", size: "2.1 GB", status: "warning" },
-              ].map((backup, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded border">
-                  <div className="flex items-center gap-3">
-                    {backup.status === "success" ? (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-yellow-600" />
-                    )}
-                    <div>
-                      <p className="font-medium text-sm">{backup.date}</p>
-                      <p className="text-xs text-slate-500">Size: {backup.size}</p>
+              {history.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  No backup history available
+                </div>
+              ) : (
+                history.slice(0, 10).map((backup, index) => (
+                  <div key={backup.id || index} className="flex items-center justify-between p-3 bg-slate-50 rounded border">
+                    <div className="flex items-center gap-3">
+                      {backup.status === "completed" ? (
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      ) : backup.status === "failed" ? (
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                      ) : (
+                        <Clock className="h-4 w-4 text-yellow-600" />
+                      )}
+                      <div>
+                        <p className="font-medium text-sm">{formatDate(backup.date)}</p>
+                        <p className="text-xs text-slate-500">Size: {backup.size}</p>
+                        <p className="text-xs text-slate-500">Type: {backup.type}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant="outline" 
+                        className={
+                          backup.status === "completed" ? "text-green-600 border-green-600" :
+                          backup.status === "failed" ? "text-red-600 border-red-600" :
+                          "text-yellow-600 border-yellow-600"
+                        }
+                      >
+                        {backup.status}
+                      </Badge>
+                      {backup.status === "completed" && (
+                        <Button size="sm" variant="outline">
+                          <Download className="h-3 w-3 mr-1" />
+                          Restore
+                        </Button>
+                      )}
                     </div>
                   </div>
-                  <Button size="sm" variant="outline">
-                    <Download className="h-3 w-3 mr-1" />
-                    Restore
-                  </Button>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
