@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Package, Search, Plus, Minus, Pin, PinOff } from "lucide-react";
+import { Package, Search, Plus, Minus, Pin, PinOff, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { salesApi, customersApi, productsApi } from "@/services/api";
 import { QuickCustomerForm } from "@/components/QuickCustomerForm";
@@ -23,7 +23,9 @@ interface CartItem {
 const Sales = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -55,16 +57,30 @@ const Sales = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await productsApi.getAll({ limit: 100 });
-      if (response.success) {
+      const response = await productsApi.getAll({ 
+        limit: 100,
+        status: 'active'
+      });
+      if (response.success && response.data) {
         const productsData = response.data?.products || response.data || [];
-        setProducts(Array.isArray(productsData) ? productsData : []);
+        const validProducts = Array.isArray(productsData) ? productsData : [];
+        setProducts(validProducts);
+        
+        // Extract unique categories from products
+        const uniqueCategories = [...new Set(
+          validProducts
+            .map(product => product.category)
+            .filter(category => category && typeof category === 'string')
+        )];
+        setCategories(uniqueCategories);
       } else {
         setProducts([]);
+        setCategories([]);
       }
     } catch (error) {
       console.error('Failed to fetch products:', error);
       setProducts([]);
+      setCategories([]);
       toast({
         title: "Error",
         description: "Failed to load products",
@@ -205,14 +221,18 @@ const Sales = () => {
     try {
       const saleData = {
         customerId: selectedCustomer?.id || null,
+        customerName: selectedCustomer?.name || "Walk-in Customer",
         items: cart.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
-          unitPrice: item.price
+          unitPrice: item.price,
+          totalPrice: item.price * item.quantity
         })),
+        totalAmount: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
         discount: 0,
         paymentMethod: paymentMethod,
         status: orderStatus,
+        saleDate: new Date().toISOString(),
         notes: selectedCustomer ? `Sale to ${selectedCustomer.name}` : "Walk-in customer sale"
       };
 
@@ -227,24 +247,31 @@ const Sales = () => {
         setPaymentMethod("cash");
         fetchTodaysOrders();
         toast({
-          title: "Sale Completed",
-          description: `Order has been processed with status: ${orderStatus}`,
+          title: "Sale Completed Successfully",
+          description: `Order has been processed with status: ${orderStatus}. Total: PKR ${saleData.totalAmount.toFixed(2)}`,
         });
+      } else {
+        throw new Error(response.message || 'Failed to process sale');
       }
     } catch (error) {
       console.error('Failed to process sale:', error);
       toast({
-        title: "Error",
-        description: "Failed to process sale",
+        title: "Sale Failed",
+        description: `Error: ${error.message || 'Unknown error occurred'}`,
         variant: "destructive"
       });
     }
   };
 
-  const filteredProducts = products.filter(product =>
-    product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product?.sku?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter products by category and search term
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product?.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = selectedCategory === null || product?.category === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
 
   // Sort products: pinned first, then by name
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -320,6 +347,38 @@ const Sales = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 h-10 bg-background border-input"
               />
+            </div>
+
+            {/* Dynamic Category Filter Bar */}
+            <div className="bg-muted/50 border border-border rounded-lg p-3 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Filter by Category:</span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant={selectedCategory === null ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => setSelectedCategory(null)}
+                >
+                  All Products ({products.length})
+                </Button>
+                {categories.map((category) => {
+                  const categoryCount = products.filter(p => p.category === category).length;
+                  return (
+                    <Button
+                      key={category}
+                      variant={selectedCategory === category ? "default" : "outline"}
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => setSelectedCategory(category)}
+                    >
+                      {category} ({categoryCount})
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

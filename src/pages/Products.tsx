@@ -7,6 +7,15 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Package, Search, Plus, Edit, Trash2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { productsApi, categoriesApi, unitsApi } from "@/services/api";
@@ -34,7 +43,7 @@ const Products = () => {
   });
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(1); // Reset to page 1 when search or filter changes
     fetchCategories();
     fetchUnits();
   }, [searchTerm, categoryFilter]);
@@ -143,6 +152,12 @@ const Products = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      fetchProducts(page);
     }
   };
 
@@ -277,6 +292,77 @@ const Products = () => {
   };
 
   const lowStockProducts = products.filter(product => product.stock <= product.minStock);
+
+  const renderPagination = () => {
+    if (pagination.totalPages <= 1) return null;
+
+    const { currentPage, totalPages } = pagination;
+    const pages = [];
+
+    // Always show first page
+    pages.push(1);
+
+    // Add ellipsis after first page if needed
+    if (currentPage > 3) {
+      pages.push('ellipsis-start');
+    }
+
+    // Add pages around current page
+    const startPage = Math.max(2, currentPage - 1);
+    const endPage = Math.min(totalPages - 1, currentPage + 1);
+
+    for (let i = startPage; i <= endPage; i++) {
+      if (!pages.includes(i)) {
+        pages.push(i);
+      }
+    }
+
+    // Add ellipsis before last page if needed
+    if (currentPage < totalPages - 2) {
+      pages.push('ellipsis-end');
+    }
+
+    // Always show last page (if different from first)
+    if (totalPages > 1 && !pages.includes(totalPages)) {
+      pages.push(totalPages);
+    }
+
+    return (
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious 
+              onClick={() => handlePageChange(currentPage - 1)}
+              className={currentPage <= 1 ? "pointer-events-none opacity-50 cursor-not-allowed" : "cursor-pointer"}
+            />
+          </PaginationItem>
+          
+          {pages.map((page, index) => (
+            <PaginationItem key={index}>
+              {page === 'ellipsis-start' || page === 'ellipsis-end' ? (
+                <PaginationEllipsis />
+              ) : (
+                <PaginationLink
+                  onClick={() => handlePageChange(page as number)}
+                  isActive={currentPage === page}
+                  className="cursor-pointer"
+                >
+                  {page}
+                </PaginationLink>
+              )}
+            </PaginationItem>
+          ))}
+          
+          <PaginationItem>
+            <PaginationNext 
+              onClick={() => handlePageChange(currentPage + 1)}
+              className={currentPage >= totalPages ? "pointer-events-none opacity-50 cursor-not-allowed" : "cursor-pointer"}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    );
+  };
 
   if (loading && products.length === 0) {
     return (
@@ -466,7 +552,14 @@ const Products = () => {
       {/* Products Grid */}
       <Card className="flex-1">
         <CardHeader>
-          <CardTitle>Product Inventory</CardTitle>
+          <CardTitle>
+            Product Inventory 
+            {pagination.totalItems > 0 && (
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                ({pagination.totalItems} total items)
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="pb-6">
           {loading ? (
@@ -478,59 +571,73 @@ const Products = () => {
               <div className="text-lg text-muted-foreground">No products found</div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
-              {products.map((product) => (
-                <Card key={product.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-foreground text-sm">{product.name}</h3>
-                          <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
+                {products.map((product) => (
+                  <Card key={product.id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-medium text-foreground text-sm">{product.name}</h3>
+                            <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+                          </div>
+                          <Badge className={`text-xs ${getCategoryColor(product.category)}`}>
+                            {product.category}
+                          </Badge>
                         </div>
-                        <Badge className={`text-xs ${getCategoryColor(product.category)}`}>
-                          {product.category}
-                        </Badge>
+                        
+                        <div className="flex justify-between items-center">
+                          <span className="text-lg font-bold text-green-600">PKR {product.price?.toLocaleString()}</span>
+                          <span className="text-xs text-muted-foreground">per {product.unit}</span>
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <Badge variant={product.stock <= product.minStock ? "destructive" : "default"}>
+                            {product.stock} {product.unit}s
+                          </Badge>
+                          {product.stock <= product.minStock && (
+                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="flex-1"
+                            onClick={() => openEditDialog(product)}
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteProduct(product.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg font-bold text-green-600">PKR {product.price?.toLocaleString()}</span>
-                        <span className="text-xs text-muted-foreground">per {product.unit}</span>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <Badge variant={product.stock <= product.minStock ? "destructive" : "default"}>
-                          {product.stock} {product.unit}s
-                        </Badge>
-                        {product.stock <= product.minStock && (
-                          <AlertTriangle className="h-4 w-4 text-red-500" />
-                        )}
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="flex-1"
-                          onClick={() => openEditDialog(product)}
-                        >
-                          <Edit className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="text-red-600 hover:text-red-700"
-                          onClick={() => handleDeleteProduct(product.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {pagination.totalPages > 1 && (
+                <div className="mt-6 flex justify-center">
+                  {renderPagination()}
+                </div>
+              )}
+
+              {/* Page info */}
+              <div className="mt-4 text-center text-sm text-muted-foreground">
+                Showing {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} to {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of {pagination.totalItems} products
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

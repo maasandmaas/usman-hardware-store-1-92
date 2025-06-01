@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Package, Search, Plus, AlertTriangle, TrendingUp, DollarSign, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { inventoryApi, productsApi, categoriesApi, unitsApi } from "@/services/api";
@@ -25,6 +26,10 @@ const Inventory = () => {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isStockAdjustmentOpen, setIsStockAdjustmentOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage] = useState(12);
   const [summary, setSummary] = useState({
     totalProducts: 0,
     totalValue: 0,
@@ -40,32 +45,67 @@ const Inventory = () => {
   }, []);
 
   useEffect(() => {
+    setCurrentPage(1);
     fetchInventory();
   }, [searchTerm, categoryFilter, statusFilter]);
+
+  useEffect(() => {
+    fetchInventory();
+  }, [currentPage]);
 
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const params: any = {};
+      const params: any = {
+        page: currentPage,
+        limit: itemsPerPage
+      };
       
       if (searchTerm) params.search = searchTerm;
       if (categoryFilter !== 'all') params.category = categoryFilter;
       if (statusFilter === 'low') params.lowStock = true;
       if (statusFilter === 'out') params.outOfStock = true;
 
+      console.log('Fetching inventory with params:', params);
       const response = await inventoryApi.getAll(params);
+      console.log('Inventory API response:', response);
       
       if (response.success) {
         const inventoryData = response.data?.inventory || response.data || [];
-        console.log('Inventory response:', response.data);
+        console.log('Inventory data:', inventoryData);
         
         const inventoryArray = Array.isArray(inventoryData) ? inventoryData : [];
         setInventory(inventoryArray);
         
+        // Handle pagination metadata
+        if (response.data?.pagination) {
+          console.log('Using pagination metadata:', response.data.pagination);
+          setTotalPages(response.data.pagination.totalPages || 1);
+          setTotalItems(response.data.pagination.totalItems || 0);
+        } else if (response.data?.totalPages) {
+          console.log('Using totalPages from response:', response.data.totalPages);
+          setTotalPages(response.data.totalPages);
+          setTotalItems(response.data.totalItems || 0);
+        } else {
+          // Fallback - calculate pagination based on array length
+          console.log('Fallback pagination calculation');
+          const totalItemsCount = inventoryArray.length;
+          const calculatedPages = Math.ceil(totalItemsCount / itemsPerPage);
+          setTotalPages(Math.max(1, calculatedPages));
+          setTotalItems(totalItemsCount);
+        }
+        
+        console.log('Final pagination state:', { 
+          currentPage, 
+          totalPages: response.data?.pagination?.totalPages || response.data?.totalPages || Math.ceil(inventoryArray.length / itemsPerPage),
+          totalItems: response.data?.pagination?.totalItems || response.data?.totalItems || inventoryArray.length,
+          inventoryLength: inventoryArray.length 
+        });
+        
         if (response.data?.summary) {
           setSummary(response.data.summary);
         } else {
-          const totalProducts = inventoryArray.length;
+          const totalProducts = response.data?.pagination?.totalItems || response.data?.totalItems || inventoryArray.length;
           const totalValue = inventoryArray.reduce((sum, item) => sum + (item.value || 0), 0);
           const lowStockItems = inventoryArray.filter(item => (item.currentStock || 0) <= (item.minStock || 0) && (item.currentStock || 0) > 0).length;
           const outOfStockItems = inventoryArray.filter(item => (item.currentStock || 0) === 0).length;
@@ -235,27 +275,106 @@ const Inventory = () => {
     }
   };
 
-  const filteredInventory = inventory.filter(item => {
-    if (!item) return false;
-    
-    const matchesSearch = searchTerm === "" || 
-                         item.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.sku?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
-    
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'low' && (item.currentStock || 0) <= (item.minStock || 0) && (item.currentStock || 0) > 0) ||
-                         (statusFilter === 'out' && (item.currentStock || 0) === 0);
-    
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
   const getStockStatus = (currentStock: number, minStock: number) => {
     if (currentStock === 0) return { status: 'out', color: 'bg-red-500 text-white' };
     if (currentStock <= minStock) return { status: 'low', color: 'bg-orange-500 text-white' };
     return { status: 'adequate', color: 'bg-green-500 text-white' };
+  };
+
+  const renderPagination = () => {
+    console.log('Rendering pagination with:', { totalPages, currentPage, totalItems });
+    
+    if (totalPages <= 1) {
+      console.log('Not showing pagination - total pages:', totalPages);
+      return null;
+    }
+
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if total is small
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+      
+      // Calculate range around current page
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(totalPages - 1, currentPage + 1);
+      
+      // Adjust range if too close to start or end
+      if (currentPage <= 3) {
+        end = Math.min(totalPages - 1, 4);
+      }
+      if (currentPage >= totalPages - 2) {
+        start = Math.max(2, totalPages - 3);
+      }
+      
+      // Add ellipsis after first page if needed
+      if (start > 2) {
+        pages.push('ellipsis-start');
+      }
+      
+      // Add pages in range
+      for (let i = start; i <= end; i++) {
+        if (!pages.includes(i)) {
+          pages.push(i);
+        }
+      }
+      
+      // Add ellipsis before last page if needed
+      if (end < totalPages - 1) {
+        pages.push('ellipsis-end');
+      }
+      
+      // Always show last page (if different from first)
+      if (totalPages > 1 && !pages.includes(totalPages)) {
+        pages.push(totalPages);
+      }
+    }
+
+    console.log('Pagination pages to render:', pages);
+
+    return (
+      <div className="flex justify-center mt-6">
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+                className={currentPage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              />
+            </PaginationItem>
+            
+            {pages.map((page, index) => (
+              <PaginationItem key={index}>
+                {page === 'ellipsis-start' || page === 'ellipsis-end' ? (
+                  <PaginationEllipsis />
+                ) : (
+                  <PaginationLink
+                    onClick={() => setCurrentPage(page as number)}
+                    isActive={currentPage === page}
+                    className="cursor-pointer"
+                  >
+                    {page}
+                  </PaginationLink>
+                )}
+              </PaginationItem>
+            ))}
+            
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
+                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
+    );
   };
 
   if (loading) {
@@ -377,87 +496,95 @@ const Inventory = () => {
 
           {/* Inventory Grid */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Inventory Items</CardTitle>
+              <div className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} products
+              </div>
             </CardHeader>
             <CardContent>
-              {filteredInventory.length === 0 ? (
+              {inventory.length === 0 ? (
                 <div className="flex items-center justify-center h-32">
                   <p className="text-muted-foreground">No inventory items found</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredInventory.map((item) => {
-                    const stockStatus = getStockStatus(item.currentStock || 0, item.minStock || 0);
-                    return (
-                      <Card key={item.productId || item.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-4">
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <h4 className="font-medium text-foreground">{item.productName || item.name}</h4>
-                                <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
-                                <p className="text-sm text-muted-foreground">Category: {item.category}</p>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {inventory.map((item) => {
+                      const stockStatus = getStockStatus(item.currentStock || 0, item.minStock || 0);
+                      return (
+                        <Card key={item.productId || item.id} className="hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-foreground">{item.productName || item.name}</h4>
+                                  <p className="text-sm text-muted-foreground">SKU: {item.sku}</p>
+                                  <p className="text-sm text-muted-foreground">Category: {item.category}</p>
+                                </div>
+                                <Badge className={`text-xs ${stockStatus.color}`}>
+                                  {stockStatus.status}
+                                </Badge>
                               </div>
-                              <Badge className={`text-xs ${stockStatus.color}`}>
-                                {stockStatus.status}
-                              </Badge>
-                            </div>
 
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Current Stock:</span>
-                                <span className="font-medium text-foreground">{item.currentStock || 0} {item.unit}</span>
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Current Stock:</span>
+                                  <span className="font-medium text-foreground">{item.currentStock || 0} {item.unit}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Min Stock:</span>
+                                  <span className="text-foreground">{item.minStock || 0} {item.unit}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Value:</span>
+                                  <span className="font-medium text-green-600">PKR {item.value?.toLocaleString() || '0'}</span>
+                                </div>
                               </div>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Min Stock:</span>
-                                <span className="text-foreground">{item.minStock || 0} {item.unit}</span>
-                              </div>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Value:</span>
-                                <span className="font-medium text-green-600">PKR {item.value?.toLocaleString() || '0'}</span>
-                              </div>
-                            </div>
 
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => {
-                                  setSelectedProduct(item);
-                                  setIsEditDialogOpen(true);
-                                }}
-                              >
-                                <Edit className="h-3 w-3 mr-1" />
-                                Edit
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedProduct(item);
-                                  setIsStockAdjustmentOpen(true);
-                                }}
-                              >
-                                <TrendingUp className="h-3 w-3 mr-1" />
-                                Adjust
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 hover:text-red-700"
-                                onClick={() => handleDeleteProduct(item.productId || item.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1"
+                                  onClick={() => {
+                                    setSelectedProduct(item);
+                                    setIsEditDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedProduct(item);
+                                    setIsStockAdjustmentOpen(true);
+                                  }}
+                                >
+                                  <TrendingUp className="h-3 w-3 mr-1" />
+                                  Adjust
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => handleDeleteProduct(item.productId || item.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Pagination */}
+                  {renderPagination()}
+                </>
               )}
             </CardContent>
           </Card>

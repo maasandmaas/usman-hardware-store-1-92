@@ -292,6 +292,7 @@ export const inventoryApi = {
   getAll: (params?: {
     page?: number;
     limit?: number;
+    search?: string;
     category?: string;
     lowStock?: boolean;
     outOfStock?: boolean;
@@ -430,5 +431,37 @@ export const purchaseOrdersApi = {
     apiRequest<ApiResponse<any>>(`/purchase-orders/${id}/receive`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    }),
+};
+
+// Quotations API
+export const quotationsApi = {
+  getAll: (params?: {
+    page?: number;
+    limit?: number;
+    customerId?: number;
+    status?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) queryParams.append(key, value.toString());
+      });
+    }
+    const query = queryParams.toString();
+    return apiRequest<any>(`/quotations${query ? `?${query}` : ''}`);
+  },
+  
+  getById: (id: number) => apiRequest<ApiResponse<any>>(`/quotations/${id}`),
+  
+  create: (quotation: any) =>
+    apiRequest<ApiResponse<any>>('/quotations', {
+      method: 'POST',
+      body: JSON.stringify(quotation),
+    }),
+  
+  convertToSale: (id: number) =>
+    apiRequest<ApiResponse<any>>(`/quotations/${id}/convert-to-sale`, {
+      method: 'PUT',
     }),
 };
