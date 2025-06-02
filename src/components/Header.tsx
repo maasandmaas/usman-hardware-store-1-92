@@ -1,4 +1,4 @@
-import { Bell, Package, Search, User, Menu } from "lucide-react";
+import { Bell, Package, User, Menu, Home, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,11 +18,14 @@ import { notificationsApi } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLocation } from "react-router-dom";
 
 export function Header() {
   const { toast } = useToast();
   const { toggleSidebar } = useSidebar();
   const isMobile = useIsMobile();
+  const location = useLocation();
+  
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
@@ -129,6 +132,23 @@ export function Header() {
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
+  // Breadcrumb generation based on current route
+  const getBreadcrumbs = () => {
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    const breadcrumbs = [{ name: 'Dashboard', path: '/', icon: Home }];
+    
+    let currentPath = '';
+    pathSegments.forEach(segment => {
+      currentPath += `/${segment}`;
+      const name = segment.charAt(0).toUpperCase() + segment.slice(1).replace('-', ' ');
+      breadcrumbs.push({ name, path: currentPath });
+    });
+    
+    return breadcrumbs;
+  };
+
+  const breadcrumbs = getBreadcrumbs();
+
   return (
     <header className="h-16 border-b border-border bg-background sticky top-0 z-50">
       <div className="flex h-full items-center justify-between px-4 md:px-6">
@@ -145,15 +165,23 @@ export function Header() {
             </Button>
           )}
           
-          {/* Search Bar - Hidden on mobile */}
-          <div className="hidden md:flex items-center gap-4 flex-1 max-w-md">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input 
-                placeholder="Search products, customers..." 
-                className="pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground"
-              />
-            </div>
+          {/* Breadcrumb Navigation - Hidden on mobile */}
+          <div className="hidden md:flex items-center gap-2 flex-1">
+            <nav className="flex items-center space-x-1 text-sm text-muted-foreground">
+              {breadcrumbs.map((breadcrumb, index) => (
+                <div key={breadcrumb.path} className="flex items-center">
+                  {index === 0 && breadcrumb.icon && (
+                    <breadcrumb.icon className="h-4 w-4 mr-1" />
+                  )}
+                  <span className={index === breadcrumbs.length - 1 ? "text-foreground font-medium" : "hover:text-foreground cursor-pointer"}>
+                    {breadcrumb.name}
+                  </span>
+                  {index < breadcrumbs.length - 1 && (
+                    <ChevronRight className="h-4 w-4 mx-1" />
+                  )}
+                </div>
+              ))}
+            </nav>
           </div>
         </div>
         
