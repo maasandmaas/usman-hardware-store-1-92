@@ -135,7 +135,9 @@ export function Header() {
   // Breadcrumb generation based on current route
   const getBreadcrumbs = () => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
-    const breadcrumbs = [{ name: 'Dashboard', path: '/', icon: Home }];
+    const breadcrumbs: Array<{ name: string; path: string; icon?: React.ForwardRefExoticComponent<any> }> = [
+      { name: 'Dashboard', path: '/', icon: Home }
+    ];
     
     let currentPath = '';
     pathSegments.forEach(segment => {
