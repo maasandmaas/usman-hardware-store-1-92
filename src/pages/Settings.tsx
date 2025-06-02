@@ -54,7 +54,7 @@ export default function Settings() {
   };
 
   const updateField = (section: keyof SettingsData, field: string, value: any) => {
-    if (formData) {
+    if (formData && formData[section]) {
       setFormData({
         ...formData,
         [section]: {
@@ -65,7 +65,7 @@ export default function Settings() {
     }
   };
 
-  if (isLoading || !formData) {
+  if (isLoading || !formData || !formData.profile || !formData.store || !formData.notifications || !formData.system) {
     return (
       <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
         <div className="flex items-center gap-4">
@@ -121,7 +121,7 @@ export default function Settings() {
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input 
                     id="fullName" 
-                    value={formData.profile.name}
+                    value={formData.profile?.name || ''}
                     onChange={(e) => updateField('profile', 'name', e.target.value)}
                   />
                 </div>
@@ -130,7 +130,7 @@ export default function Settings() {
                   <Input 
                     id="email" 
                     type="email" 
-                    value={formData.profile.email}
+                    value={formData.profile?.email || ''}
                     onChange={(e) => updateField('profile', 'email', e.target.value)}
                   />
                 </div>
@@ -138,13 +138,13 @@ export default function Settings() {
                   <Label htmlFor="phone">Phone</Label>
                   <Input 
                     id="phone" 
-                    value={formData.profile.phone}
+                    value={formData.profile?.phone || ''}
                     onChange={(e) => updateField('profile', 'phone', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
-                  <Input id="role" value={formData.profile.role} disabled />
+                  <Input id="role" value={formData.profile?.role || ''} disabled />
                 </div>
               </div>
             </CardContent>
@@ -165,7 +165,7 @@ export default function Settings() {
                   <Label htmlFor="storeName">Store Name</Label>
                   <Input 
                     id="storeName" 
-                    value={formData.store.name}
+                    value={formData.store?.name || ''}
                     onChange={(e) => updateField('store', 'name', e.target.value)}
                   />
                 </div>
@@ -173,7 +173,7 @@ export default function Settings() {
                   <Label htmlFor="currency">Currency</Label>
                   <Input 
                     id="currency" 
-                    value={formData.store.currency}
+                    value={formData.store?.currency || ''}
                     onChange={(e) => updateField('store', 'currency', e.target.value)}
                   />
                 </div>
@@ -182,8 +182,8 @@ export default function Settings() {
                   <Input 
                     id="taxRate" 
                     type="number" 
-                    value={formData.store.taxRate}
-                    onChange={(e) => updateField('store', 'taxRate', parseFloat(e.target.value))}
+                    value={formData.store?.taxRate || 0}
+                    onChange={(e) => updateField('store', 'taxRate', parseFloat(e.target.value) || 0)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -191,8 +191,8 @@ export default function Settings() {
                   <Input 
                     id="lowStockThreshold" 
                     type="number" 
-                    value={formData.store.lowStockThreshold}
-                    onChange={(e) => updateField('store', 'lowStockThreshold', parseInt(e.target.value))}
+                    value={formData.store?.lowStockThreshold || 0}
+                    onChange={(e) => updateField('store', 'lowStockThreshold', parseInt(e.target.value) || 0)}
                   />
                 </div>
               </div>
@@ -200,7 +200,7 @@ export default function Settings() {
                 <Label htmlFor="storeAddress">Store Address</Label>
                 <Input 
                   id="storeAddress" 
-                  value={formData.store.address}
+                  value={formData.store?.address || ''}
                   onChange={(e) => updateField('store', 'address', e.target.value)}
                 />
               </div>
@@ -213,7 +213,7 @@ export default function Settings() {
                     <Input 
                       id="openTime" 
                       type="time" 
-                      value={formData.store.openTime}
+                      value={formData.store?.openTime || ''}
                       onChange={(e) => updateField('store', 'openTime', e.target.value)}
                     />
                   </div>
@@ -222,7 +222,7 @@ export default function Settings() {
                     <Input 
                       id="closeTime" 
                       type="time" 
-                      value={formData.store.closeTime}
+                      value={formData.store?.closeTime || ''}
                       onChange={(e) => updateField('store', 'closeTime', e.target.value)}
                     />
                   </div>
@@ -248,7 +248,7 @@ export default function Settings() {
                     <Label htmlFor="newOrder">New Order Alerts</Label>
                     <Switch 
                       id="newOrder" 
-                      checked={formData.notifications.newOrder}
+                      checked={formData.notifications?.newOrder || false}
                       onCheckedChange={(checked) => updateField('notifications', 'newOrder', checked)}
                     />
                   </div>
@@ -256,7 +256,7 @@ export default function Settings() {
                     <Label htmlFor="dailyTarget">Daily Target Updates</Label>
                     <Switch 
                       id="dailyTarget" 
-                      checked={formData.notifications.dailyTarget}
+                      checked={formData.notifications?.dailyTarget || false}
                       onCheckedChange={(checked) => updateField('notifications', 'dailyTarget', checked)}
                     />
                   </div>
@@ -264,7 +264,7 @@ export default function Settings() {
                     <Label htmlFor="lowStock">Low Stock Alerts</Label>
                     <Switch 
                       id="lowStock" 
-                      checked={formData.notifications.lowStock}
+                      checked={formData.notifications?.lowStock || false}
                       onCheckedChange={(checked) => updateField('notifications', 'lowStock', checked)}
                     />
                   </div>
@@ -272,7 +272,7 @@ export default function Settings() {
                     <Label htmlFor="paymentDue">Payment Due Reminders</Label>
                     <Switch 
                       id="paymentDue" 
-                      checked={formData.notifications.paymentDue}
+                      checked={formData.notifications?.paymentDue || false}
                       onCheckedChange={(checked) => updateField('notifications', 'paymentDue', checked)}
                     />
                   </div>
@@ -298,7 +298,7 @@ export default function Settings() {
                     <Label htmlFor="autoBackup">Automatic Daily Backup</Label>
                     <Switch 
                       id="autoBackup" 
-                      checked={formData.system.autoBackup}
+                      checked={formData.system?.autoBackup || false}
                       onCheckedChange={(checked) => updateField('system', 'autoBackup', checked)}
                     />
                   </div>
@@ -306,7 +306,7 @@ export default function Settings() {
                     <Label htmlFor="cacheEnabled">Enable Caching</Label>
                     <Switch 
                       id="cacheEnabled" 
-                      checked={formData.system.cacheEnabled}
+                      checked={formData.system?.cacheEnabled || false}
                       onCheckedChange={(checked) => updateField('system', 'cacheEnabled', checked)}
                     />
                   </div>
@@ -320,7 +320,7 @@ export default function Settings() {
                     <Label htmlFor="darkMode">Dark Mode</Label>
                     <Switch 
                       id="darkMode" 
-                      checked={formData.system.darkMode}
+                      checked={formData.system?.darkMode || false}
                       onCheckedChange={(checked) => updateField('system', 'darkMode', checked)}
                     />
                   </div>
