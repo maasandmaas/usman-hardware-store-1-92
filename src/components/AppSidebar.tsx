@@ -32,7 +32,8 @@ import {
   UserCheck,
   Database,
   Receipt,
-  PieChart
+  PieChart,
+  ShoppingBag
 } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
@@ -63,6 +64,11 @@ const mainItems: MenuItem[] = [
     title: "Sales (POS)",
     url: "/sales",
     icon: ShoppingCart,
+  },
+  {
+    title: "Orders",
+    url: "/orders",
+    icon: ShoppingBag,
   },
   {
     title: "Customers",

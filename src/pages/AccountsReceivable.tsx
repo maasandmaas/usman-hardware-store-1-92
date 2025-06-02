@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,105 +8,168 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreditCard, Search, Phone, AlertCircle, DollarSign, Calendar, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { financeApi, type AccountsReceivable as AccountsReceivableType } from "@/services/financeApi";
 
 const AccountsReceivable = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [receivables, setReceivables] = useState<AccountsReceivableType[]>([]);
+  const [summary, setSummary] = useState({
+    totalReceivables: 0,
+    overdueAmount: 0,
+    overdueCount: 0
+  });
+  const [loading, setLoading] = useState(true);
 
-  const receivables = [
-    {
-      id: 1,
-      customer: "Ahmad Furniture",
-      phone: "0300-1234567",
-      invoiceNo: "INV-2024-045",
-      amount: 15000,
-      dueDate: "2024-11-30",
-      daysPastDue: 0,
-      status: "due_today"
-    },
-    {
-      id: 2,
-      customer: "Hassan Carpentry",
-      phone: "0301-2345678",
-      invoiceNo: "INV-2024-044",
-      amount: 8500,
-      dueDate: "2024-11-25",
-      daysPastDue: 5,
-      status: "overdue"
-    },
-    {
-      id: 3,
-      customer: "Ali Hardware",
-      phone: "0302-3456789",
-      invoiceNo: "INV-2024-043",
-      amount: 25000,
-      dueDate: "2024-12-05",
-      daysPastDue: -5,
-      status: "upcoming"
-    },
-    {
-      id: 4,
-      customer: "Malik Steel Works",
-      phone: "0303-4567890",
-      invoiceNo: "INV-2024-042",
-      amount: 12500,
-      dueDate: "2024-11-20",
-      daysPastDue: 10,
-      status: "overdue"
+  useEffect(() => {
+    fetchReceivables();
+  }, [filterStatus]);
+
+  const fetchReceivables = async () => {
+    try {
+      setLoading(true);
+      const params: any = { limit: 50 };
+      
+      if (filterStatus === "overdue") {
+        params.overdue = true;
+      }
+
+      const response = await financeApi.getAccountsReceivable(params);
+      
+      if (response.success) {
+        // Remove duplicates based on invoice number and customer ID combination
+        const uniqueReceivables = response.data.receivables.filter((item, index, self) => 
+          index === self.findIndex((r) => 
+            r.invoiceNumber === item.invoiceNumber && 
+            r.customerId === item.customerId &&
+            r.balance > 0 // Only include items with outstanding balance
+          )
+        );
+        
+        console.log('Original receivables:', response.data.receivables.length);
+        console.log('Unique receivables after deduplication:', uniqueReceivables.length);
+        
+        setReceivables(uniqueReceivables);
+        setSummary(response.data.summary);
+      }
+    } catch (error) {
+      console.error('Error fetching receivables:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load accounts receivable data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const handleCallCustomer = (customer) => {
+  const handleCallCustomer = (customer: AccountsReceivableType) => {
     toast({
       title: "Calling Customer",
-      description: `Initiating call to ${customer.customer}`,
+      description: `Initiating call to ${customer.customerName}`,
     });
   };
 
-  const handleMarkPaid = (customer) => {
-    toast({
-      title: "Payment Recorded",
-      description: `PKR ${customer.amount.toLocaleString()} payment marked as received from ${customer.customer}`,
-    });
+  const handleMarkPaid = async (customer: AccountsReceivableType) => {
+    try {
+      console.log('Marking payment for customer:', customer.customerId, 'Invoice:', customer.invoiceNumber);
+      
+      const response = await financeApi.recordPayment({
+        customerId: customer.customerId,
+        amount: customer.balance,
+        paymentMethod: 'cash',
+        reference: `Payment for ${customer.invoiceNumber}`,
+        notes: `Full payment for invoice ${customer.invoiceNumber}`
+      });
+
+      if (response.success) {
+        toast({
+          title: "Payment Recorded",
+          description: `Rs. ${customer.balance.toLocaleString()} payment marked as received from ${customer.customerName}`,
+        });
+        
+        // Remove the specific item from the local state instead of refetching
+        setReceivables(prev => prev.filter(item => 
+          !(item.customerId === customer.customerId && item.invoiceNumber === customer.invoiceNumber)
+        ));
+        
+        // Update summary
+        setSummary(prev => ({
+          ...prev,
+          totalReceivables: prev.totalReceivables - customer.balance,
+          overdueAmount: customer.daysOverdue > 0 ? prev.overdueAmount - customer.balance : prev.overdueAmount,
+          overdueCount: customer.daysOverdue > 0 ? prev.overdueCount - 1 : prev.overdueCount
+        }));
+      }
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to record payment",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredReceivables = receivables.filter(item => {
-    const matchesSearch = item.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.phone.includes(searchTerm) ||
-                         item.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = item.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (filterStatus === "all") return matchesSearch;
-    return matchesSearch && item.status === filterStatus;
+    if (filterStatus === "overdue") return matchesSearch && item.daysOverdue > 0;
+    if (filterStatus === "due_today") {
+      const today = new Date().toISOString().split('T')[0];
+      return matchesSearch && item.dueDate === today;
+    }
+    if (filterStatus === "upcoming") return matchesSearch && item.daysOverdue < 0;
+    
+    return matchesSearch;
   });
 
-  const totalOverdue = receivables
-    .filter(item => item.status === "overdue")
-    .reduce((sum, item) => sum + item.amount, 0);
-
   const totalDueToday = receivables
-    .filter(item => item.status === "due_today")
-    .reduce((sum, item) => sum + item.amount, 0);
+    .filter(item => {
+      const today = new Date().toISOString().split('T')[0];
+      return item.dueDate === today;
+    })
+    .reduce((sum, item) => sum + item.balance, 0);
 
-  const getStatusBadge = (status, daysPastDue) => {
-    switch (status) {
-      case "overdue":
-        return <Badge className="bg-red-100 text-red-700 border-red-200">
-          <AlertCircle className="h-3 w-3 mr-1" />
-          {daysPastDue} days overdue
-        </Badge>;
-      case "due_today":
-        return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
-          Due Today
-        </Badge>;
-      case "upcoming":
-        return <Badge className="bg-green-100 text-green-700 border-green-200">
-          Due in {Math.abs(daysPastDue)} days
-        </Badge>;
-      default:
-        return null;
+  const getStatusBadge = (item: AccountsReceivableType) => {
+    if (item.daysOverdue > 0) {
+      return <Badge className="bg-red-100 text-red-700 border-red-200">
+        <AlertCircle className="h-3 w-3 mr-1" />
+        {item.daysOverdue} days overdue
+      </Badge>;
     }
+    
+    const today = new Date().toISOString().split('T')[0];
+    if (item.dueDate === today) {
+      return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
+        Due Today
+      </Badge>;
+    }
+    
+    if (item.daysOverdue < 0) {
+      return <Badge className="bg-green-100 text-green-700 border-green-200">
+        Due in {Math.abs(item.daysOverdue)} days
+      </Badge>;
+    }
+
+    return <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+      {item.status}
+    </Badge>;
   };
+
+  if (loading) {
+    return (
+      <div className="flex-1 p-4 md:p-6 space-y-6 min-h-screen bg-slate-50">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-500">Loading accounts receivable...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 p-4 md:p-6 space-y-6 min-h-screen bg-slate-50">
@@ -128,7 +191,7 @@ const AccountsReceivable = () => {
               </div>
               <div>
                 <p className="text-sm text-slate-600">Total Overdue</p>
-                <p className="text-2xl font-bold text-red-600">PKR {totalOverdue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-red-600">Rs. {summary.overdueAmount.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -142,7 +205,7 @@ const AccountsReceivable = () => {
               </div>
               <div>
                 <p className="text-sm text-slate-600">Due Today</p>
-                <p className="text-2xl font-bold text-yellow-600">PKR {totalDueToday.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-yellow-600">Rs. {totalDueToday.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -156,7 +219,7 @@ const AccountsReceivable = () => {
               </div>
               <div>
                 <p className="text-sm text-slate-600">Total Outstanding</p>
-                <p className="text-2xl font-bold text-blue-600">PKR {receivables.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-blue-600">Rs. {summary.totalReceivables.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -198,19 +261,20 @@ const AccountsReceivable = () => {
         <CardContent>
           <div className="space-y-4 custom-scrollbar max-h-96 overflow-y-auto">
             {filteredReceivables.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
+              <div key={`${item.customerId}-${item.invoiceNumber}-${item.id}`} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
                 <div className="flex items-center gap-4">
                   <div>
-                    <h3 className="font-medium text-slate-900">{item.customer}</h3>
-                    <p className="text-sm text-slate-600">Invoice: {item.invoiceNo}</p>
+                    <h3 className="font-medium text-slate-900">{item.customerName}</h3>
+                    <p className="text-sm text-slate-600">Invoice: {item.invoiceNumber}</p>
                     <p className="text-xs text-slate-500">Due: {new Date(item.dueDate).toLocaleDateString()}</p>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-lg font-bold text-slate-900">PKR {item.amount.toLocaleString()}</p>
-                    {getStatusBadge(item.status, item.daysPastDue)}
+                    <p className="text-lg font-bold text-slate-900">Rs. {item.balance.toLocaleString()}</p>
+                    <p className="text-xs text-slate-500">Paid: Rs. {item.paidAmount.toLocaleString()}</p>
+                    {getStatusBadge(item)}
                   </div>
                   
                   <div className="flex gap-2">
@@ -235,6 +299,11 @@ const AccountsReceivable = () => {
                 </div>
               </div>
             ))}
+            {filteredReceivables.length === 0 && (
+              <div className="text-center py-8 text-slate-500">
+                No receivables found matching your criteria.
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

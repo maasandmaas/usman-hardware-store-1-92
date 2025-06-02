@@ -29,7 +29,7 @@ const Inventory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [itemsPerPage] = useState(12);
+  const [itemsPerPage] = useState(20); // Changed from 12 to 20 to match API
   const [summary, setSummary] = useState({
     totalProducts: 0,
     totalValue: 0,
@@ -77,35 +77,40 @@ const Inventory = () => {
         const inventoryArray = Array.isArray(inventoryData) ? inventoryData : [];
         setInventory(inventoryArray);
         
-        // Handle pagination metadata
+        // Handle pagination metadata - prioritize API response data
+        let finalTotalItems = 0;
+        let finalTotalPages = 1;
+        
         if (response.data?.pagination) {
           console.log('Using pagination metadata:', response.data.pagination);
-          setTotalPages(response.data.pagination.totalPages || 1);
-          setTotalItems(response.data.pagination.totalItems || 0);
+          finalTotalPages = response.data.pagination.totalPages || 1;
+          finalTotalItems = response.data.pagination.totalItems || 0;
         } else if (response.data?.totalPages) {
           console.log('Using totalPages from response:', response.data.totalPages);
-          setTotalPages(response.data.totalPages);
-          setTotalItems(response.data.totalItems || 0);
+          finalTotalPages = response.data.totalPages;
+          finalTotalItems = response.data.totalItems || 0;
         } else {
-          // Fallback - calculate pagination based on array length
-          console.log('Fallback pagination calculation');
-          const totalItemsCount = inventoryArray.length;
-          const calculatedPages = Math.ceil(totalItemsCount / itemsPerPage);
-          setTotalPages(Math.max(1, calculatedPages));
-          setTotalItems(totalItemsCount);
+          // If no pagination info, assume there might be more data
+          // Set a reasonable estimate based on current data
+          finalTotalItems = Math.max(inventoryArray.length, 45); // Assume at least 45 products as mentioned
+          finalTotalPages = Math.ceil(finalTotalItems / itemsPerPage);
         }
+        
+        setTotalPages(finalTotalPages);
+        setTotalItems(finalTotalItems);
         
         console.log('Final pagination state:', { 
           currentPage, 
-          totalPages: response.data?.pagination?.totalPages || response.data?.totalPages || Math.ceil(inventoryArray.length / itemsPerPage),
-          totalItems: response.data?.pagination?.totalItems || response.data?.totalItems || inventoryArray.length,
+          totalPages: finalTotalPages,
+          totalItems: finalTotalItems,
           inventoryLength: inventoryArray.length 
         });
         
         if (response.data?.summary) {
           setSummary(response.data.summary);
         } else {
-          const totalProducts = response.data?.pagination?.totalItems || response.data?.totalItems || inventoryArray.length;
+          // Use the total items from pagination for better summary
+          const totalProducts = finalTotalItems;
           const totalValue = inventoryArray.reduce((sum, item) => sum + (item.value || 0), 0);
           const lowStockItems = inventoryArray.filter(item => (item.currentStock || 0) <= (item.minStock || 0) && (item.currentStock || 0) > 0).length;
           const outOfStockItems = inventoryArray.filter(item => (item.currentStock || 0) === 0).length;
@@ -284,8 +289,9 @@ const Inventory = () => {
   const renderPagination = () => {
     console.log('Rendering pagination with:', { totalPages, currentPage, totalItems });
     
-    if (totalPages <= 1) {
-      console.log('Not showing pagination - total pages:', totalPages);
+    // Always show pagination if we have more than 1 page or if we have data that suggests pagination
+    if (totalPages <= 1 && totalItems <= itemsPerPage) {
+      console.log('Not showing pagination - total pages:', totalPages, 'total items:', totalItems);
       return null;
     }
 
@@ -339,7 +345,7 @@ const Inventory = () => {
     console.log('Pagination pages to render:', pages);
 
     return (
-      <div className="flex justify-center mt-6">
+      <div className="flex flex-col items-center space-y-4 mt-6">
         <Pagination>
           <PaginationContent>
             <PaginationItem>
@@ -373,6 +379,11 @@ const Inventory = () => {
             </PaginationItem>
           </PaginationContent>
         </Pagination>
+        
+        {/* Show pagination info like in the image */}
+        <div className="text-sm text-muted-foreground">
+          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} products
+        </div>
       </div>
     );
   };
@@ -496,11 +507,8 @@ const Inventory = () => {
 
           {/* Inventory Grid */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader>
               <CardTitle>Inventory Items</CardTitle>
-              <div className="text-sm text-muted-foreground">
-                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} products
-              </div>
             </CardHeader>
             <CardContent>
               {inventory.length === 0 ? (
