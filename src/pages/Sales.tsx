@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Package, Search, Plus, Minus, Pin, PinOff, Filter } from "lucide-react";
+import { Package, Search, Plus, Minus, Pin, PinOff, Filter, Menu, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { salesApi, customersApi, productsApi } from "@/services/api";
 import { QuickCustomerForm } from "@/components/QuickCustomerForm";
 import { TodaysOrdersModal } from "@/components/sales/TodaysOrdersModal";
+import { ProductCard } from "@/components/sales/ProductCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CartItem {
   productId: number;
@@ -22,6 +24,7 @@ interface CartItem {
 
 const Sales = () => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
@@ -37,6 +40,7 @@ const Sales = () => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [orderStatus, setOrderStatus] = useState("completed");
   const [quantityInputs, setQuantityInputs] = useState<{[key: number]: string}>({});
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -288,7 +292,7 @@ const Sales = () => {
 
   if (loading) {
     return (
-      <div className="flex-1 p-6 space-y-6 min-h-screen bg-background">
+      <div className="flex-1 p-4 md:p-6 space-y-6 min-h-screen bg-background">
         <div className="flex items-center justify-center h-64">
           <div className="text-lg text-muted-foreground">Loading POS...</div>
         </div>
@@ -297,29 +301,50 @@ const Sales = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 relative">
       {/* Main POS Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="bg-background shadow-sm border-b px-4 py-3">
+        <div className="bg-background shadow-sm border-b px-3 md:px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
               <SidebarTrigger />
-              <div className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-blue-600" />
-                <div>
-                  <h1 className="text-base font-semibold text-foreground">Sales System (POS)</h1>
-                  <p className="text-xs text-muted-foreground">Usman Hardware - Hafizabad</p>
+              <div className="flex items-center gap-2 min-w-0">
+                <Package className="h-4 w-4 md:h-5 md:w-5 text-blue-600 flex-shrink-0" />
+                <div className="min-w-0">
+                  <h1 className="text-sm md:text-base font-semibold text-foreground truncate">
+                    Sales System (POS)
+                  </h1>
+                  <p className="text-xs text-muted-foreground hidden sm:block">
+                    Usman Hardware - Hafizabad
+                  </p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+            <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+              {/* Mobile Cart Toggle */}
+              {isMobile && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setIsCartOpen(!isCartOpen)}
+                  className="h-8 w-8 p-0 md:hidden relative"
+                >
+                  <Package className="h-4 w-4" />
+                  {totalCartItems > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 flex items-center justify-center text-xs bg-blue-600">
+                      {totalCartItems}
+                    </Badge>
+                  )}
+                </Button>
+              )}
+              
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full hidden md:inline">
                 {totalCartItems} items
               </span>
               <Button 
                 size="sm" 
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm h-8 md:h-9 px-2 md:px-3"
                 onClick={() => setIsTodaysOrdersOpen(true)}
               >
                 Today's Orders
@@ -329,10 +354,10 @@ const Sales = () => {
         </div>
 
         {/* Products Section */}
-        <div className="flex-1 p-4 overflow-auto bg-background">
+        <div className="flex-1 p-3 md:p-4 overflow-auto bg-background">
           <div className="mb-4">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <h2 className="text-base md:text-lg font-semibold text-foreground flex items-center gap-2">
                 <Package className="h-4 w-4 text-blue-600" />
                 Products
                 <Badge variant="outline" className="ml-1 text-xs">{pinnedProducts.length} pinned</Badge>
@@ -345,7 +370,7 @@ const Sales = () => {
                 placeholder="Search products by name or SKU..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-10 bg-background border-input"
+                className="pl-10 h-9 md:h-10 bg-background border-input text-sm"
               />
             </div>
 
@@ -359,10 +384,10 @@ const Sales = () => {
                 <Button
                   variant={selectedCategory === null ? "default" : "outline"}
                   size="sm"
-                  className="h-8 text-xs"
+                  className="h-7 md:h-8 text-xs"
                   onClick={() => setSelectedCategory(null)}
                 >
-                  All Products ({products.length})
+                  All ({products.length})
                 </Button>
                 {categories.map((category) => {
                   const categoryCount = products.filter(p => p.category === category).length;
@@ -371,7 +396,7 @@ const Sales = () => {
                       key={category}
                       variant={selectedCategory === category ? "default" : "outline"}
                       size="sm"
-                      className="h-8 text-xs"
+                      className="h-7 md:h-8 text-xs"
                       onClick={() => setSelectedCategory(category)}
                     >
                       {category} ({categoryCount})
@@ -382,74 +407,26 @@ const Sales = () => {
             </div>
           </div>
 
-          {/* Enhanced Responsive Products Grid with reduced height cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+          {/* Responsive Products Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {sortedProducts.map((product) => (
-              <Card key={product.id} className={`relative transition-all hover:shadow-md ${pinnedProducts.includes(product.id) ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950' : ''}`}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-sm font-medium text-foreground line-clamp-1">
-                        {product.name}
-                      </CardTitle>
-                      <p className="text-xs text-muted-foreground">{product.sku}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0"
-                      onClick={() => togglePinProduct(product.id)}
-                    >
-                      {pinnedProducts.includes(product.id) ? 
-                        <PinOff className="h-3 w-3 text-blue-600" /> : 
-                        <Pin className="h-3 w-3 text-muted-foreground" />
-                      }
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0 pb-3">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold text-green-600">PKR {product.price}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {product.stock} {product.unit}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="text"
-                        placeholder="Qty"
-                        value={quantityInputs[product.id] || ""}
-                        onChange={(e) => handleQuantityInputChange(product.id, e.target.value)}
-                        className="h-8 text-xs flex-1"
-                      />
-                      <Button 
-                        size="sm" 
-                        className="h-8 px-2"
-                        onClick={() => addCustomQuantityToCart(product)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    
-                    <Button 
-                      size="sm" 
-                      className="w-full h-7 text-xs"
-                      onClick={() => addToCartWithCustomQuantity(product, 1)}
-                    >
-                      Add to Cart
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <ProductCard
+                key={product.id}
+                product={product}
+                isPinned={pinnedProducts.includes(product.id)}
+                quantityInput={quantityInputs[product.id] || ""}
+                onTogglePin={togglePinProduct}
+                onQuantityChange={handleQuantityInputChange}
+                onAddToCart={addToCartWithCustomQuantity}
+                onAddCustomQuantity={addCustomQuantityToCart}
+              />
             ))}
           </div>
         </div>
       </div>
 
-      {/* Cart Sidebar with Payment Method Selection */}
-      <div className="w-80 bg-background border-l shadow-lg flex flex-col">
+      {/* Desktop Cart Sidebar */}
+      <div className={`${isMobile ? 'hidden' : 'w-80'} bg-background border-l shadow-lg flex flex-col`}>
         <div className="p-4 border-b">
           <h2 className="text-lg font-semibold text-foreground mb-4">Cart</h2>
           
@@ -598,6 +575,183 @@ const Sales = () => {
           </div>
         )}
       </div>
+
+      {/* Mobile Cart Overlay */}
+      {isMobile && isCartOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setIsCartOpen(false)} />
+          <div className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-background shadow-lg">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">Cart ({cart.length})</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCartOpen(false)}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Mobile Cart Content - Same as desktop but in overlay */}
+            <div className="flex flex-col h-full">
+              <div className="p-4 border-b">
+                {/* Customer Selection */}
+                <div className="space-y-3 mb-4">
+                  <Select 
+                    value={selectedCustomer?.id?.toString() || "walk-in"} 
+                    onValueChange={(value) => {
+                      if (value === "walk-in") {
+                        setSelectedCustomer(null);
+                      } else {
+                        const customer = customers.find(c => c.id.toString() === value);
+                        setSelectedCustomer(customer || null);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full h-9">
+                      <SelectValue placeholder="Select Customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="walk-in">Walk-in Customer</SelectItem>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id.toString()}>
+                          {customer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full h-8"
+                    onClick={() => {
+                      setIsQuickCustomerOpen(true);
+                      setIsCartOpen(false);
+                    }}
+                  >
+                    + Add New Customer
+                  </Button>
+                </div>
+
+                {/* Payment Method */}
+                <div className="space-y-2 mb-4">
+                  <label className="text-sm font-medium">Payment Method</label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger className="w-full h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="credit">Credit</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="card">Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Order Status */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Order Status</label>
+                  <Select value={orderStatus} onValueChange={setOrderStatus}>
+                    <SelectTrigger className="w-full h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="processing">Processing</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Mobile Cart Items */}
+              <div className="flex-1 overflow-auto p-4">
+                {cart.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+                    <p>No items in cart</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {cart.map((item) => (
+                      <Card key={item.productId} className="p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm">{item.name}</h4>
+                            <p className="text-xs text-muted-foreground">{item.sku}</p>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-6 w-6 p-0 text-red-500"
+                            onClick={() => removeFromCart(item.productId)}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-6 w-6 p-0"
+                              onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="text-sm font-medium">{item.quantity} {item.unit}</span>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-6 w-6 p-0"
+                              onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <span className="font-bold text-green-600 text-sm">
+                            PKR {(item.price * item.quantity).toFixed(2)}
+                          </span>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Checkout */}
+              {cart.length > 0 && (
+                <div className="p-4 border-t bg-background">
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between text-sm">
+                      <span>Subtotal:</span>
+                      <span>PKR {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-lg">
+                      <span>Total:</span>
+                      <span className="text-green-600">PKR {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => {
+                      handleCheckout();
+                      setIsCartOpen(false);
+                    }}
+                  >
+                    Complete Sale ({paymentMethod})
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Today's Orders Modal */}
       <TodaysOrdersModal
