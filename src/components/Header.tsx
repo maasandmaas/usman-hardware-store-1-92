@@ -1,5 +1,4 @@
-
-import { Bell, Package, Search, User } from "lucide-react";
+import { Bell, Package, Search, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -17,9 +16,13 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { getPendingOrders, removePendingOrder } from "@/data/storeData";
 import { notificationsApi } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { useSidebar } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function Header() {
   const { toast } = useToast();
+  const { toggleSidebar } = useSidebar();
+  const isMobile = useIsMobile();
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
@@ -128,29 +131,44 @@ export function Header() {
 
   return (
     <header className="h-16 border-b border-border bg-background sticky top-0 z-50">
-      <div className="flex h-full items-center justify-between px-6">
-        <div className="flex items-center gap-4 flex-1 max-w-md">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input 
-              placeholder="Search products, customers..." 
-              className="pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground"
-            />
+      <div className="flex h-full items-center justify-between px-4 md:px-6">
+        <div className="flex items-center gap-4 flex-1">
+          {/* Mobile Sidebar Toggle */}
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="md:hidden h-8 w-8"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
+          
+          {/* Search Bar - Hidden on mobile */}
+          <div className="hidden md:flex items-center gap-4 flex-1 max-w-md">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input 
+                placeholder="Search products, customers..." 
+                className="pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground"
+              />
+            </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           {/* Pending Orders Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="relative hover:bg-accent hover:text-accent-foreground"
+                className="relative hover:bg-accent hover:text-accent-foreground h-8 w-8 md:h-10 md:w-10"
               >
-                <Package className="h-5 w-5" />
+                <Package className="h-4 w-4 md:h-5 md:w-5" />
                 {pendingOrdersCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-destructive text-destructive-foreground">
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 md:h-5 md:w-5 rounded-full p-0 flex items-center justify-center text-xs bg-destructive text-destructive-foreground">
                     {pendingOrdersCount}
                   </Badge>
                 )}
@@ -210,11 +228,11 @@ export function Header() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="relative hover:bg-accent hover:text-accent-foreground"
+                className="relative hover:bg-accent hover:text-accent-foreground h-8 w-8 md:h-10 md:w-10"
               >
-                <Bell className="h-5 w-5" />
+                <Bell className="h-4 w-4 md:h-5 md:w-5" />
                 {unreadCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-destructive text-destructive-foreground">
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 md:h-5 md:w-5 rounded-full p-0 flex items-center justify-center text-xs bg-destructive text-destructive-foreground">
                     {unreadCount}
                   </Badge>
                 )}
