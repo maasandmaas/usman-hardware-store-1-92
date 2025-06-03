@@ -48,6 +48,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
+  const handleQuickAdd = () => {
+    const quantity = quantityInput && !isNaN(parseFloat(quantityInput)) ? parseFloat(quantityInput) : 1;
+    onAddToCart(product, quantity);
+  };
+
   return (
     <Card className={`hover:shadow-md transition-all duration-200 h-full ${
       isPinned 
@@ -110,11 +115,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           
           {/* Quick Add Button */}
           <Button
-            onClick={() => onAddToCart(product, 1)}
+            onClick={handleQuickAdd}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] h-6"
             disabled={product.stock <= 0}
           >
-            Quick Add (1 {product.unit})
+            Quick Add ({quantityInput || '1'} {product.unit})
           </Button>
         </div>
       </CardContent>
