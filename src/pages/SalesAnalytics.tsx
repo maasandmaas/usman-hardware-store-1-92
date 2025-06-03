@@ -41,60 +41,60 @@ export default function SalesAnalytics() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
+        <Card className="border-l-4 border-l-green-500 bg-card dark:bg-card">
+          <CardContent className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 rounded-b-lg">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
                 <DollarSign className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">Rs. 1,185,000</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">Rs. 1,185,000</p>
                 <p className="text-sm text-green-600">+12% from last month</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="border-l-4 border-l-blue-500 bg-card dark:bg-card">
+          <CardContent className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 rounded-b-lg">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Package className="h-6 w-6 text-blue-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Units Sold</p>
-                <p className="text-2xl font-bold text-gray-900">2,450</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">2,450</p>
                 <p className="text-sm text-blue-600">+8% from last month</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="border-l-4 border-l-orange-500 bg-card dark:bg-card">
+          <CardContent className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20 rounded-b-lg">
             <div className="flex items-center">
               <div className="p-2 bg-orange-100 rounded-lg">
                 <Users className="h-6 w-6 text-orange-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">New Customers</p>
-                <p className="text-2xl font-bold text-gray-900">45</p>
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">45</p>
                 <p className="text-sm text-orange-600">+15% from last month</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
+        <Card className="border-l-4 border-l-purple-500 bg-card dark:bg-card">
+          <CardContent className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 rounded-b-lg">
             <div className="flex items-center">
               <div className="p-2 bg-purple-100 rounded-lg">
                 <TrendingUp className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Avg. Order Value</p>
-                <p className="text-2xl font-bold text-gray-900">Rs. 3,235</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">Rs. 3,235</p>
                 <p className="text-sm text-purple-600">+5% from last month</p>
               </div>
             </div>
