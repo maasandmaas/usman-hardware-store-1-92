@@ -407,8 +407,8 @@ const Sales = () => {
             </div>
           </div>
 
-          {/* Responsive Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {/* Responsive Products Grid - More cards per row with smaller size */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
             {sortedProducts.map((product) => (
               <ProductCard
                 key={product.id}

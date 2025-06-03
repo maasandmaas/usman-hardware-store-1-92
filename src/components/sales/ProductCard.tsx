@@ -49,7 +49,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   return (
-    <Card className={`hover:shadow-lg transition-all duration-200 h-full ${
+    <Card className={`hover:shadow-md transition-all duration-200 h-full ${
       isPinned 
         ? 'border-blue-300 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/20' 
         : 'border-border bg-card'
@@ -58,37 +58,37 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         variant="ghost"
         size="sm"
         onClick={() => onTogglePin(product.id)}
-        className="absolute top-2 right-2 h-6 w-6 p-0 z-10"
+        className="absolute top-1 right-1 h-5 w-5 p-0 z-10"
       >
         {isPinned ? 
-          <Pin className="h-3 w-3 text-blue-600" /> : 
-          <PinOff className="h-3 w-3 text-muted-foreground" />
+          <Pin className="h-2.5 w-2.5 text-blue-600" /> : 
+          <PinOff className="h-2.5 w-2.5 text-muted-foreground" />
         }
       </Button>
       
-      <CardContent className="p-3 h-full flex flex-col">
-        <div className="flex-1 space-y-3">
+      <CardContent className="p-2 h-full flex flex-col">
+        <div className="flex-1 space-y-2">
           {/* Product Info */}
-          <div className="space-y-1">
-            <h3 className="font-semibold text-card-foreground text-sm leading-tight line-clamp-2 min-h-[2.5rem]">
+          <div className="space-y-0.5">
+            <h3 className="font-medium text-card-foreground text-xs leading-tight line-clamp-2 min-h-[2rem] pr-6">
               {product.name}
             </h3>
-            <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+            <p className="text-[10px] text-muted-foreground">SKU: {product.sku}</p>
           </div>
           
           {/* Price and Stock */}
-          <div className="space-y-1">
-            <div className="text-lg font-bold text-blue-600">
+          <div className="space-y-0.5">
+            <div className="text-sm font-bold text-blue-600">
               PKR {product.price.toLocaleString()}
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-[10px] text-muted-foreground">
               {product.stock} {product.unit} available
             </div>
           </div>
         </div>
 
         {/* Actions - Always at bottom */}
-        <div className="space-y-2 mt-auto">
+        <div className="space-y-1.5 mt-auto">
           {/* Quantity Input */}
           <div className="flex items-center gap-1">
             <Input
@@ -96,22 +96,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               placeholder={`Qty (${product.unit})`}
               value={quantityInput}
               onChange={(e) => handleQuantityInputChange(e.target.value)}
-              className="h-8 text-xs flex-1 bg-background border-input"
+              className="h-6 text-[10px] flex-1 bg-background border-input px-1"
               disabled={product.stock <= 0}
             />
             <Button
               onClick={handleAddCustomQuantity}
-              className="h-8 w-8 p-0 bg-green-600 hover:bg-green-700 text-white flex-shrink-0"
+              className="h-6 w-6 p-0 bg-green-600 hover:bg-green-700 text-white flex-shrink-0"
               disabled={product.stock <= 0 || !quantityInput}
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-2.5 w-2.5" />
             </Button>
           </div>
           
           {/* Quick Add Button */}
           <Button
             onClick={() => onAddToCart(product, 1)}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-[10px] h-6"
             disabled={product.stock <= 0}
           >
             Quick Add (1 {product.unit})
