@@ -16,9 +16,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Package, Search, Plus, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { Package, Search, Plus, Edit, Trash2, AlertTriangle, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { productsApi, categoriesApi, unitsApi } from "@/services/api";
+import { ProductDetailsModal } from "@/components/sales/ProductDetailsModal";
+import { FilteredProductsModal } from "@/components/FilteredProductsModal";
+import { Eye } from "lucide-react";
+import { generateSKU } from "@/utils/skuGenerator";
 
 const Products = () => {
   const { toast } = useToast();
@@ -41,9 +45,18 @@ const Products = () => {
     totalItems: 0,
     itemsPerPage: 20
   });
+  const [filteredProductsModal, setFilteredProductsModal] = useState({
+    open: false,
+    title: '',
+    filterType: 'all' as 'lowStock' | 'outOfStock' | 'inStock' | 'all'
+  });
+  const [productDetailsModal, setProductDetailsModal] = useState({
+    open: false,
+    product: null as any
+  });
 
   useEffect(() => {
-    fetchProducts(1); // Reset to page 1 when search or filter changes
+    fetchProducts(1);
     fetchCategories();
     fetchUnits();
   }, [searchTerm, categoryFilter]);
@@ -57,7 +70,6 @@ const Products = () => {
           { value: "all", label: "All Categories" }
         ];
         
-        // Handle the new API response format
         if (Array.isArray(response.data)) {
           response.data.forEach((cat: any) => {
             if (typeof cat === 'string') {
@@ -72,7 +84,6 @@ const Products = () => {
       }
     } catch (error) {
       console.error('Failed to fetch categories:', error);
-      // Fallback categories
       setCategories([
         { value: "all", label: "All Categories" },
         { value: "hinges", label: "Hinges & Hardware" },
@@ -92,7 +103,6 @@ const Products = () => {
         console.log('Units response:', response.data);
         const unitsList: any[] = [];
         
-        // Handle the new API response format
         if (Array.isArray(response.data)) {
           response.data.forEach((unit: any) => {
             if (typeof unit === 'string') {
@@ -110,7 +120,6 @@ const Products = () => {
       }
     } catch (error) {
       console.error('Failed to fetch units:', error);
-      // Fallback units
       setUnits([
         { value: "pieces", label: "Pieces" },
         { value: "kg", label: "Kilograms" },
@@ -299,15 +308,12 @@ const Products = () => {
     const { currentPage, totalPages } = pagination;
     const pages = [];
 
-    // Always show first page
     pages.push(1);
 
-    // Add ellipsis after first page if needed
     if (currentPage > 3) {
       pages.push('ellipsis-start');
     }
 
-    // Add pages around current page
     const startPage = Math.max(2, currentPage - 1);
     const endPage = Math.min(totalPages - 1, currentPage + 1);
 
@@ -317,12 +323,10 @@ const Products = () => {
       }
     }
 
-    // Add ellipsis before last page if needed
     if (currentPage < totalPages - 2) {
       pages.push('ellipsis-end');
     }
 
-    // Always show last page (if different from first)
     if (totalPages > 1 && !pages.includes(totalPages)) {
       pages.push(totalPages);
     }
@@ -362,6 +366,21 @@ const Products = () => {
         </PaginationContent>
       </Pagination>
     );
+  };
+
+  const openFilteredModal = (filterType: 'lowStock' | 'outOfStock' | 'inStock' | 'all', title: string) => {
+    setFilteredProductsModal({
+      open: true,
+      title,
+      filterType
+    });
+  };
+
+  const openProductDetails = (product: any) => {
+    setProductDetailsModal({
+      open: true,
+      product
+    });
   };
 
   if (loading && products.length === 0) {
@@ -469,9 +488,8 @@ const Products = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-l-4 border-l-blue-500">
+        <Card className="border-l-4 border-l-blue-500 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => openFilteredModal('all', 'All Products')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <Package className="h-8 w-8 text-blue-500" />
@@ -483,7 +501,7 @@ const Products = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-green-500">
+        <Card className="border-l-4 border-l-green-500 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => openFilteredModal('inStock', 'Products In Stock')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <Package className="h-8 w-8 text-green-500" />
@@ -495,7 +513,7 @@ const Products = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-red-500">
+        <Card className="border-l-4 border-l-red-500 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => openFilteredModal('lowStock', 'Low Stock Products')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-8 w-8 text-red-500" />
@@ -507,7 +525,7 @@ const Products = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-purple-500">
+        <Card className="border-l-4 border-l-purple-500 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => openFilteredModal('all', 'All Categories')}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <Package className="h-8 w-8 text-purple-500" />
@@ -520,7 +538,6 @@ const Products = () => {
         </Card>
       </div>
 
-      {/* Search and Filter */}
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
@@ -549,7 +566,6 @@ const Products = () => {
         </CardContent>
       </Card>
 
-      {/* Products Grid */}
       <Card className="flex-1">
         <CardHeader>
           <CardTitle>
@@ -582,9 +598,19 @@ const Products = () => {
                             <h3 className="font-medium text-foreground text-sm">{product.name}</h3>
                             <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
                           </div>
-                          <Badge className={`text-xs ${getCategoryColor(product.category)}`}>
-                            {product.category}
-                          </Badge>
+                          <div className="flex items-center gap-1">
+                            <Badge className={`text-xs ${getCategoryColor(product.category)}`}>
+                              {product.category}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => openProductDetails(product)}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                         
                         <div className="flex justify-between items-center">
@@ -626,14 +652,12 @@ const Products = () => {
                 ))}
               </div>
 
-              {/* Pagination Controls */}
               {pagination.totalPages > 1 && (
                 <div className="mt-6 flex justify-center">
                   {renderPagination()}
                 </div>
               )}
 
-              {/* Page info */}
               <div className="mt-4 text-center text-sm text-muted-foreground">
                 Showing {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} to {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} of {pagination.totalItems} products
               </div>
@@ -642,7 +666,6 @@ const Products = () => {
         </CardContent>
       </Card>
 
-      {/* Edit Product Dialog */}
       {selectedProduct && (
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <ProductDialog 
@@ -658,11 +681,24 @@ const Products = () => {
           />
         </Dialog>
       )}
+
+      <FilteredProductsModal
+        open={filteredProductsModal.open}
+        onOpenChange={(open) => setFilteredProductsModal(prev => ({ ...prev, open }))}
+        title={filteredProductsModal.title}
+        products={products}
+        filterType={filteredProductsModal.filterType}
+      />
+
+      <ProductDetailsModal
+        open={productDetailsModal.open}
+        onOpenChange={(open) => setProductDetailsModal(prev => ({ ...prev, open }))}
+        product={productDetailsModal.product}
+      />
     </div>
   );
 };
 
-// Product Dialog Component
 const ProductDialog = ({ 
   onSubmit, 
   onClose, 
@@ -710,6 +746,28 @@ const ProductDialog = ({
     }
   };
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      
+      // Auto-generate SKU when name changes (only for new products)
+      if (field === 'name' && !isEdit) {
+        newData.sku = generateSKU(value);
+      }
+      
+      return newData;
+    });
+  };
+
+  const handleRegenerateSKU = () => {
+    if (formData.name) {
+      setFormData(prev => ({
+        ...prev,
+        sku: generateSKU(prev.name)
+      }));
+    }
+  };
+
   return (
     <DialogContent className="max-w-2xl">
       <DialogHeader>
@@ -722,18 +780,34 @@ const ProductDialog = ({
             <Input
               id="name"
               value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              onChange={(e) => handleInputChange('name', e.target.value)}
               required
             />
           </div>
           <div>
-            <Label htmlFor="sku">SKU</Label>
-            <Input
-              id="sku"
-              value={formData.sku}
-              onChange={(e) => setFormData({...formData, sku: e.target.value})}
-              required
-            />
+            <Label htmlFor="sku">SKU {!isEdit && '(Auto-generated)'}</Label>
+            <div className="flex gap-1">
+              <Input
+                id="sku"
+                value={formData.sku}
+                onChange={(e) => handleInputChange('sku', e.target.value)}
+                placeholder={isEdit ? "Enter SKU" : "Auto-generated from name"}
+                required
+                className="flex-1"
+              />
+              {!isEdit && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRegenerateSKU}
+                  disabled={!formData.name}
+                  className="px-2"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
           </div>
           <div>
             <Label htmlFor="price">Price (PKR)</Label>
@@ -741,7 +815,7 @@ const ProductDialog = ({
               id="price"
               type="number"
               value={formData.price}
-              onChange={(e) => setFormData({...formData, price: e.target.value})}
+              onChange={(e) => handleInputChange('price', e.target.value)}
               required
             />
           </div>
@@ -751,7 +825,7 @@ const ProductDialog = ({
               id="costPrice"
               type="number"
               value={formData.costPrice}
-              onChange={(e) => setFormData({...formData, costPrice: e.target.value})}
+              onChange={(e) => handleInputChange('costPrice', e.target.value)}
               required
             />
           </div>
@@ -761,7 +835,7 @@ const ProductDialog = ({
               id="stock"
               type="number"
               value={formData.stock}
-              onChange={(e) => setFormData({...formData, stock: e.target.value})}
+              onChange={(e) => handleInputChange('stock', e.target.value)}
               required
             />
           </div>
@@ -771,13 +845,13 @@ const ProductDialog = ({
               id="minStock"
               type="number"
               value={formData.minStock}
-              onChange={(e) => setFormData({...formData, minStock: e.target.value})}
+              onChange={(e) => handleInputChange('minStock', e.target.value)}
               required
             />
           </div>
           <div>
             <Label htmlFor="category">Category</Label>
-            <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+            <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
@@ -790,7 +864,7 @@ const ProductDialog = ({
           </div>
           <div>
             <Label htmlFor="unit">Unit</Label>
-            <Select value={formData.unit} onValueChange={(value) => setFormData({...formData, unit: value})}>
+            <Select value={formData.unit} onValueChange={(value) => handleInputChange('unit', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select unit" />
               </SelectTrigger>
@@ -808,7 +882,7 @@ const ProductDialog = ({
             <Input
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Enter product description"
             />
           </div>
