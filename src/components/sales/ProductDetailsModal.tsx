@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -68,8 +69,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
               lastPurchase: sale.saleDate
             };
           }
-          stats[customerKey].totalQuantity += sale.quantity;
-          stats[customerKey].totalValue += sale.totalPrice;
+          stats[customerKey].totalQuantity += sale.quantity || 0;
+          stats[customerKey].totalValue += sale.totalPrice || 0;
           stats[customerKey].purchaseCount += 1;
           stats[customerKey].averagePrice = stats[customerKey].totalValue / stats[customerKey].totalQuantity;
           
@@ -96,8 +97,15 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
     });
   };
 
-  const totalSold = salesData.reduce((sum, sale) => sum + sale.quantity, 0);
-  const totalRevenue = salesData.reduce((sum, sale) => sum + sale.totalPrice, 0);
+  const formatCurrency = (value: number | undefined | null) => {
+    if (value === undefined || value === null || isNaN(value)) {
+      return 'N/A';
+    }
+    return value.toLocaleString();
+  };
+
+  const totalSold = salesData.reduce((sum, sale) => sum + (sale.quantity || 0), 0);
+  const totalRevenue = salesData.reduce((sum, sale) => sum + (sale.totalPrice || 0), 0);
   const uniqueCustomers = Object.keys(customerStats).length;
 
   if (!product) return null;
@@ -122,7 +130,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   <div className="text-sm text-muted-foreground">Total Sold</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">PKR {totalRevenue.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-green-600">PKR {formatCurrency(totalRevenue)}</div>
                   <div className="text-sm text-muted-foreground">Total Revenue</div>
                 </div>
                 <div className="text-center">
@@ -162,11 +170,11 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                         <div className="text-muted-foreground">Total Quantity</div>
                       </div>
                       <div>
-                        <div className="font-medium text-green-600">PKR {customer.totalValue.toLocaleString()}</div>
+                        <div className="font-medium text-green-600">PKR {formatCurrency(customer.totalValue)}</div>
                         <div className="text-muted-foreground">Total Value</div>
                       </div>
                       <div>
-                        <div className="font-medium text-purple-600">PKR {customer.averagePrice.toFixed(2)}</div>
+                        <div className="font-medium text-purple-600">PKR {formatCurrency(customer.averagePrice)}</div>
                         <div className="text-muted-foreground">Avg. Price/{product.unit}</div>
                       </div>
                     </div>
@@ -198,9 +206,9 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium">{sale.quantity} {product.unit}</div>
-                        <div className="text-sm text-green-600">PKR {sale.unitPrice.toLocaleString()}/{product.unit}</div>
-                        <div className="text-sm font-medium">Total: PKR {sale.totalPrice.toLocaleString()}</div>
+                        <div className="font-medium">{sale.quantity || 0} {product.unit}</div>
+                        <div className="text-sm text-green-600">PKR {formatCurrency(sale.unitPrice)}/{product.unit}</div>
+                        <div className="text-sm font-medium">Total: PKR {formatCurrency(sale.totalPrice)}</div>
                       </div>
                     </div>
                   </CardContent>
