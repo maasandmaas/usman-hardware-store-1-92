@@ -11,6 +11,7 @@ import { salesApi, customersApi, productsApi } from "@/services/api";
 import { QuickCustomerForm } from "@/components/QuickCustomerForm";
 import { TodaysOrdersModal } from "@/components/sales/TodaysOrdersModal";
 import { ProductCard } from "@/components/sales/ProductCard";
+import { CartSidebar } from "@/components/sales/CartSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CartItem {
