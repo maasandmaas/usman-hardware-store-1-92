@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, User, X, Plus, Minus, UserPlus } from "lucide-react";
+import { ShoppingCart, User, X, Plus, Minus, UserPlus, Edit2 } from "lucide-react";
 
 interface CartItem {
   productId: number;
@@ -16,6 +16,7 @@ interface CartItem {
   quantity: number;
   sku: string;
   unit: string;
+  adjustedPrice?: number; // For price negotiations
 }
 
 interface CartSidebarProps {
@@ -32,6 +33,7 @@ interface CartSidebarProps {
   onUpdateCartQuantity: (productId: number, quantity: number) => void;
   onRemoveFromCart: (productId: number) => void;
   onCheckout: () => void;
+  onUpdateItemPrice?: (productId: number, newPrice: number) => void;
 }
 
 export const CartSidebar: React.FC<CartSidebarProps> = ({
@@ -47,10 +49,36 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
   onSetOrderStatus,
   onUpdateCartQuantity,
   onRemoveFromCart,
-  onCheckout
+  onCheckout,
+  onUpdateItemPrice
 }) => {
+  const [priceEditingItem, setPriceEditingItem] = useState<number | null>(null);
+  const [tempPrice, setTempPrice] = useState<string>("");
+
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cart.reduce((total, item) => {
+      const finalPrice = item.adjustedPrice || item.price;
+      return total + (finalPrice * item.quantity);
+    }, 0);
+  };
+
+  const handlePriceEdit = (item: CartItem) => {
+    setPriceEditingItem(item.productId);
+    setTempPrice((item.adjustedPrice || item.price).toString());
+  };
+
+  const handlePriceSave = (productId: number) => {
+    const newPrice = parseFloat(tempPrice);
+    if (!isNaN(newPrice) && newPrice > 0 && onUpdateItemPrice) {
+      onUpdateItemPrice(productId, newPrice);
+    }
+    setPriceEditingItem(null);
+    setTempPrice("");
+  };
+
+  const handlePriceCancel = () => {
+    setPriceEditingItem(null);
+    setTempPrice("");
   };
 
   return (
@@ -144,7 +172,14 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <p className="font-medium text-xs text-card-foreground">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">PKR {item.price.toLocaleString()} / {item.unit}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-muted-foreground">
+                        Original: PKR {item.price.toLocaleString()} / {item.unit}
+                      </p>
+                      {item.adjustedPrice && item.adjustedPrice !== item.price && (
+                        <Badge variant="secondary" className="text-xs">Negotiated</Badge>
+                      )}
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
@@ -155,6 +190,55 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                     <X className="h-3 w-3" />
                   </Button>
                 </div>
+
+                {/* Price editing section */}
+                <div className="mb-2">
+                  {priceEditingItem === item.productId ? (
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        value={tempPrice}
+                        onChange={(e) => setTempPrice(e.target.value)}
+                        className="h-6 text-xs flex-1"
+                        placeholder="New price"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePriceSave(item.productId)}
+                        className="h-6 w-6 p-0 bg-green-600 text-white"
+                      >
+                        ✓
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePriceCancel}
+                        className="h-6 w-6 p-0 bg-red-600 text-white"
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-medium">
+                          PKR {(item.adjustedPrice || item.price).toLocaleString()} / {item.unit}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePriceEdit(item)}
+                          className="h-4 w-4 p-0 text-blue-600 hover:text-blue-800"
+                          title="Negotiate price"
+                        >
+                          <Edit2 className="h-2.5 w-2.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <Button
@@ -176,7 +260,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                     </Button>
                   </div>
                   <p className="font-semibold text-blue-600 text-xs">
-                    PKR {(item.price * item.quantity).toLocaleString()}
+                    PKR {((item.adjustedPrice || item.price) * item.quantity).toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -185,22 +269,14 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
         )}
       </div>
 
-      {/* Checkout Section */}
+      {/* Checkout Section - Removed Tax */}
       {cart.length > 0 && (
         <div className="p-3 border-t border-border bg-card">
           <div className="space-y-2 mb-3">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Subtotal:</span>
-              <span className="font-medium text-card-foreground">PKR {getCartTotal().toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Tax (10%):</span>
-              <span className="font-medium text-card-foreground">PKR {(getCartTotal() * 0.1).toLocaleString()}</span>
-            </div>
             <div className="border-t border-border pt-2">
               <div className="flex justify-between font-bold">
                 <span className="text-sm text-card-foreground">Total:</span>
-                <span className="text-green-600 text-sm">PKR {(getCartTotal() * 1.1).toLocaleString()}</span>
+                <span className="text-green-600 text-sm">PKR {getCartTotal().toLocaleString()}</span>
               </div>
             </div>
           </div>

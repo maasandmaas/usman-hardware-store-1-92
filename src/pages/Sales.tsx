@@ -20,6 +20,7 @@ interface CartItem {
   quantity: number;
   sku: string;
   unit: string;
+  adjustedPrice?: number; // For price negotiations
 }
 
 const Sales = () => {
@@ -212,6 +213,19 @@ const Sales = () => {
     setCart(cart.filter(item => item.productId !== productId));
   };
 
+  const updateItemPrice = (productId: number, newPrice: number) => {
+    setCart(cart.map(item => 
+      item.productId === productId 
+        ? { ...item, adjustedPrice: newPrice }
+        : item
+    ));
+    
+    toast({
+      title: "Price Updated",
+      description: "Item price has been adjusted for negotiation",
+    });
+  };
+
   const handleCheckout = async () => {
     if (cart.length === 0) {
       toast({
@@ -229,10 +243,13 @@ const Sales = () => {
         items: cart.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
-          unitPrice: item.price,
-          totalPrice: item.price * item.quantity
+          unitPrice: item.adjustedPrice || item.price, // Use adjusted price if available
+          totalPrice: (item.adjustedPrice || item.price) * item.quantity
         })),
-        totalAmount: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        totalAmount: cart.reduce((sum, item) => {
+          const finalPrice = item.adjustedPrice || item.price;
+          return sum + (finalPrice * item.quantity);
+        }, 0),
         discount: 0,
         paymentMethod: paymentMethod,
         status: orderStatus,
@@ -287,8 +304,12 @@ const Sales = () => {
     return (a.name || '').localeCompare(b.name || '');
   });
 
-  // Calculate total cart items
+  // Calculate total cart items and value
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const totalCartValue = cart.reduce((sum, item) => {
+    const finalPrice = item.adjustedPrice || item.price;
+    return sum + (finalPrice * item.quantity);
+  }, 0);
 
   if (loading) {
     return (
@@ -340,7 +361,7 @@ const Sales = () => {
               )}
               
               <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full hidden md:inline">
-                {totalCartItems} items
+                {totalCartItems} items - PKR {totalCartValue.toLocaleString()}
               </span>
               <Button 
                 size="sm" 
@@ -425,158 +446,27 @@ const Sales = () => {
         </div>
       </div>
 
-      {/* Desktop Cart Sidebar */}
-      <div className={`${isMobile ? 'hidden' : 'w-80'} bg-background border-l shadow-lg flex flex-col`}>
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Cart</h2>
-          
-          {/* Customer Selection */}
-          <div className="space-y-3 mb-4">
-            <Select 
-              value={selectedCustomer?.id?.toString() || "walk-in"} 
-              onValueChange={(value) => {
-                if (value === "walk-in") {
-                  setSelectedCustomer(null);
-                } else {
-                  const customer = customers.find(c => c.id.toString() === value);
-                  setSelectedCustomer(customer || null);
-                }
-              }}
-            >
-              <SelectTrigger className="w-full h-9">
-                <SelectValue placeholder="Select Customer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="walk-in">Walk-in Customer</SelectItem>
-                {customers.map((customer) => (
-                  <SelectItem key={customer.id} value={customer.id.toString()}>
-                    {customer.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full h-8"
-              onClick={() => setIsQuickCustomerOpen(true)}
-            >
-              + Add New Customer
-            </Button>
-          </div>
-
-          {/* Payment Method Selection */}
-          <div className="space-y-2 mb-4">
-            <label className="text-sm font-medium text-foreground">Payment Method</label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger className="w-full h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="credit">Credit</SelectItem>
-                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                <SelectItem value="card">Card</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Order Status */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Order Status</label>
-            <Select value={orderStatus} onValueChange={setOrderStatus}>
-              <SelectTrigger className="w-full h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Cart Items */}
-        <div className="flex-1 overflow-auto p-4">
-          {cart.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">
-              <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-              <p>No items in cart</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {cart.map((item) => (
-                <Card key={item.productId} className="p-3">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{item.name}</h4>
-                      <p className="text-xs text-muted-foreground">{item.sku}</p>
-                    </div>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-6 w-6 p-0 text-red-500"
-                      onClick={() => removeFromCart(item.productId)}
-                    >
-                      ×
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="h-6 w-6 p-0"
-                        onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="text-sm font-medium">{item.quantity} {item.unit}</span>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="h-6 w-6 p-0"
-                        onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    <span className="font-bold text-green-600">PKR {(item.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Cart Total & Checkout */}
-        {cart.length > 0 && (
-          <div className="p-4 border-t bg-background">
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal:</span>
-                <span>PKR {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg">
-                <span>Total:</span>
-                <span className="text-green-600">PKR {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
-              </div>
-            </div>
-            
-            <Button 
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
-              onClick={handleCheckout}
-            >
-              Complete Sale ({paymentMethod})
-            </Button>
-          </div>
-        )}
+      {/* Desktop Cart Sidebar - Updated to use CartSidebar component */}
+      <div className={`${isMobile ? 'hidden' : ''}`}>
+        <CartSidebar
+          cart={cart}
+          selectedCustomer={selectedCustomer}
+          customers={customers}
+          orderStatus={orderStatus}
+          isCustomerDialogOpen={false}
+          isQuickCustomerOpen={isQuickCustomerOpen}
+          onSetSelectedCustomer={setSelectedCustomer}
+          onSetIsCustomerDialogOpen={() => {}}
+          onSetIsQuickCustomerOpen={setIsQuickCustomerOpen}
+          onSetOrderStatus={setOrderStatus}
+          onUpdateCartQuantity={updateCartQuantity}
+          onRemoveFromCart={removeFromCart}
+          onCheckout={handleCheckout}
+          onUpdateItemPrice={updateItemPrice}
+        />
       </div>
 
-      {/* Mobile Cart Overlay */}
+      {/* Mobile Cart Overlay - Updated to remove tax */}
       {isMobile && isCartOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-black/50" onClick={() => setIsCartOpen(false)} />
@@ -593,80 +483,8 @@ const Sales = () => {
               </Button>
             </div>
             
-            {/* Mobile Cart Content - Same as desktop but in overlay */}
+            {/* Mobile Cart Content */}
             <div className="flex flex-col h-full">
-              <div className="p-4 border-b">
-                {/* Customer Selection */}
-                <div className="space-y-3 mb-4">
-                  <Select 
-                    value={selectedCustomer?.id?.toString() || "walk-in"} 
-                    onValueChange={(value) => {
-                      if (value === "walk-in") {
-                        setSelectedCustomer(null);
-                      } else {
-                        const customer = customers.find(c => c.id.toString() === value);
-                        setSelectedCustomer(customer || null);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-full h-9">
-                      <SelectValue placeholder="Select Customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="walk-in">Walk-in Customer</SelectItem>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id.toString()}>
-                          {customer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full h-8"
-                    onClick={() => {
-                      setIsQuickCustomerOpen(true);
-                      setIsCartOpen(false);
-                    }}
-                  >
-                    + Add New Customer
-                  </Button>
-                </div>
-
-                {/* Payment Method */}
-                <div className="space-y-2 mb-4">
-                  <label className="text-sm font-medium">Payment Method</label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger className="w-full h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="credit">Credit</SelectItem>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="card">Card</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Order Status */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Order Status</label>
-                  <Select value={orderStatus} onValueChange={setOrderStatus}>
-                    <SelectTrigger className="w-full h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="processing">Processing</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
               {/* Mobile Cart Items */}
               <div className="flex-1 overflow-auto p-4">
                 {cart.length === 0 ? (
@@ -723,17 +541,13 @@ const Sales = () => {
                 )}
               </div>
 
-              {/* Mobile Checkout */}
+              {/* Mobile Checkout - Remove tax */}
               {cart.length > 0 && (
                 <div className="p-4 border-t bg-background">
                   <div className="space-y-2 mb-4">
-                    <div className="flex justify-between text-sm">
-                      <span>Subtotal:</span>
-                      <span>PKR {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
-                    </div>
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total:</span>
-                      <span className="text-green-600">PKR {cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+                      <span className="text-green-600">PKR {totalCartValue.toFixed(2)}</span>
                     </div>
                   </div>
                   
@@ -753,7 +567,7 @@ const Sales = () => {
         </div>
       )}
 
-      {/* Today's Orders Modal */}
+      {/* Modals */}
       <TodaysOrdersModal
         open={isTodaysOrdersOpen}
         onOpenChange={setIsTodaysOrdersOpen}
