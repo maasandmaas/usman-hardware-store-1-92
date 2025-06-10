@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -261,19 +260,24 @@ const Sales = () => {
     }
 
     try {
+      // Calculate total without any tax
+      const totalAmount = cart.reduce((sum, item) => {
+        const finalPrice = item.adjustedPrice || item.price;
+        return sum + (finalPrice * item.quantity);
+      }, 0);
+
       const saleData = {
         customerId: selectedCustomer?.id || null,
         customerName: selectedCustomer?.name || "Walk-in Customer",
         items: cart.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
-          unitPrice: item.adjustedPrice || item.price, // Use adjusted price if available
+          unitPrice: item.adjustedPrice || item.price,
           totalPrice: (item.adjustedPrice || item.price) * item.quantity
         })),
-        totalAmount: cart.reduce((sum, item) => {
-          const finalPrice = item.adjustedPrice || item.price;
-          return sum + (finalPrice * item.quantity);
-        }, 0),
+        totalAmount: totalAmount, // Pure total without tax
+        subtotal: totalAmount, // Same as total since no tax
+        tax: 0, // Explicitly set tax to 0
         discount: 0,
         paymentMethod: paymentMethod,
         status: orderStatus,
@@ -293,7 +297,7 @@ const Sales = () => {
         fetchTodaysOrders();
         toast({
           title: "Sale Completed Successfully",
-          description: `Order has been processed with status: ${orderStatus}. Total: PKR ${saleData.totalAmount.toFixed(2)}`,
+          description: `Order has been processed with status: ${orderStatus}. Payment: ${paymentMethod}. Total: PKR ${saleData.totalAmount.toFixed(2)}`,
         });
       } else {
         throw new Error(response.message || 'Failed to process sale');
@@ -328,7 +332,7 @@ const Sales = () => {
     return (a.name || '').localeCompare(b.name || '');
   });
 
-  // Calculate total cart items and value
+  // Calculate total cart items and value (without tax)
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalCartValue = cart.reduce((sum, item) => {
     const finalPrice = item.adjustedPrice || item.price;
@@ -495,12 +499,14 @@ const Sales = () => {
           selectedCustomer={selectedCustomer}
           customers={customers}
           orderStatus={orderStatus}
+          paymentMethod={paymentMethod}
           isCustomerDialogOpen={isCustomerDialogOpen}
           isQuickCustomerOpen={isQuickCustomerOpen}
           onSetSelectedCustomer={setSelectedCustomer}
           onSetIsCustomerDialogOpen={setIsCustomerDialogOpen}
           onSetIsQuickCustomerOpen={setIsQuickCustomerOpen}
           onSetOrderStatus={setOrderStatus}
+          onSetPaymentMethod={setPaymentMethod}
           onUpdateCartQuantity={updateCartQuantity}
           onRemoveFromCart={removeFromCart}
           onCheckout={handleCheckout}
