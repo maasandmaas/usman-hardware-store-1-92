@@ -137,7 +137,7 @@ const SalesReceipts = () => {
       yPos += 4;
       pdf.text('Hafizabad, Punjab, Pakistan', pageWidth / 2, yPos, { align: 'center' });
       yPos += 4;
-      pdf.text('Phone: +92-300-1234567', pageWidth / 2, yPos, { align: 'center' });
+      pdf.text('Phone: +92-322-6506118', pageWidth / 2, yPos, { align: 'center' });
       yPos += 8;
 
       // Separator line
