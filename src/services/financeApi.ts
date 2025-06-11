@@ -63,6 +63,16 @@ export interface PaymentRequest {
   notes?: string;
 }
 
+// NEW: Customer balance update interface
+export interface CustomerBalanceUpdate {
+  customerId: number;
+  orderId: number;
+  amount: number;
+  type: 'credit' | 'debit'; // credit = customer owes money, debit = customer paid
+  orderNumber: string;
+  description?: string;
+}
+
 // Generic API request function
 const apiRequest = async <T>(
   endpoint: string,
@@ -159,6 +169,57 @@ export const financeApi = {
     }>('/finance/payments', {
       method: 'POST',
       body: JSON.stringify(payment),
+    });
+  },
+
+  // NEW: Update customer balance based on order status change
+  updateCustomerBalance: (balanceUpdate: CustomerBalanceUpdate) => {
+    return apiRequest<{
+      success: boolean;
+      data: {
+        customerId: number;
+        previousBalance: number;
+        newBalance: number;
+        transactionId: number;
+      };
+      message: string;
+    }>('/finance/customer-balance', {
+      method: 'POST',
+      body: JSON.stringify(balanceUpdate),
+    });
+  },
+
+  // NEW: Get customer's current balance and transaction history
+  getCustomerBalance: (customerId: number) => {
+    return apiRequest<{
+      success: boolean;
+      data: {
+        customerId: number;
+        currentBalance: number;
+        transactions: Array<{
+          id: number;
+          orderId: number;
+          orderNumber: string;
+          amount: number;
+          type: 'credit' | 'debit';
+          date: string;
+          description: string;
+        }>;
+      };
+    }>(`/finance/customer-balance/${customerId}`);
+  },
+
+  // NEW: Sync all customer balances (useful for data consistency)
+  syncCustomerBalances: () => {
+    return apiRequest<{
+      success: boolean;
+      data: {
+        updated: number;
+        errors: Array<{ customerId: number; error: string }>;
+      };
+      message: string;
+    }>('/finance/sync-customer-balances', {
+      method: 'POST',
     });
   },
 };

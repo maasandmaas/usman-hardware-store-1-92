@@ -10,19 +10,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Users, Search, Plus, Edit, CreditCard, Phone, MapPin, Calendar, Mail, Building, IdCard, Receipt, History, AlertCircle, Banknote } from "lucide-react";
+import { Users, Search, Plus, Edit, CreditCard, Phone, MapPin, Calendar, Mail, Building, IdCard, Receipt, History, AlertCircle, Banknote, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { customersApi } from "@/services/api";
+import { customersApi, salesApi } from "@/services/api";
 import { CustomerEditModal } from "@/components/customers/CustomerEditModal";
+import { useCustomerBalance } from "@/hooks/useCustomerBalance";
 
 const Customers = () => {
   const { toast } = useToast();
+  const { getCustomerBalance, syncAllCustomerBalances } = useCustomerBalance();
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [customerTypeFilter, setCustomerTypeFilter] = useState("all");
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -64,7 +67,43 @@ const Customers = () => {
         
         // Ensure we're working with an array
         const customersArray = Array.isArray(customerData) ? customerData : [];
-        setCustomers(customersArray);
+        
+        // NEW: Calculate actual outstanding balances based on credit orders
+        const customersWithBalances = await Promise.all(
+          customersArray.map(async (customer) => {
+            try {
+              // Get customer's credit orders (orders with status 'credit')
+              const salesResponse = await salesApi.getAll({
+                customerId: customer.id,
+                status: 'credit',
+                limit: 100
+              });
+              
+              let outstandingBalance = 0;
+              if (salesResponse.success) {
+                const creditOrders = salesResponse.data?.sales || salesResponse.data || [];
+                outstandingBalance = Array.isArray(creditOrders) 
+                  ? creditOrders.reduce((sum: number, order: any) => sum + (order.total || 0), 0)
+                  : 0;
+              }
+              
+              return {
+                ...customer,
+                currentBalance: outstandingBalance,
+                dueAmount: outstandingBalance // For backward compatibility
+              };
+            } catch (error) {
+              console.error(`Failed to calculate balance for customer ${customer.id}:`, error);
+              return {
+                ...customer,
+                currentBalance: customer.currentBalance || customer.dueAmount || 0,
+                dueAmount: customer.currentBalance || customer.dueAmount || 0
+              };
+            }
+          })
+        );
+        
+        setCustomers(customersWithBalances);
         
         // Update pagination if available
         if (response.data?.pagination) {
@@ -74,7 +113,7 @@ const Customers = () => {
           setPagination({
             currentPage: 1,
             totalPages: 1,
-            totalItems: customersArray.length,
+            totalItems: customersWithBalances.length,
             itemsPerPage: 20
           });
         }
@@ -89,6 +128,19 @@ const Customers = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // NEW: Handle manual balance sync
+  const handleSyncBalances = async () => {
+    try {
+      setSyncing(true);
+      await syncAllCustomerBalances();
+      await fetchCustomers(); // Refresh the data
+    } catch (error) {
+      console.error('Failed to sync balances:', error);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -199,15 +251,26 @@ const Customers = () => {
             <p className="text-muted-foreground">Manage customer profiles, dues, and transactions</p>
           </div>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Customer
-            </Button>
-          </DialogTrigger>
-          <CustomerDialog onSubmit={handleAddCustomer} onClose={() => setIsDialogOpen(false)} />
-        </Dialog>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleSyncBalances}
+            disabled={syncing}
+            className="bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing...' : 'Sync Balances'}
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Customer
+              </Button>
+            </DialogTrigger>
+            <CustomerDialog onSubmit={handleAddCustomer} onClose={() => setIsDialogOpen(false)} />
+          </Dialog>
+        </div>
       </div>
 
       {/* Summary Cards */}
