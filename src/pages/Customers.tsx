@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,13 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Users, Search, Plus, Edit, CreditCard, Phone, MapPin, Calendar, Mail, Building, IdCard, Receipt, History, AlertCircle, Banknote, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { customersApi, salesApi } from "@/services/api";
+import { customersApi } from "@/services/api";
 import { CustomerEditModal } from "@/components/customers/CustomerEditModal";
 import { useCustomerBalance } from "@/hooks/useCustomerBalance";
 
 const Customers = () => {
   const { toast } = useToast();
-  const { getCustomerBalance, syncAllCustomerBalances } = useCustomerBalance();
+  const { syncAllCustomerBalances } = useCustomerBalance();
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -33,7 +34,7 @@ const Customers = () => {
     itemsPerPage: 20
   });
 
-  // NEW: States for customer edit modal
+  // States for customer edit modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState<any>(null);
 
@@ -59,64 +60,40 @@ const Customers = () => {
       if (searchTerm) params.search = searchTerm;
       if (customerTypeFilter !== 'all') params.type = customerTypeFilter;
 
+      console.log('Fetching customers with params:', params);
       const response = await customersApi.getAll(params);
+      console.log('API Response:', response);
       
       if (response.success) {
-        const customerData = response.data?.customers || response.data || [];
-        console.log('Customers response:', response.data);
+        // Use the data structure directly from the API
+        const apiData = response.data;
+        const customersArray = apiData?.customers || [];
         
-        // Ensure we're working with an array
-        const customersArray = Array.isArray(customerData) ? customerData : [];
+        console.log('Customers from API:', customersArray);
         
-        // NEW: Calculate actual outstanding balances based on credit orders
-        const customersWithBalances = await Promise.all(
-          customersArray.map(async (customer) => {
-            try {
-              // Get customer's credit orders (orders with status 'credit')
-              const salesResponse = await salesApi.getAll({
-                customerId: customer.id,
-                status: 'credit',
-                limit: 100
-              });
-              
-              let outstandingBalance = 0;
-              if (salesResponse.success) {
-                const creditOrders = salesResponse.data?.sales || salesResponse.data || [];
-                outstandingBalance = Array.isArray(creditOrders) 
-                  ? creditOrders.reduce((sum: number, order: any) => sum + (order.total || 0), 0)
-                  : 0;
-              }
-              
-              return {
-                ...customer,
-                currentBalance: outstandingBalance,
-                dueAmount: outstandingBalance // For backward compatibility
-              };
-            } catch (error) {
-              console.error(`Failed to calculate balance for customer ${customer.id}:`, error);
-              return {
-                ...customer,
-                currentBalance: customer.currentBalance || customer.dueAmount || 0,
-                dueAmount: customer.currentBalance || customer.dueAmount || 0
-              };
-            }
-          })
-        );
+        // The API already provides currentBalance, creditLimit, totalPurchases
+        // No need to calculate anything, just use the data as-is
+        setCustomers(customersArray);
         
-        setCustomers(customersWithBalances);
-        
-        // Update pagination if available
-        if (response.data?.pagination) {
-          setPagination(response.data.pagination);
+        // Use pagination info from API
+        if (apiData?.pagination) {
+          setPagination(apiData.pagination);
         } else {
-          // Set basic pagination info if not provided
           setPagination({
             currentPage: 1,
             totalPages: 1,
-            totalItems: customersWithBalances.length,
+            totalItems: customersArray.length,
             itemsPerPage: 20
           });
         }
+      } else {
+        console.error('API returned error:', response);
+        setCustomers([]);
+        toast({
+          title: "Error",
+          description: response.message || "Failed to load customers",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Failed to fetch customers:', error);
@@ -131,7 +108,7 @@ const Customers = () => {
     }
   };
 
-  // NEW: Handle manual balance sync
+  // Handle manual balance sync
   const handleSyncBalances = async () => {
     try {
       setSyncing(true);
@@ -146,13 +123,22 @@ const Customers = () => {
 
   const handleAddCustomer = async (formData: any) => {
     try {
+      console.log('Creating customer with data:', formData);
       const response = await customersApi.create(formData);
+      console.log('Create customer response:', response);
+      
       if (response.success) {
         setIsDialogOpen(false);
         fetchCustomers();
         toast({
           title: "Customer Added",
           description: "New customer has been added successfully.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: response.message || "Failed to add customer",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -174,6 +160,12 @@ const Customers = () => {
           title: "Customer Updated",
           description: "Customer has been updated successfully.",
         });
+      } else {
+        toast({
+          title: "Error",
+          description: response.message || "Failed to update customer",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Failed to update customer:', error);
@@ -185,20 +177,20 @@ const Customers = () => {
     }
   };
 
-  // NEW: Handle edit customer
+  // Handle edit customer
   const handleEditCustomer = (customer: any) => {
     setCustomerToEdit(customer);
     setIsEditModalOpen(true);
   };
 
-  // NEW: Handle customer updated
+  // Handle customer updated
   const handleCustomerUpdated = () => {
     fetchCustomers();
     setIsEditModalOpen(false);
     setCustomerToEdit(null);
   };
 
-  // NEW: Handle customer deleted
+  // Handle customer deleted
   const handleCustomerDeleted = () => {
     fetchCustomers();
     setIsEditModalOpen(false);
@@ -215,9 +207,10 @@ const Customers = () => {
     return matchesSearch && matchesType;
   });
 
-  const totalDues = customers.reduce((sum, customer) => sum + (customer.currentBalance || customer.dueAmount || 0), 0);
+  // Use the currentBalance from API data
+  const totalDues = customers.reduce((sum, customer) => sum + (customer.currentBalance || 0), 0);
   const activeCustomers = customers.filter(c => c.status === "active" || !c.status).length;
-  const customersWithDues = customers.filter(c => (c.currentBalance || c.dueAmount || 0) > 0).length;
+  const customersWithDues = customers.filter(c => (customer.currentBalance || 0) > 0).length;
 
   const getCustomerTypeColor = (type: string) => {
     const colors = {
@@ -372,8 +365,8 @@ const Customers = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <CardTitle className="text-lg text-foreground">{customer.name}</CardTitle>
-                      <Badge className={`text-xs ${getCustomerTypeColor(customer.type || 'individual')}`}>
-                        {customer.type || 'individual'}
+                      <Badge className={`text-xs ${getCustomerTypeColor(customer.type || 'business')}`}>
+                        {customer.type || 'business'}
                       </Badge>
                       <Badge className={`text-xs ${getStatusColor(customer.status)}`}>
                         {customer.status || 'active'}
@@ -381,12 +374,12 @@ const Customers = () => {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                       <Phone className="h-4 w-4" />
-                      {customer.phone}
+                      {customer.phone || 'No phone'}
                     </div>
                   </div>
-                  {(customer.currentBalance || customer.dueAmount || 0) > 0 && (
+                  {(customer.currentBalance || 0) > 0 && (
                     <Badge variant="destructive" className="ml-2">
-                      Due: PKR {(customer.currentBalance || customer.dueAmount)?.toLocaleString()}
+                      Due: PKR {customer.currentBalance?.toLocaleString()}
                     </Badge>
                   )}
                 </div>
@@ -478,7 +471,7 @@ const CustomerDialog = ({ onSubmit, onClose }: { onSubmit: (data: any) => void; 
     email: "", 
     address: "", 
     city: "",
-    type: "individual",
+    type: "business",
     creditLimit: ""
   });
 
@@ -489,7 +482,7 @@ const CustomerDialog = ({ onSubmit, onClose }: { onSubmit: (data: any) => void; 
       creditLimit: parseFloat(formData.creditLimit) || 0
     });
     setFormData({ 
-      name: "", phone: "", email: "", address: "", city: "", type: "individual", creditLimit: "" 
+      name: "", phone: "", email: "", address: "", city: "", type: "business", creditLimit: "" 
     });
   };
 
@@ -515,7 +508,6 @@ const CustomerDialog = ({ onSubmit, onClose }: { onSubmit: (data: any) => void; 
               id="phone"
               value={formData.phone}
               onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              required
             />
           </div>
         </div>
@@ -609,11 +601,11 @@ const CustomerDetailsDialog = ({
                 <div>
                   <Label>Contact Information</Label>
                   <div className="mt-2 space-y-2 text-sm">
-                    <p><strong>Phone:</strong> {customer.phone}</p>
+                    <p><strong>Phone:</strong> {customer.phone || 'N/A'}</p>
                     <p><strong>Email:</strong> {customer.email || 'N/A'}</p>
-                    <p><strong>Address:</strong> {customer.address}</p>
-                    <p><strong>City:</strong> {customer.city}</p>
-                    <p><strong>Type:</strong> {customer.type}</p>
+                    <p><strong>Address:</strong> {customer.address || 'N/A'}</p>
+                    <p><strong>City:</strong> {customer.city || 'N/A'}</p>
+                    <p><strong>Type:</strong> {customer.type || 'business'}</p>
                   </div>
                 </div>
               </div>
@@ -623,8 +615,8 @@ const CustomerDetailsDialog = ({
                   <div className="mt-2 space-y-2 text-sm">
                     <p><strong>Total Purchases:</strong> PKR {customer.totalPurchases?.toLocaleString() || '0'}</p>
                     <p><strong>Credit Limit:</strong> PKR {customer.creditLimit?.toLocaleString() || '0'}</p>
-                    <p><strong>Outstanding Amount:</strong> <span className="text-red-600 font-bold">PKR {(customer.currentBalance || customer.dueAmount || 0)?.toLocaleString()}</span></p>
-                    <p><strong>Available Credit:</strong> PKR {((customer.creditLimit || 0) - (customer.currentBalance || customer.dueAmount || 0)).toLocaleString()}</p>
+                    <p><strong>Outstanding Amount:</strong> <span className="text-red-600 font-bold">PKR {(customer.currentBalance || 0)?.toLocaleString()}</span></p>
+                    <p><strong>Available Credit:</strong> PKR {((customer.creditLimit || 0) - (customer.currentBalance || 0)).toLocaleString()}</p>
                     <p><strong>Last Purchase:</strong> {customer.lastPurchase || 'N/A'}</p>
                   </div>
                 </div>
