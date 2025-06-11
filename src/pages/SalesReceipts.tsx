@@ -131,7 +131,6 @@ const SalesReceipts = () => {
       pdf.text('USMAN HARDWARE', pageWidth / 2, yPos, { align: 'center' });
       yPos += 6;
       
-      
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'normal');
       pdf.text('Furniture Hardware Specialist', pageWidth / 2, yPos, { align: 'center' });
