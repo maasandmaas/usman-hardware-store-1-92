@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -210,7 +209,7 @@ const Customers = () => {
   // Use the currentBalance from API data
   const totalDues = customers.reduce((sum, customer) => sum + (customer.currentBalance || 0), 0);
   const activeCustomers = customers.filter(c => c.status === "active" || !c.status).length;
-  const customersWithDues = customers.filter(c => (customer.currentBalance || 0) > 0).length;
+  const customersWithDues = customers.filter(c => (c.currentBalance || 0) > 0).length;
 
   const getCustomerTypeColor = (type: string) => {
     const colors = {
