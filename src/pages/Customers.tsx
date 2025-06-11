@@ -53,25 +53,35 @@ const Customers = () => {
       const params: any = {
         page,
         limit: 20,
-        status: 'active'
+        status: 'active',
+        // Add parameter to explicitly request historical data
+        includeHistoricalData: true,
+        // Remove any date filters that might be limiting to today only
+        allTime: true
       };
       
       if (searchTerm) params.search = searchTerm;
       if (customerTypeFilter !== 'all') params.type = customerTypeFilter;
 
-      console.log('Fetching customers with params:', params);
+      console.log('Fetching customers with historical data params:', params);
       const response = await customersApi.getAll(params);
-      console.log('API Response:', response);
+      console.log('API Response for historical data:', response);
       
       if (response.success) {
         // Use the data structure directly from the API
         const apiData = response.data;
         const customersArray = apiData?.customers || [];
         
-        console.log('Customers from API:', customersArray);
+        console.log('Customers with historical data from API:', customersArray);
         
-        // The API already provides currentBalance, creditLimit, totalPurchases
-        // No need to calculate anything, just use the data as-is
+        // Log specific customers to debug the totalPurchases issue
+        customersArray.forEach(customer => {
+          if (customer.lastPurchase && (customer.totalPurchases === 0 || customer.totalPurchases === null)) {
+            console.warn(`Customer ${customer.name} has lastPurchase: ${customer.lastPurchase} but totalPurchases: ${customer.totalPurchases}`);
+          }
+        });
+        
+        // The API should provide currentBalance, creditLimit, totalPurchases with historical data
         setCustomers(customersArray);
         
         // Use pagination info from API
@@ -95,7 +105,7 @@ const Customers = () => {
         });
       }
     } catch (error) {
-      console.error('Failed to fetch customers:', error);
+      console.error('Failed to fetch customers with historical data:', error);
       setCustomers([]);
       toast({
         title: "Error",
