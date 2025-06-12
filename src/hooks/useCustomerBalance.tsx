@@ -31,10 +31,10 @@ export const useCustomerBalance = () => {
         balanceUpdate = {
           customerId,
           orderId,
-          amount: orderTotal, // This should be the amount without tax
+          amount: orderTotal, // Use orderTotal without any tax calculations
           type: 'credit' as const,
           orderNumber,
-          description: `Order ${orderNumber} changed to credit - customer owes amount`
+          description: `Order ${orderNumber} changed to credit - customer owes amount (tax-free)`
         };
       }
       // If changing FROM credit status (customer no longer owes money)
@@ -42,10 +42,10 @@ export const useCustomerBalance = () => {
         balanceUpdate = {
           customerId,
           orderId,
-          amount: orderTotal, // This should be the amount without tax
+          amount: orderTotal, // Use orderTotal without any tax calculations
           type: 'debit' as const,
           orderNumber,
-          description: `Order ${orderNumber} status changed from credit - debt cleared`
+          description: `Order ${orderNumber} status changed from credit - debt cleared (tax-free)`
         };
       }
 
@@ -53,10 +53,10 @@ export const useCustomerBalance = () => {
         const response = await financeApi.updateCustomerBalance(balanceUpdate);
         
         if (response.success) {
-          console.log('Customer balance updated successfully:', response.data);
+          console.log('Customer balance updated successfully (tax-free):', response.data);
           toast({
             title: "Balance Updated",
-            description: `Customer balance updated for order ${orderNumber}`,
+            description: `Customer balance updated for order ${orderNumber} (excluding tax)`,
           });
           return response.data;
         } else {
@@ -96,7 +96,7 @@ export const useCustomerBalance = () => {
       if (response.success) {
         toast({
           title: "Balances Synced",
-          description: `Updated ${response.data.updated} customer balances`,
+          description: `Updated ${response.data.updated} customer balances (tax-free)`,
         });
         return response.data;
       } else {

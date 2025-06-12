@@ -110,12 +110,12 @@ const apiRequest = async <T>(
 export const financeApi = {
   // Customer balance methods
   updateCustomerBalance: (update: CustomerBalanceUpdate) => {
-    console.log('Sending customer balance update without tax:', update);
+    console.log('Sending customer balance update (tax-free):', update);
     return apiRequest<ApiResponse<CustomerBalance>>('/customers/update-balance', {
       method: 'POST',
       body: JSON.stringify({
         ...update,
-        // Ensure the amount is sent without any tax calculations
+        // Ensure the amount is sent without any tax calculations - completely tax-free
         amount: update.amount
       }),
     });

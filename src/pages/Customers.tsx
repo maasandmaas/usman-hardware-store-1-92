@@ -57,22 +57,24 @@ const Customers = () => {
         // Add parameter to explicitly request historical data
         includeHistoricalData: true,
         // Remove any date filters that might be limiting to today only
-        allTime: true
+        allTime: true,
+        // Ensure tax-free calculations
+        excludeTax: true
       };
       
       if (searchTerm) params.search = searchTerm;
       if (customerTypeFilter !== 'all') params.type = customerTypeFilter;
 
-      console.log('Fetching customers with historical data params:', params);
+      console.log('Fetching customers with tax-free data params:', params);
       const response = await customersApi.getAll(params);
-      console.log('API Response for historical data:', response);
+      console.log('API Response for tax-free data:', response);
       
       if (response.success) {
         // Use the data structure directly from the API
         const apiData = response.data;
         const customersArray = apiData?.customers || [];
         
-        console.log('Customers with historical data from API:', customersArray);
+        console.log('Customers with tax-free data from API:', customersArray);
         
         // Log specific customers to debug the totalPurchases issue
         customersArray.forEach(customer => {
@@ -81,7 +83,7 @@ const Customers = () => {
           }
         });
         
-        // The API should provide currentBalance, creditLimit, totalPurchases with historical data
+        // The API should provide currentBalance, creditLimit, totalPurchases with tax-free data
         setCustomers(customersArray);
         
         // Use pagination info from API
@@ -105,7 +107,7 @@ const Customers = () => {
         });
       }
     } catch (error) {
-      console.error('Failed to fetch customers with historical data:', error);
+      console.error('Failed to fetch customers with tax-free data:', error);
       setCustomers([]);
       toast({
         title: "Error",
@@ -216,7 +218,7 @@ const Customers = () => {
     return matchesSearch && matchesType;
   });
 
-  // Use the currentBalance from API data
+  // Use the currentBalance from API data (should be tax-free)
   const totalDues = customers.reduce((sum, customer) => sum + (customer.currentBalance || 0), 0);
   const activeCustomers = customers.filter(c => c.status === "active" || !c.status).length;
   const customersWithDues = customers.filter(c => (c.currentBalance || 0) > 0).length;
@@ -250,7 +252,7 @@ const Customers = () => {
           <SidebarTrigger />
           <div>
             <h1 className="text-3xl font-bold text-foreground">Customer Management</h1>
-            <p className="text-muted-foreground">Manage customer profiles, dues, and transactions</p>
+            <p className="text-muted-foreground">Manage customer profiles, dues, and transactions (tax-free)</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -294,7 +296,7 @@ const Customers = () => {
             <div className="flex items-center gap-3">
               <CreditCard className="h-8 w-8 text-red-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Total Dues</p>
+                <p className="text-sm text-muted-foreground">Total Dues (Tax-Free)</p>
                 <p className="text-2xl font-bold text-red-600">PKR {totalDues.toLocaleString()}</p>
               </div>
             </div>
@@ -388,7 +390,7 @@ const Customers = () => {
                   </div>
                   {(customer.currentBalance || 0) > 0 && (
                     <Badge variant="destructive" className="ml-2">
-                      Due: PKR {customer.currentBalance?.toLocaleString()}
+                      Due: PKR {customer.currentBalance?.toLocaleString()} (Tax-Free)
                     </Badge>
                   )}
                 </div>
@@ -408,7 +410,7 @@ const Customers = () => {
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Total Purchases</p>
+                    <p className="text-muted-foreground">Total Purchases (Tax-Free)</p>
                     <p className="font-bold text-green-600">PKR {customer.totalPurchases?.toLocaleString() || '0'}</p>
                   </div>
                   <div>
@@ -620,7 +622,7 @@ const CustomerDetailsDialog = ({
               </div>
               <div className="space-y-4">
                 <div>
-                  <Label>Account Summary</Label>
+                  <Label>Account Summary (Tax-Free)</Label>
                   <div className="mt-2 space-y-2 text-sm">
                     <p><strong>Total Purchases:</strong> PKR {customer.totalPurchases?.toLocaleString() || '0'}</p>
                     <p><strong>Credit Limit:</strong> PKR {customer.creditLimit?.toLocaleString() || '0'}</p>

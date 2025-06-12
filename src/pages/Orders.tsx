@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,6 +70,8 @@ const Orders = () => {
       const params: any = {
         page: currentPage,
         limit: 20,
+        // Ensure tax-free calculations
+        excludeTax: true
       };
 
       if (filterStatus !== "all") {
@@ -116,8 +117,11 @@ const Orders = () => {
   // ENHANCED 80MM THERMAL RECEIPT
   const handleOrderPDF = async (order: Sale) => {
     try {
+      // Calculate final total without tax (subtotal - discount)
+      const finalTotal = order.subtotal - order.discount;
+      
       // Generate QR code with proper encoding
-      const qrData = `USMAN-HARDWARE-${order.orderNumber}-${order.subtotal}-VERIFIED`;
+      const qrData = `USMAN-HARDWARE-${order.orderNumber}-${finalTotal}-VERIFIED`;
       const qrCodeDataURL = await QRCode.toDataURL(qrData, {
         width: 60,
         margin: 1,
@@ -190,7 +194,7 @@ const Orders = () => {
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(26, 54, 93);
-      pdf.text('SALES RECEIPT', pageWidth / 2, yPos + 6.5, { align: 'center' });
+      pdf.text('SALES RECEIPT (TAX-FREE)', pageWidth / 2, yPos + 6.5, { align: 'center' });
       
       yPos += 16;
 
@@ -309,7 +313,7 @@ const Orders = () => {
       pdf.line(8, yPos, pageWidth - 8, yPos);
       yPos += 6;
 
-      // TOTALS SECTION - LEFT ALIGNED
+      // TOTALS SECTION - LEFT ALIGNED (NO TAX)
       const totalsStartX = 8;
       
       pdf.setFontSize(7);
@@ -329,8 +333,7 @@ const Orders = () => {
         yPos += 4;
       }
       
-      // Grand Total with emphasis - LEFT ALIGNED (subtotal minus discount)
-      const finalTotal = order.subtotal - order.discount;
+      // Grand Total with emphasis - LEFT ALIGNED (subtotal minus discount, NO TAX)
       pdf.setFillColor(26, 54, 93);
       pdf.roundedRect(totalsStartX, yPos, 45, 6, 1, 1, 'F');
       
@@ -425,11 +428,11 @@ const Orders = () => {
       pdf.text(`Receipt ID: ${order.orderNumber}`, pageWidth / 2, yPos + 3, { align: 'center' });
 
       // Save with descriptive filename
-      pdf.save(`UH_Receipt_${order.orderNumber}_80mm.pdf`);
+      pdf.save(`UH_Receipt_${order.orderNumber}_80mm_TaxFree.pdf`);
       
       toast({
         title: "Receipt Generated!",
-        description: `Thermal receipt for order ${order.orderNumber}`,
+        description: `Tax-free thermal receipt for order ${order.orderNumber}`,
       });
     } catch (error) {
       console.error('Failed to generate receipt:', error);
@@ -453,7 +456,8 @@ const Orders = () => {
       // Fetch all orders for export (without pagination)
       const response = await salesApi.getAll({ 
         limit: 10000, // Large number to get all orders
-        page: 1
+        page: 1,
+        excludeTax: true
       });
       
       if (response.success) {
@@ -469,7 +473,7 @@ const Orders = () => {
         // Title
         pdf.setFontSize(20);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Orders Export Report', pageWidth / 2, yPos, { align: 'center' });
+        pdf.text('Orders Export Report (Tax-Free)', pageWidth / 2, yPos, { align: 'center' });
         yPos += 15;
 
         // Export info
@@ -488,8 +492,8 @@ const Orders = () => {
         // Table headers
         pdf.setFontSize(8);
         pdf.setFont('helvetica', 'bold');
-        const headers = ['Order #', 'Customer', 'Date', 'Items', 'Total', 'Status'];
-        const colWidths = [25, 35, 25, 15, 25, 20];
+        const headers = ['Order #', 'Customer', 'Date', 'Items', 'Total (Tax-Free)', 'Status'];
+        const colWidths = [25, 35, 25, 15, 30, 20];
         let xPos = margin;
 
         headers.forEach((header, index) => {
@@ -608,7 +612,7 @@ const Orders = () => {
           <SidebarTrigger />
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Orders Management</h1>
-            <p className="text-slate-600">View and manage all customer orders</p>
+            <p className="text-slate-600">View and manage all customer orders (tax-free)</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -651,7 +655,7 @@ const Orders = () => {
                 <DollarSign className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Total Sales</p>
+                <p className="text-sm text-slate-600">Total Sales (Tax-Free)</p>
                 <p className="text-2xl font-bold text-green-600">Rs. {summary.totalSales.toLocaleString()}</p>
               </div>
             </div>
@@ -665,7 +669,7 @@ const Orders = () => {
                 <Package className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Avg Order Value</p>
+                <p className="text-sm text-slate-600">Avg Order Value (Tax-Free)</p>
                 <p className="text-2xl font-bold text-purple-600">Rs. {summary.avgOrderValue.toLocaleString()}</p>
               </div>
             </div>
@@ -678,7 +682,7 @@ const Orders = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5 text-blue-600" />
-            Orders List
+            Orders List (Tax-Free)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -753,7 +757,7 @@ const Orders = () => {
                   <TableHead>Customer</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Items</TableHead>
-                  <TableHead>Total</TableHead>
+                  <TableHead>Total (Tax-Free)</TableHead>
                   <TableHead>Payment</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -761,7 +765,7 @@ const Orders = () => {
               </TableHeader>
               <TableBody>
                 {filteredOrders.map((order) => {
-                  // Calculate final total
+                  // Calculate final total without tax (subtotal - discount)
                   const finalTotal = order.subtotal - order.discount;
                   return (
                     <TableRow key={order.id}>
