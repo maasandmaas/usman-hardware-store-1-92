@@ -1,4 +1,5 @@
 
+
 const BASE_URL = 'https://zaidawn.site/wp-json/ims/v1';
 
 // API response types
@@ -129,18 +130,11 @@ export const financeApi = {
     previousPaymentMethod: string;
     orderTotal: number;
     orderNumber: string;
-  }) => {
-    // Ensure we use the full order total without any tax calculations
-    const dataToSend = {
-      ...paymentData,
-      orderTotal: paymentData.orderTotal // Use the full amount passed in
-    };
-    
-    return apiRequest<ApiResponse<any>>(`/sales/${orderId}/payment-method`, {
+  }) =>
+    apiRequest<ApiResponse<any>>(`/sales/${orderId}/payment-method`, {
       method: 'PUT',
-      body: JSON.stringify(dataToSend),
-    });
-  },
+      body: JSON.stringify(paymentData),
+    }),
 
   // Finance overview methods
   getOverview: (period?: string) =>
@@ -218,3 +212,4 @@ export const financeApi = {
       body: JSON.stringify(expense),
     }),
 };
+

@@ -23,9 +23,6 @@ export const useCustomerBalance = () => {
         previousStatus
       });
 
-      // Use the full order total without any tax calculations
-      const actualAmount = orderTotal;
-
       // Determine if we need to add or remove debt based on status change
       let balanceUpdate = null;
 
@@ -34,7 +31,7 @@ export const useCustomerBalance = () => {
         balanceUpdate = {
           customerId,
           orderId,
-          amount: actualAmount,
+          amount: orderTotal,
           type: 'credit' as const,
           orderNumber,
           description: `Order ${orderNumber} changed to credit - customer owes amount`
@@ -45,7 +42,7 @@ export const useCustomerBalance = () => {
         balanceUpdate = {
           customerId,
           orderId,
-          amount: actualAmount,
+          amount: orderTotal,
           type: 'debit' as const,
           orderNumber,
           description: `Order ${orderNumber} status changed from credit - debt cleared`
