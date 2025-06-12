@@ -113,44 +113,62 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
         } else {
           throw new Error(response.message || 'Failed to update status');
         }
-      } else if (editMode === 'payment' || editMode === 'customer') {
-        const updateData: any = {};
+      } else if (editMode === 'payment') {
+        console.log('Updating payment method from', order.paymentMethod, 'to:', editValues.paymentMethod);
         
-        if (editMode === 'payment') {
-          updateData.paymentMethod = editValues.paymentMethod;
-          console.log('Updating payment method to:', editValues.paymentMethod);
-          
-          // NEW: Handle customer balance update for payment method changes
-          if (order.customerId && editValues.paymentMethod !== order.paymentMethod) {
-            console.log('Payment method changed, updating customer balance');
-            try {
-              await updateBalanceForOrderStatusChange(
-                order.id,
-                order.customerId,
-                order.orderNumber,
-                order.total,
-                editValues.paymentMethod === 'credit' ? 'credit' : 'paid',
-                order.paymentMethod === 'credit' ? 'credit' : 'paid'
-              );
-              console.log('Customer balance updated successfully');
-            } catch (balanceError) {
-              console.error('Failed to update customer balance:', balanceError);
-              // Don't fail the whole operation, just warn
+        // NEW: Use dedicated API endpoint for payment method updates with balance handling
+        if (order.customerId && editValues.paymentMethod !== order.paymentMethod) {
+          try {
+            const response = await fetch(`https://zaidawn.site/wp-json/ims/v1/sales/${order.id}/payment-method`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                paymentMethod: editValues.paymentMethod,
+                customerId: order.customerId,
+                previousPaymentMethod: order.paymentMethod,
+                orderTotal: order.total,
+                orderNumber: order.orderNumber
+              })
+            });
+            
+            const result = await response.json();
+            console.log('Payment method update response:', result);
+            
+            if (result.success) {
               toast({
-                title: "Warning",
-                description: "Payment method updated but customer balance sync failed",
-                variant: "destructive"
+                title: "Payment Method Updated",
+                description: "Payment method and customer balance updated successfully",
               });
+            } else {
+              throw new Error(result.message || 'Failed to update payment method');
             }
+          } catch (error) {
+            console.error('Failed to update payment method with balance:', error);
+            throw error;
           }
-        } else if (editMode === 'customer') {
-          updateData.customerId = editValues.customerId;
-          console.log('Updating customer to:', editValues.customerId);
+        } else {
+          // Fallback to regular update if no customer or no payment method change
+          const response = await fetch(`https://zaidawn.site/wp-json/ims/v1/sales/${order.id}/details`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentMethod: editValues.paymentMethod })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            toast({
+              title: "Payment Method Updated",
+              description: "Payment method has been updated successfully",
+            });
+          } else {
+            throw new Error(result.message || 'Failed to update payment method');
+          }
         }
+      } else if (editMode === 'customer') {
+        const updateData = { customerId: editValues.customerId };
+        console.log('Updating customer to:', editValues.customerId);
         
-        console.log('Sending update data:', updateData);
-        
-        // Using direct fetch for now since salesApi doesn't have a general update method
         const response = await fetch(`https://zaidawn.site/wp-json/ims/v1/sales/${order.id}/details`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -162,8 +180,8 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
         
         if (result.success) {
           toast({
-            title: "Order Updated",
-            description: `${editMode === 'payment' ? 'Payment method' : 'Customer'} has been updated successfully`,
+            title: "Customer Updated",
+            description: "Customer has been updated successfully",
           });
         } else {
           throw new Error(result.message || 'Update failed');
