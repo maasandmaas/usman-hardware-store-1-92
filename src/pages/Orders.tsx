@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Search, ShoppingCart, Eye, Calendar, DollarSign, User, Package, Download, FileText, RefreshCw } from "lucide-react";
+import { Search, ShoppingCart, Eye, Calendar, DollarSign, User, Package, FileText, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { salesApi } from "@/services/api";
 import { OrderDetailsModal } from "@/components/orders/OrderDetailsModal";
@@ -57,7 +58,6 @@ const Orders = () => {
     avgOrderValue: 0
   });
   
-  // NEW: State for order details modal
   const [selectedOrder, setSelectedOrder] = useState<Sale | null>(null);
   const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
 
@@ -108,13 +108,12 @@ const Orders = () => {
     }
   };
 
-  // NEW: Handle view order details
   const handleViewOrder = (order: Sale) => {
     setSelectedOrder(order);
     setIsOrderDetailsOpen(true);
   };
 
-  // ENHANCED 80MM THERMAL RECEIPT - NO TAX VERSION
+  // ENHANCED 80MM THERMAL RECEIPT
   const handleOrderPDF = async (order: Sale) => {
     try {
       // Generate QR code with proper encoding
@@ -310,7 +309,7 @@ const Orders = () => {
       pdf.line(8, yPos, pageWidth - 8, yPos);
       yPos += 6;
 
-      // TOTALS SECTION - LEFT ALIGNED (NO TAX)
+      // TOTALS SECTION - LEFT ALIGNED
       const totalsStartX = 8;
       
       pdf.setFontSize(7);
@@ -330,7 +329,7 @@ const Orders = () => {
         yPos += 4;
       }
       
-      // Grand Total with emphasis - LEFT ALIGNED (subtotal minus discount, no tax)
+      // Grand Total with emphasis - LEFT ALIGNED (subtotal minus discount)
       const finalTotal = order.subtotal - order.discount;
       pdf.setFillColor(26, 54, 93);
       pdf.roundedRect(totalsStartX, yPos, 45, 6, 1, 1, 'F');
@@ -426,14 +425,14 @@ const Orders = () => {
       pdf.text(`Receipt ID: ${order.orderNumber}`, pageWidth / 2, yPos + 3, { align: 'center' });
 
       // Save with descriptive filename
-      pdf.save(`UH_Receipt_${order.orderNumber}_80mm_NoTax.pdf`);
+      pdf.save(`UH_Receipt_${order.orderNumber}_80mm.pdf`);
       
       toast({
-        title: "Tax-Free Receipt Generated!",
-        description: `Clean thermal receipt for order ${order.orderNumber} without any tax calculations`,
+        title: "Receipt Generated!",
+        description: `Thermal receipt for order ${order.orderNumber}`,
       });
     } catch (error) {
-      console.error('Failed to generate tax-free receipt:', error);
+      console.error('Failed to generate receipt:', error);
       toast({
         title: "Receipt Generation Failed",
         description: "Failed to generate thermal receipt. Please try again.",
@@ -445,99 +444,6 @@ const Orders = () => {
   const handleSearch = () => {
     setCurrentPage(1);
     fetchOrders();
-  };
-
-  const handleOrdersExportCSV = async () => {
-    try {
-      setExportLoading(true);
-      
-      // Fetch all orders for export (without pagination)
-      const response = await salesApi.getAll({ 
-        limit: 10000, // Large number to get all orders
-        page: 1
-      });
-      
-      if (response.success) {
-        const allOrders = response.data.sales || response.data || [];
-        const exportData = allOrders.map((order: Sale) => ({
-          'Order Number': order.orderNumber,
-          'Customer Name': order.customerName || 'Walk-in',
-          'Customer ID': order.customerId || 'N/A',
-          'Date': new Date(order.date).toLocaleDateString(),
-          'Time': order.time,
-          'Items Count': order.items.length,
-          'Items': order.items.map(item => `${item.productName} (${item.quantity}x)`).join('; '),
-          'Subtotal (PKR)': order.subtotal,
-          'Discount (PKR)': order.discount,
-          'Final Total (PKR)': order.subtotal - order.discount, // No tax calculation
-          'Payment Method': order.paymentMethod,
-          'Status': order.status,
-          'Created By': order.createdBy,
-          'Created At': order.createdAt
-        }));
-
-        // Calculate summary without tax
-        const totalSales = allOrders.reduce((sum: number, order: Sale) => sum + (order.subtotal - order.discount), 0);
-        const totalOrders = allOrders.length;
-
-        // Add summary row
-        exportData.unshift({
-          'Order Number': 'SUMMARY',
-          'Customer Name': `Total Orders: ${totalOrders}`,
-          'Customer ID': `Export Date: ${new Date().toLocaleString()}`,
-          'Date': `Total Sales: PKR ${totalSales.toLocaleString()} (No Tax)`,
-          'Time': '',
-          'Items Count': '',
-          'Items': '',
-          'Subtotal (PKR)': '',
-          'Discount (PKR)': '',
-          'Final Total (PKR)': '',
-          'Payment Method': '',
-          'Status': '',
-          'Created By': '',
-          'Created At': ''
-        });
-
-        // Convert to CSV
-        const headers = Object.keys(exportData[1] || {});
-        const csvContent = [
-          headers.join(','),
-          ...exportData.map(row => 
-            headers.map(header => {
-              const value = row[header as keyof typeof row];
-              return typeof value === 'string' && value.includes(',') 
-                ? `"${value}"` 
-                : value;
-            }).join(',')
-          )
-        ].join('\n');
-
-        // Download CSV
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `orders_export_no_tax_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        toast({
-          title: "CSV Export Successful (No Tax)",
-          description: `Exported ${allOrders.length} orders without tax calculations.`,
-        });
-      }
-    } catch (error) {
-      console.error('Failed to export orders:', error);
-      toast({
-        title: "Export Failed",
-        description: "Failed to export orders data. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setExportLoading(false);
-    }
   };
 
   const handleOrdersExportPDF = async () => {
@@ -563,7 +469,7 @@ const Orders = () => {
         // Title
         pdf.setFontSize(20);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Orders Export Report (Tax-Free)', pageWidth / 2, yPos, { align: 'center' });
+        pdf.text('Orders Export Report', pageWidth / 2, yPos, { align: 'center' });
         yPos += 15;
 
         // Export info
@@ -574,15 +480,15 @@ const Orders = () => {
         pdf.text(`Total Orders: ${allOrders.length}`, margin, yPos);
         yPos += 8;
 
-        // Calculate total sales without tax
+        // Calculate total sales
         const totalSales = allOrders.reduce((sum: number, order: Sale) => sum + (order.subtotal - order.discount), 0);
-        pdf.text(`Total Sales: PKR ${totalSales.toLocaleString()} (No Tax Applied)`, margin, yPos);
+        pdf.text(`Total Sales: PKR ${totalSales.toLocaleString()}`, margin, yPos);
         yPos += 15;
 
         // Table headers
         pdf.setFontSize(8);
         pdf.setFont('helvetica', 'bold');
-        const headers = ['Order #', 'Customer', 'Date', 'Items', 'Total (No Tax)', 'Status'];
+        const headers = ['Order #', 'Customer', 'Date', 'Items', 'Total', 'Status'];
         const colWidths = [25, 35, 25, 15, 25, 20];
         let xPos = margin;
 
@@ -606,7 +512,7 @@ const Orders = () => {
           }
 
           xPos = margin;
-          const finalTotal = order.subtotal - order.discount; // No tax
+          const finalTotal = order.subtotal - order.discount;
           const rowData = [
             order.orderNumber.substring(0, 12),
             (order.customerName || 'Walk-in').substring(0, 18),
@@ -626,14 +532,14 @@ const Orders = () => {
         // Footer
         yPos = pageHeight - 20;
         pdf.setFontSize(8);
-        pdf.text(`Generated by Order Management System - Tax-Free Report`, pageWidth / 2, yPos, { align: 'center' });
+        pdf.text(`Generated by Order Management System`, pageWidth / 2, yPos, { align: 'center' });
 
         // Save PDF
-        pdf.save(`orders_export_no_tax_${new Date().toISOString().split('T')[0]}.pdf`);
+        pdf.save(`orders_export_${new Date().toISOString().split('T')[0]}.pdf`);
 
         toast({
-          title: "PDF Export Successful (No Tax)",
-          description: `Exported ${allOrders.length} orders to PDF without tax calculations.`,
+          title: "PDF Export Successful",
+          description: `Exported ${allOrders.length} orders to PDF.`,
         });
       }
     } catch (error) {
@@ -702,24 +608,10 @@ const Orders = () => {
           <SidebarTrigger />
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Orders Management</h1>
-            <p className="text-slate-600">View and manage all customer orders (Tax-Free)</p>
+            <p className="text-slate-600">View and manage all customer orders</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleOrdersExportCSV}
-            disabled={exportLoading}
-            className="bg-green-600 hover:bg-green-700 text-white border-green-600"
-          >
-            {exportLoading ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
-            {exportLoading ? 'Exporting...' : 'CSV Export (No Tax)'}
-          </Button>
-
           <Button 
             variant="outline" 
             onClick={handleOrdersExportPDF}
@@ -731,12 +623,12 @@ const Orders = () => {
             ) : (
               <FileText className="h-4 w-4 mr-2" />
             )}
-            {exportLoading ? 'Exporting...' : 'PDF Export (No Tax)'}
+            {exportLoading ? 'Exporting...' : 'PDF Export'}
           </Button>
         </div>
       </div>
 
-      {/* Summary Cards - Updated to show tax-free totals */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card className="border-slate-200">
           <CardContent className="p-6">
@@ -759,7 +651,7 @@ const Orders = () => {
                 <DollarSign className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Total Sales (No Tax)</p>
+                <p className="text-sm text-slate-600">Total Sales</p>
                 <p className="text-2xl font-bold text-green-600">Rs. {summary.totalSales.toLocaleString()}</p>
               </div>
             </div>
@@ -773,7 +665,7 @@ const Orders = () => {
                 <Package className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Avg Order Value (No Tax)</p>
+                <p className="text-sm text-slate-600">Avg Order Value</p>
                 <p className="text-2xl font-bold text-purple-600">Rs. {summary.avgOrderValue.toLocaleString()}</p>
               </div>
             </div>
@@ -786,7 +678,7 @@ const Orders = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5 text-blue-600" />
-            Orders List (Tax-Free View)
+            Orders List
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -852,7 +744,7 @@ const Orders = () => {
             />
           </div>
 
-          {/* Orders Table - Updated to show tax-free totals */}
+          {/* Orders Table */}
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -861,7 +753,7 @@ const Orders = () => {
                   <TableHead>Customer</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Items</TableHead>
-                  <TableHead>Total (No Tax)</TableHead>
+                  <TableHead>Total</TableHead>
                   <TableHead>Payment</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -869,7 +761,7 @@ const Orders = () => {
               </TableHeader>
               <TableBody>
                 {filteredOrders.map((order) => {
-                  // Calculate final total without tax
+                  // Calculate final total
                   const finalTotal = order.subtotal - order.discount;
                   return (
                     <TableRow key={order.id}>
@@ -973,7 +865,7 @@ const Orders = () => {
         </CardContent>
       </Card>
 
-      {/* NEW: Order Details Modal */}
+      {/* Order Details Modal */}
       <OrderDetailsModal
         open={isOrderDetailsOpen}
         onOpenChange={setIsOrderDetailsOpen}
