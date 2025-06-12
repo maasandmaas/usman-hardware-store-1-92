@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,7 @@ interface OrderDetailsModalProps {
 
 export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }: OrderDetailsModalProps) => {
   const { toast } = useToast();
-  const { updateBalanceForOrderStatusChange, updateBalanceForPaymentMethodChange } = useCustomerBalance();
+  const { updateBalanceForOrderStatusChange } = useCustomerBalance();
   const [showAdjustmentForm, setShowAdjustmentForm] = useState(false);
   const [adjustmentItems, setAdjustmentItems] = useState<any[]>([]);
   const [adjustmentNotes, setAdjustmentNotes] = useState("");
@@ -117,25 +116,19 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
       } else if (editMode === 'payment') {
         console.log('Updating payment method from', order.paymentMethod, 'to:', editValues.paymentMethod);
         
-        // Handle customer balance update for payment method change
+        // NEW: Use dedicated API endpoint for payment method updates with balance handling
         if (order.customerId && editValues.paymentMethod !== order.paymentMethod) {
           try {
-            // First update the customer balance based on payment method change
-            await updateBalanceForPaymentMethodChange(
-              order.id,
-              order.customerId,
-              order.orderNumber,
-              order.subtotal,
-              order.discount || 0,
-              editValues.paymentMethod,
-              order.paymentMethod
-            );
-
-            // Then update the order payment method
-            const response = await fetch(`https://zaidawn.site/wp-json/ims/v1/sales/${order.id}/details`, {
+            const response = await fetch(`https://zaidawn.site/wp-json/ims/v1/sales/${order.id}/payment-method`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ paymentMethod: editValues.paymentMethod })
+              body: JSON.stringify({
+                paymentMethod: editValues.paymentMethod,
+                customerId: order.customerId,
+                previousPaymentMethod: order.paymentMethod,
+                orderTotal: order.total,
+                orderNumber: order.orderNumber
+              })
             });
             
             const result = await response.json();
@@ -552,10 +545,16 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
                     <span>PKR {order.discount.toFixed(2)}</span>
                   </div>
                 )}
+                {order.tax > 0 && (
+                  <div className="flex justify-between">
+                    <span>Tax:</span>
+                    <span>PKR {order.tax.toFixed(2)}</span>
+                  </div>
+                )}
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total:</span>
-                  <span>PKR {((order.subtotal || 0) - (order.discount || 0)).toFixed(2)}</span>
+                  <span>PKR {(order.total || 0).toFixed(2)}</span>
                 </div>
               </CardContent>
             </Card>
