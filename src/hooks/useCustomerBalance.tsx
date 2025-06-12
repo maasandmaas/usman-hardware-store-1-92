@@ -92,11 +92,12 @@ export const useCustomerBalance = () => {
 
   const syncAllCustomerBalances = async () => {
     try {
+      console.log('Starting customer balance sync with tax-free calculations...');
       const response = await financeApi.syncCustomerBalances();
       if (response.success) {
         toast({
           title: "Balances Synced",
-          description: `Updated ${response.data.updated} customer balances`,
+          description: `Updated ${response.data.updated} customer balances without tax`,
         });
         return response.data;
       } else {
