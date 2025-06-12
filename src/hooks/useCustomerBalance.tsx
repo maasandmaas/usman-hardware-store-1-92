@@ -76,6 +76,81 @@ export const useCustomerBalance = () => {
     }
   };
 
+  const updateBalanceForPaymentMethodChange = async (
+    orderId: number,
+    customerId: number,
+    orderNumber: string,
+    orderSubtotal: number,
+    orderDiscount: number,
+    newPaymentMethod: string,
+    previousPaymentMethod: string
+  ) => {
+    try {
+      console.log('Updating customer balance for payment method change:', {
+        orderId,
+        customerId,
+        orderNumber,
+        orderSubtotal,
+        orderDiscount,
+        newPaymentMethod,
+        previousPaymentMethod
+      });
+
+      // Calculate the actual amount without tax (subtotal - discount)
+      const actualAmount = orderSubtotal - orderDiscount;
+
+      let balanceUpdate = null;
+
+      // If changing TO credit payment method (customer now owes money)
+      if (newPaymentMethod === 'credit' && previousPaymentMethod !== 'credit') {
+        balanceUpdate = {
+          customerId,
+          orderId,
+          amount: actualAmount,
+          type: 'credit' as const,
+          orderNumber,
+          description: `Order ${orderNumber} payment changed to credit - customer owes amount`
+        };
+      }
+      // If changing FROM credit payment method (customer no longer owes money)
+      else if (previousPaymentMethod === 'credit' && newPaymentMethod !== 'credit') {
+        balanceUpdate = {
+          customerId,
+          orderId,
+          amount: actualAmount,
+          type: 'debit' as const,
+          orderNumber,
+          description: `Order ${orderNumber} payment changed from credit - debt cleared`
+        };
+      }
+
+      if (balanceUpdate) {
+        const response = await financeApi.updateCustomerBalance(balanceUpdate);
+        
+        if (response.success) {
+          console.log('Customer balance updated successfully:', response.data);
+          toast({
+            title: "Balance Updated",
+            description: `Customer balance updated for order ${orderNumber}`,
+          });
+          return response.data;
+        } else {
+          throw new Error('Failed to update customer balance');
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Failed to update customer balance:', error);
+      toast({
+        title: "Balance Update Failed",
+        description: `Failed to update customer balance for order ${orderNumber}`,
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const getCustomerBalance = async (customerId: number) => {
     try {
       const response = await financeApi.getCustomerBalance(customerId);
@@ -115,6 +190,7 @@ export const useCustomerBalance = () => {
 
   return {
     updateBalanceForOrderStatusChange,
+    updateBalanceForPaymentMethodChange,
     getCustomerBalance,
     syncAllCustomerBalances
   };
