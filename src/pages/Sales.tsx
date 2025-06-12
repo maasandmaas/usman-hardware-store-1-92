@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Package, Search, Plus, Minus, Pin, PinOff, Filter, Menu, X, AlertTriangle } from "lucide-react";
+import { Package, Search, Plus, Minus, Pin, PinOff, Filter, Menu, X, AlertTriangle, Maximize, Minimize } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { salesApi, customersApi, productsApi } from "@/services/api";
 import { QuickCustomerForm } from "@/components/QuickCustomerForm";
@@ -48,6 +48,7 @@ const Sales = () => {
   const [quantityInputs, setQuantityInputs] = useState<{[key: number]: string}>({});
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Fullscreen toggle function
   const toggleFullscreen = () => {
