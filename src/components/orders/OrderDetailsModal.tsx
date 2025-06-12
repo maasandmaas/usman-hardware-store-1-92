@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { User, Package, Calendar, DollarSign, RotateCcw, AlertTriangle, Minus, Plus, ArrowLeft, Edit2, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { salesApi, customersApi } from "@/services/api";
+import { useCustomerBalance } from "@/hooks/useCustomerBalance";
 
 interface OrderDetailsModalProps {
   open: boolean;
@@ -22,6 +23,7 @@ interface OrderDetailsModalProps {
 
 export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }: OrderDetailsModalProps) => {
   const { toast } = useToast();
+  const { updateBalanceForOrderStatusChange } = useCustomerBalance();
   const [showAdjustmentForm, setShowAdjustmentForm] = useState(false);
   const [adjustmentItems, setAdjustmentItems] = useState<any[]>([]);
   const [adjustmentNotes, setAdjustmentNotes] = useState("");
@@ -117,6 +119,30 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
         if (editMode === 'payment') {
           updateData.paymentMethod = editValues.paymentMethod;
           console.log('Updating payment method to:', editValues.paymentMethod);
+          
+          // NEW: Handle customer balance update for payment method changes
+          if (order.customerId && editValues.paymentMethod !== order.paymentMethod) {
+            console.log('Payment method changed, updating customer balance');
+            try {
+              await updateBalanceForOrderStatusChange(
+                order.id,
+                order.customerId,
+                order.orderNumber,
+                order.total,
+                editValues.paymentMethod === 'credit' ? 'credit' : 'paid',
+                order.paymentMethod === 'credit' ? 'credit' : 'paid'
+              );
+              console.log('Customer balance updated successfully');
+            } catch (balanceError) {
+              console.error('Failed to update customer balance:', balanceError);
+              // Don't fail the whole operation, just warn
+              toast({
+                title: "Warning",
+                description: "Payment method updated but customer balance sync failed",
+                variant: "destructive"
+              });
+            }
+          }
         } else if (editMode === 'customer') {
           updateData.customerId = editValues.customerId;
           console.log('Updating customer to:', editValues.customerId);
