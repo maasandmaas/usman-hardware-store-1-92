@@ -25,6 +25,41 @@ export interface CustomerBalance {
   creditLimit: number;
 }
 
+// Accounts Receivable types
+export interface AccountsReceivable {
+  id: number;
+  customerName: string;
+  customerId: number;
+  orderNumber: string;
+  amount: number;
+  dueDate: string;
+  daysOverdue: number;
+  status: 'pending' | 'overdue' | 'paid';
+}
+
+// Expense types
+export interface Expense {
+  id: number;
+  category: string;
+  description: string;
+  amount: number;
+  date: string;
+  reference: string;
+  paymentMethod: 'cash' | 'bank_transfer' | 'cheque' | 'credit_card';
+  createdBy: string;
+  createdAt: string;
+}
+
+// Finance Overview types
+export interface FinanceOverview {
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  accountsReceivable: number;
+  cashFlow: number;
+  monthlyGrowth: number;
+}
+
 // Generic API request function
 const apiRequest = async <T>(
   endpoint: string,
@@ -55,24 +90,21 @@ const apiRequest = async <T>(
 
 // Finance API endpoints
 export const financeApi = {
-  // Update customer balance for order payment method changes
+  // Customer balance methods
   updateCustomerBalance: (update: CustomerBalanceUpdate) =>
     apiRequest<ApiResponse<CustomerBalance>>('/customers/update-balance', {
       method: 'POST',
       body: JSON.stringify(update),
     }),
 
-  // Get customer balance
   getCustomerBalance: (customerId: number) =>
     apiRequest<ApiResponse<CustomerBalance>>(`/customers/${customerId}/balance`),
 
-  // Sync all customer balances (recalculate from sales)
   syncCustomerBalances: () =>
     apiRequest<ApiResponse<{ updated: number }>>('/customers/sync-balances', {
       method: 'POST',
     }),
 
-  // Update order payment method with balance adjustment
   updateOrderPaymentMethod: (orderId: number, paymentData: { 
     paymentMethod: string;
     customerId?: number;
@@ -83,5 +115,73 @@ export const financeApi = {
     apiRequest<ApiResponse<any>>(`/sales/${orderId}/payment-method`, {
       method: 'PUT',
       body: JSON.stringify(paymentData),
+    }),
+
+  // Finance overview methods
+  getOverview: () =>
+    apiRequest<ApiResponse<FinanceOverview>>('/finance/overview'),
+
+  // Accounts receivable methods
+  getAccountsReceivable: (params?: {
+    status?: 'pending' | 'overdue' | 'paid';
+    customerId?: number;
+    limit?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) queryParams.append(key, value.toString());
+      });
+    }
+    const query = queryParams.toString();
+    return apiRequest<ApiResponse<{ receivables: AccountsReceivable[] }>>(`/finance/accounts-receivable${query ? `?${query}` : ''}`);
+  },
+
+  recordPayment: (payment: {
+    customerId: number;
+    amount: number;
+    paymentMethod: string;
+    reference?: string;
+    notes?: string;
+  }) =>
+    apiRequest<ApiResponse<any>>('/finance/record-payment', {
+      method: 'POST',
+      body: JSON.stringify(payment),
+    }),
+
+  // Expense methods
+  getExpenses: (params?: {
+    category?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    limit?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) queryParams.append(key, value.toString());
+      });
+    }
+    const query = queryParams.toString();
+    return apiRequest<ApiResponse<{ 
+      expenses: Expense[];
+      summary: {
+        totalExpenses: number;
+        categories: Array<{ category: string; amount: number }>;
+      };
+    }>>(`/finance/expenses${query ? `?${query}` : ''}`);
+  },
+
+  createExpense: (expense: {
+    category: string;
+    description: string;
+    amount: number;
+    date: string;
+    paymentMethod: string;
+    reference?: string;
+  }) =>
+    apiRequest<ApiResponse<Expense>>('/finance/expenses', {
+      method: 'POST',
+      body: JSON.stringify(expense),
     }),
 };
