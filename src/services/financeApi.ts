@@ -1,4 +1,5 @@
 
+
 const BASE_URL = 'https://zaidawn.site/wp-json/ims/v1';
 
 // API response types
@@ -31,7 +32,10 @@ export interface AccountsReceivable {
   customerName: string;
   customerId: number;
   orderNumber: string;
+  invoiceNumber: string;
   amount: number;
+  balance: number;
+  paidAmount: number;
   dueDate: string;
   daysOverdue: number;
   status: 'pending' | 'overdue' | 'paid';
@@ -52,12 +56,27 @@ export interface Expense {
 
 // Finance Overview types
 export interface FinanceOverview {
-  totalRevenue: number;
-  totalExpenses: number;
-  netProfit: number;
-  accountsReceivable: number;
-  cashFlow: number;
-  monthlyGrowth: number;
+  revenue: {
+    total: number;
+    cash: number;
+    credit: number;
+    growth: number;
+  };
+  expenses: {
+    total: number;
+    purchases: number;
+    operational: number;
+    growth: number;
+  };
+  profit: {
+    net: number;
+    margin: number;
+  };
+  cashFlow: {
+    inflow: number;
+    outflow: number;
+    net: number;
+  };
 }
 
 // Generic API request function
@@ -118,14 +137,15 @@ export const financeApi = {
     }),
 
   // Finance overview methods
-  getOverview: () =>
-    apiRequest<ApiResponse<FinanceOverview>>('/finance/overview'),
+  getOverview: (period?: string) =>
+    apiRequest<ApiResponse<FinanceOverview>>(`/finance/overview${period ? `?period=${period}` : ''}`),
 
   // Accounts receivable methods
   getAccountsReceivable: (params?: {
     status?: 'pending' | 'overdue' | 'paid';
     customerId?: number;
     limit?: number;
+    overdue?: boolean;
   }) => {
     const queryParams = new URLSearchParams();
     if (params) {
@@ -134,7 +154,14 @@ export const financeApi = {
       });
     }
     const query = queryParams.toString();
-    return apiRequest<ApiResponse<{ receivables: AccountsReceivable[] }>>(`/finance/accounts-receivable${query ? `?${query}` : ''}`);
+    return apiRequest<ApiResponse<{ 
+      receivables: AccountsReceivable[];
+      summary: {
+        totalReceivables: number;
+        overdueAmount: number;
+        overdueCount: number;
+      };
+    }>>(`/finance/accounts-receivable${query ? `?${query}` : ''}`);
   },
 
   recordPayment: (payment: {
@@ -185,3 +212,4 @@ export const financeApi = {
       body: JSON.stringify(expense),
     }),
 };
+
