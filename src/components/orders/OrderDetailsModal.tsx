@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { User, Package, Calendar, DollarSign, RotateCcw, AlertTriangle, Minus, Plus, ArrowLeft, Edit2, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { salesApi, customersApi } from "@/services/api";
-import { financeApi } from "@/services/financeApi";
 import { useCustomerBalance } from "@/hooks/useCustomerBalance";
 
 interface OrderDetailsModalProps {
@@ -136,62 +134,25 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
       } else if (editMode === 'payment') {
         console.log('Updating payment method from', order.paymentMethod, 'to:', editValues.paymentMethod);
         
-        // NEW: Use dedicated API endpoint for payment method updates with balance handling
-        if (order.customerId && editValues.paymentMethod !== order.paymentMethod) {
-          try {
-            console.log('Calling financeApi.updateOrderPaymentMethod with:', {
-              paymentMethod: editValues.paymentMethod,
-              customerId: order.customerId,
-              previousPaymentMethod: order.paymentMethod,
-              orderTotal: order.total,
-              orderNumber: order.orderNumber
-            });
-            
-            const response = await financeApi.updateOrderPaymentMethod(order.id, {
-              paymentMethod: editValues.paymentMethod,
-              customerId: order.customerId,
-              previousPaymentMethod: order.paymentMethod,
-              orderTotal: order.total,
-              orderNumber: order.orderNumber
-            });
-            
-            console.log('Payment method update response:', response);
-            
-            if (response.success) {
-              toast({
-                title: "Payment Method Updated",
-                description: "Payment method and customer balance updated successfully",
-              });
-            } else {
-              throw new Error(response.message || 'Failed to update payment method');
-            }
-          } catch (error) {
-            console.error('Failed to update payment method with balance:', error);
-            toast({
-              title: "Update Failed",
-              description: `Failed to update payment method: ${error.message || 'Unknown error'}`,
-              variant: "destructive"
-            });
-            throw error;
-          }
-        } else {
-          // Fallback to regular update if no customer or no payment method change
-          const response = await fetch(`https://zaidawn.site/wp-json/ims/v1/sales/${order.id}/details`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentMethod: editValues.paymentMethod })
+        // Use the existing details endpoint for payment method updates
+        const response = await fetch(`https://zaidawn.site/wp-json/ims/v1/sales/${order.id}/details`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            paymentMethod: editValues.paymentMethod 
+          })
+        });
+        
+        const result = await response.json();
+        console.log('Payment method update response:', result);
+        
+        if (result.success) {
+          toast({
+            title: "Payment Method Updated",
+            description: "Payment method and customer balance updated successfully",
           });
-          
-          const result = await response.json();
-          
-          if (result.success) {
-            toast({
-              title: "Payment Method Updated",
-              description: "Payment method has been updated successfully",
-            });
-          } else {
-            throw new Error(result.message || 'Failed to update payment method');
-          }
+        } else {
+          throw new Error(result.message || 'Failed to update payment method');
         }
       } else if (editMode === 'customer') {
         const updateData = { customerId: editValues.customerId };

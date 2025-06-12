@@ -129,24 +129,6 @@ export const financeApi = {
       method: 'POST',
     }),
 
-  updateOrderPaymentMethod: (orderId: number, paymentData: { 
-    paymentMethod: string;
-    customerId?: number;
-    previousPaymentMethod: string;
-    orderTotal: number;
-    orderNumber: string;
-  }) => {
-    console.log('Calling updateOrderPaymentMethod API with:', {
-      orderId,
-      paymentData
-    });
-    
-    return apiRequest<ApiResponse<any>>(`/sales/${orderId}/payment-method`, {
-      method: 'PUT',
-      body: JSON.stringify(paymentData),
-    });
-  },
-
   // Finance overview methods
   getOverview: (period?: string) =>
     apiRequest<ApiResponse<FinanceOverview>>(`/finance/overview${period ? `?period=${period}` : ''}`),
