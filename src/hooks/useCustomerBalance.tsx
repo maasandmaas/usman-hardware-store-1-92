@@ -31,7 +31,7 @@ export const useCustomerBalance = () => {
         balanceUpdate = {
           customerId,
           orderId,
-          amount: orderTotal,
+          amount: orderTotal, // This should be the amount without tax
           type: 'credit' as const,
           orderNumber,
           description: `Order ${orderNumber} changed to credit - customer owes amount`
@@ -42,7 +42,7 @@ export const useCustomerBalance = () => {
         balanceUpdate = {
           customerId,
           orderId,
-          amount: orderTotal,
+          amount: orderTotal, // This should be the amount without tax
           type: 'debit' as const,
           orderNumber,
           description: `Order ${orderNumber} status changed from credit - debt cleared`
