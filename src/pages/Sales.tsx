@@ -50,6 +50,40 @@ const Sales = () => {
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Fullscreen toggle function
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch((err) => {
+        console.error('Error attempting to enable fullscreen:', err);
+        toast({
+          title: "Fullscreen Error",
+          description: "Could not enter fullscreen mode",
+          variant: "destructive"
+        });
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        setIsFullscreen(false);
+      }).catch((err) => {
+        console.error('Error attempting to exit fullscreen:', err);
+      });
+    }
+  };
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   useEffect(() => {
     fetchProducts();
     fetchCustomers();
