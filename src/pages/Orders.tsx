@@ -69,9 +69,7 @@ const Orders = () => {
       setLoading(true);
       const params: any = {
         page: currentPage,
-        limit: 20,
-        // Ensure tax-free calculations
-        excludeTax: true
+        limit: 20
       };
 
       if (filterStatus !== "all") {
@@ -194,7 +192,7 @@ const Orders = () => {
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(26, 54, 93);
-      pdf.text('SALES RECEIPT (TAX-FREE)', pageWidth / 2, yPos + 6.5, { align: 'center' });
+      pdf.text('SALES RECEIPT', pageWidth / 2, yPos + 6.5, { align: 'center' });
       
       yPos += 16;
 
@@ -428,11 +426,11 @@ const Orders = () => {
       pdf.text(`Receipt ID: ${order.orderNumber}`, pageWidth / 2, yPos + 3, { align: 'center' });
 
       // Save with descriptive filename
-      pdf.save(`UH_Receipt_${order.orderNumber}_80mm_TaxFree.pdf`);
+      pdf.save(`UH_Receipt_${order.orderNumber}_80mm.pdf`);
       
       toast({
         title: "Receipt Generated!",
-        description: `Tax-free thermal receipt for order ${order.orderNumber}`,
+        description: `Thermal receipt for order ${order.orderNumber}`,
       });
     } catch (error) {
       console.error('Failed to generate receipt:', error);
@@ -456,8 +454,7 @@ const Orders = () => {
       // Fetch all orders for export (without pagination)
       const response = await salesApi.getAll({ 
         limit: 10000, // Large number to get all orders
-        page: 1,
-        excludeTax: true
+        page: 1
       });
       
       if (response.success) {
@@ -473,7 +470,7 @@ const Orders = () => {
         // Title
         pdf.setFontSize(20);
         pdf.setFont('helvetica', 'bold');
-        pdf.text('Orders Export Report (Tax-Free)', pageWidth / 2, yPos, { align: 'center' });
+        pdf.text('Orders Export Report', pageWidth / 2, yPos, { align: 'center' });
         yPos += 15;
 
         // Export info
@@ -492,7 +489,7 @@ const Orders = () => {
         // Table headers
         pdf.setFontSize(8);
         pdf.setFont('helvetica', 'bold');
-        const headers = ['Order #', 'Customer', 'Date', 'Items', 'Total (Tax-Free)', 'Status'];
+        const headers = ['Order #', 'Customer', 'Date', 'Items', 'Total', 'Status'];
         const colWidths = [25, 35, 25, 15, 30, 20];
         let xPos = margin;
 
@@ -612,7 +609,7 @@ const Orders = () => {
           <SidebarTrigger />
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Orders Management</h1>
-            <p className="text-slate-600">View and manage all customer orders (tax-free)</p>
+            <p className="text-slate-600">View and manage all customer orders</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -655,7 +652,7 @@ const Orders = () => {
                 <DollarSign className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Total Sales (Tax-Free)</p>
+                <p className="text-sm text-slate-600">Total Sales</p>
                 <p className="text-2xl font-bold text-green-600">Rs. {summary.totalSales.toLocaleString()}</p>
               </div>
             </div>
@@ -669,7 +666,7 @@ const Orders = () => {
                 <Package className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-600">Avg Order Value (Tax-Free)</p>
+                <p className="text-sm text-slate-600">Avg Order Value</p>
                 <p className="text-2xl font-bold text-purple-600">Rs. {summary.avgOrderValue.toLocaleString()}</p>
               </div>
             </div>
@@ -682,7 +679,7 @@ const Orders = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5 text-blue-600" />
-            Orders List (Tax-Free)
+            Orders List
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -757,7 +754,7 @@ const Orders = () => {
                   <TableHead>Customer</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Items</TableHead>
-                  <TableHead>Total (Tax-Free)</TableHead>
+                  <TableHead>Total</TableHead>
                   <TableHead>Payment</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>

@@ -31,10 +31,10 @@ export const useCustomerBalance = () => {
         balanceUpdate = {
           customerId,
           orderId,
-          amount: orderTotal, // Use orderTotal without any tax calculations
+          amount: orderTotal,
           type: 'credit' as const,
           orderNumber,
-          description: `Order ${orderNumber} changed to credit - customer owes amount (tax-free)`
+          description: `Order ${orderNumber} changed to credit - customer owes amount`
         };
       }
       // If changing FROM credit status (customer no longer owes money)
@@ -42,10 +42,10 @@ export const useCustomerBalance = () => {
         balanceUpdate = {
           customerId,
           orderId,
-          amount: orderTotal, // Use orderTotal without any tax calculations
+          amount: orderTotal,
           type: 'debit' as const,
           orderNumber,
-          description: `Order ${orderNumber} status changed from credit - debt cleared (tax-free)`
+          description: `Order ${orderNumber} status changed from credit - debt cleared`
         };
       }
 
@@ -53,10 +53,10 @@ export const useCustomerBalance = () => {
         const response = await financeApi.updateCustomerBalance(balanceUpdate);
         
         if (response.success) {
-          console.log('Customer balance updated successfully (tax-free):', response.data);
+          console.log('Customer balance updated successfully:', response.data);
           toast({
             title: "Balance Updated",
-            description: `Customer balance updated for order ${orderNumber} (excluding tax)`,
+            description: `Customer balance updated for order ${orderNumber}`,
           });
           return response.data;
         } else {
@@ -96,7 +96,7 @@ export const useCustomerBalance = () => {
       if (response.success) {
         toast({
           title: "Balances Synced",
-          description: `Updated ${response.data.updated} customer balances (tax-free)`,
+          description: `Updated ${response.data.updated} customer balances`,
         });
         return response.data;
       } else {

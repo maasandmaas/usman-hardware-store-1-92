@@ -1,4 +1,3 @@
-
 const BASE_URL = 'https://zaidawn.site/wp-json/ims/v1';
 
 // API response types
@@ -12,7 +11,7 @@ export interface ApiResponse<T> {
 export interface CustomerBalanceUpdate {
   customerId: number;
   orderId: number;
-  amount: number; // This should be the net amount without tax
+  amount: number;
   type: 'credit' | 'debit';
   orderNumber: string;
   description: string;
@@ -110,12 +109,11 @@ const apiRequest = async <T>(
 export const financeApi = {
   // Customer balance methods
   updateCustomerBalance: (update: CustomerBalanceUpdate) => {
-    console.log('Sending customer balance update (tax-free):', update);
+    console.log('Sending customer balance update:', update);
     return apiRequest<ApiResponse<CustomerBalance>>('/customers/update-balance', {
       method: 'POST',
       body: JSON.stringify({
         ...update,
-        // Ensure the amount is sent without any tax calculations - completely tax-free
         amount: update.amount
       }),
     });
