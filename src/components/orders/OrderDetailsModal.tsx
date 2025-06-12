@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { User, Package, Calendar, DollarSign, RotateCcw, AlertTriangle, Minus, Plus, ArrowLeft, Edit2, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { salesApi, customersApi } from "@/services/api";
+import { financeApi } from "@/services/financeApi";
 import { useCustomerBalance } from "@/hooks/useCustomerBalance";
 
 interface OrderDetailsModalProps {
@@ -102,6 +104,24 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
       
       if (editMode === 'status') {
         console.log('Updating status to:', editValues.status);
+        
+        // Handle status changes with customer balance updates
+        if (order.customerId && editValues.status !== order.status) {
+          try {
+            await updateBalanceForOrderStatusChange(
+              order.id,
+              order.customerId,
+              order.orderNumber,
+              order.total,
+              editValues.status,
+              order.status
+            );
+          } catch (error) {
+            console.error('Balance update failed:', error);
+            // Continue with status update even if balance update fails
+          }
+        }
+        
         const response = await salesApi.updateStatus(order.id, { status: editValues.status });
         console.log('Status update response:', response);
         
@@ -119,31 +139,39 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
         // NEW: Use dedicated API endpoint for payment method updates with balance handling
         if (order.customerId && editValues.paymentMethod !== order.paymentMethod) {
           try {
-            const response = await fetch(`https://zaidawn.site/wp-json/ims/v1/sales/${order.id}/payment-method`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                paymentMethod: editValues.paymentMethod,
-                customerId: order.customerId,
-                previousPaymentMethod: order.paymentMethod,
-                orderTotal: order.total,
-                orderNumber: order.orderNumber
-              })
+            console.log('Calling financeApi.updateOrderPaymentMethod with:', {
+              paymentMethod: editValues.paymentMethod,
+              customerId: order.customerId,
+              previousPaymentMethod: order.paymentMethod,
+              orderTotal: order.total,
+              orderNumber: order.orderNumber
             });
             
-            const result = await response.json();
-            console.log('Payment method update response:', result);
+            const response = await financeApi.updateOrderPaymentMethod(order.id, {
+              paymentMethod: editValues.paymentMethod,
+              customerId: order.customerId,
+              previousPaymentMethod: order.paymentMethod,
+              orderTotal: order.total,
+              orderNumber: order.orderNumber
+            });
             
-            if (result.success) {
+            console.log('Payment method update response:', response);
+            
+            if (response.success) {
               toast({
                 title: "Payment Method Updated",
                 description: "Payment method and customer balance updated successfully",
               });
             } else {
-              throw new Error(result.message || 'Failed to update payment method');
+              throw new Error(response.message || 'Failed to update payment method');
             }
           } catch (error) {
             console.error('Failed to update payment method with balance:', error);
+            toast({
+              title: "Update Failed",
+              description: `Failed to update payment method: ${error.message || 'Unknown error'}`,
+              variant: "destructive"
+            });
             throw error;
           }
         } else {
@@ -226,6 +254,8 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
         return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">Pending</Badge>;
       case "cancelled":
         return <Badge className="bg-red-100 text-red-700 border-red-200">Cancelled</Badge>;
+      case "credit":
+        return <Badge className="bg-blue-100 text-blue-700 border-blue-200">Credit</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-700 border-gray-200">{status}</Badge>;
     }
@@ -421,6 +451,7 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
                             <SelectItem value="pending">Pending</SelectItem>
                             <SelectItem value="completed">Completed</SelectItem>
                             <SelectItem value="cancelled">Cancelled</SelectItem>
+                            <SelectItem value="credit">Credit</SelectItem>
                           </SelectContent>
                         </Select>
                         <Button size="sm" onClick={handleEditSave} disabled={editLoading}>
@@ -592,7 +623,6 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
               </div>
             </div>
 
-            {/* Return Items Form */}
             <div className="space-y-4">
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                 <h4 className="font-medium text-orange-800 mb-2">Order: {order.orderNumber}</h4>
@@ -700,7 +730,6 @@ export const OrderDetailsModal = ({ open, onOpenChange, order, onOrderUpdated }:
                 />
               </div>
 
-              {/* Summary */}
               {adjustmentItems.some(item => item.returnQuantity > 0) && (
                 <Card className="bg-blue-50 border-blue-200">
                   <CardContent className="p-4">

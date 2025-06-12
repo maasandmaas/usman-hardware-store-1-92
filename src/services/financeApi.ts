@@ -1,3 +1,4 @@
+
 const BASE_URL = 'https://zaidawn.site/wp-json/ims/v1';
 
 // API response types
@@ -134,11 +135,17 @@ export const financeApi = {
     previousPaymentMethod: string;
     orderTotal: number;
     orderNumber: string;
-  }) =>
-    apiRequest<ApiResponse<any>>(`/sales/${orderId}/payment-method`, {
+  }) => {
+    console.log('Calling updateOrderPaymentMethod API with:', {
+      orderId,
+      paymentData
+    });
+    
+    return apiRequest<ApiResponse<any>>(`/sales/${orderId}/payment-method`, {
       method: 'PUT',
       body: JSON.stringify(paymentData),
-    }),
+    });
+  },
 
   // Finance overview methods
   getOverview: (period?: string) =>
