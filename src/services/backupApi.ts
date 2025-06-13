@@ -1,5 +1,6 @@
+import { API_CONFIG } from '@/config/api';
 
-const BASE_URL = 'https://zaidawn.site/wp-json/ims/v1';
+const BASE_URL = API_CONFIG.BASE_URL;
 
 export interface BackupStatus {
   lastBackup: string;

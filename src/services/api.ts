@@ -1,4 +1,6 @@
-const BASE_URL = 'https://zaidawn.site/wp-json/ims/v1';
+import { API_CONFIG } from '@/config/api';
+
+const BASE_URL = API_CONFIG.BASE_URL;
 
 // API response types
 export interface ApiResponse<T> {
@@ -146,7 +148,7 @@ export const dashboardApi = {
   getStats: () => apiRequest<ApiResponse<any>>('/dashboard/stats'),
   getEnhancedStats: () => apiRequest<ApiResponse<EnhancedDashboardData>>('/dashboard/enhanced-stats'),
   getRevenueTrend: () => apiRequest<ApiResponse<any>>('/dashboard/revenue-trend'),
-  getCategoryPerformance: () => apiRequest<ApiResponse<any>>('/dashboard/category-performance'),
+  getCategoryPerformance: ()apiRequest<ApiResponse<any>>('/dashboard/category-performance'),
   getDailySales: () => apiRequest<ApiResponse<any>>('/dashboard/daily-sales'),
   getInventoryStatus: () => apiRequest<ApiResponse<any>>('/dashboard/inventory-status'),
 };

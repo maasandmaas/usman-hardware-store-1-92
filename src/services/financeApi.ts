@@ -1,4 +1,6 @@
-const BASE_URL = 'https://zaidawn.site/wp-json/ims/v1';
+import { API_CONFIG } from '@/config/api';
+
+const BASE_URL = API_CONFIG.BASE_URL;
 
 // API response types
 export interface ApiResponse<T> {
