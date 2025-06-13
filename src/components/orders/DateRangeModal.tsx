@@ -99,7 +99,7 @@ export const DateRangeModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-gray-800">
             Select Date Range
@@ -109,37 +109,36 @@ export const DateRangeModal = ({
           </p>
         </DialogHeader>
 
-        <div className="space-y-4 mt-6">
-          {timeOptions.map((option) => {
-            const Icon = option.icon;
-            const isSelected = selectedTimeScope === option.id;
-            
-            return (
-              <Card
-                key={option.id}
-                className={`cursor-pointer transition-all duration-200 border-2 ${getColorClasses(option.color, isSelected)} hover:shadow-md`}
-                onClick={() => setSelectedTimeScope(option.id)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-full ${getIconColorClasses(option.color)}`}>
-                      <Icon className="h-5 w-5" />
+        <div className="flex-1 overflow-auto">
+          {/* Time Options Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+            {timeOptions.map((option) => {
+              const Icon = option.icon;
+              const isSelected = selectedTimeScope === option.id;
+              
+              return (
+                <Card
+                  key={option.id}
+                  className={`cursor-pointer transition-all duration-200 border-2 ${getColorClasses(option.color, isSelected)} hover:shadow-md h-24`}
+                  onClick={() => setSelectedTimeScope(option.id)}
+                >
+                  <CardContent className="p-3 h-full flex flex-col items-center justify-center text-center">
+                    <div className={`p-2 rounded-full mb-1 ${getIconColorClasses(option.color)}`}>
+                      <Icon className="h-4 w-4" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{option.title}</h3>
-                      <p className="text-sm text-gray-600">{option.description}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                    <h3 className="font-semibold text-sm text-gray-800">{option.title}</h3>
+                    <p className="text-xs text-gray-600 leading-tight">{option.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
 
           {/* Custom Date Range Inputs */}
           {selectedTimeScope === 'custom' && (
             <Card className="border-2 border-pink-200 bg-pink-50">
               <CardContent className="p-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Start Date
@@ -168,7 +167,7 @@ export const DateRangeModal = ({
           )}
         </div>
 
-        <DialogFooter className="flex gap-2 mt-6">
+        <DialogFooter className="flex gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

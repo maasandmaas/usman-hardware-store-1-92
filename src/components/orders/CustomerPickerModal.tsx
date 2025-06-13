@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, User, Check } from "lucide-react";
 
 interface CustomerPickerModalProps {
@@ -50,7 +51,7 @@ export const CustomerPickerModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-gray-800">
             {isSingleMode ? 'Select Customer' : 'Select Multiple Customers'}
@@ -60,7 +61,7 @@ export const CustomerPickerModal = ({
           </p>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="flex-1 space-y-4 overflow-hidden">
           {/* Search Box */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -81,49 +82,51 @@ export const CustomerPickerModal = ({
             </div>
           )}
 
-          {/* Customer List */}
-          <div className="max-h-96 overflow-y-auto space-y-2">
-            {filteredCustomers.map((customer) => (
-              <Card
-                key={customer.id}
-                className={`cursor-pointer transition-all duration-200 ${
-                  isCustomerSelected(customer.id)
-                    ? 'border-blue-500 bg-blue-50 shadow-md'
-                    : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                }`}
-                onClick={() => handleCustomerToggle(customer.id)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-full ${
-                        isCustomerSelected(customer.id) 
-                          ? 'bg-blue-100' 
-                          : 'bg-gray-100'
-                      }`}>
-                        <User className={`h-4 w-4 ${
+          {/* Customer List with ScrollArea */}
+          <ScrollArea className="flex-1 h-[400px]">
+            <div className="space-y-2 pr-4">
+              {filteredCustomers.map((customer) => (
+                <Card
+                  key={customer.id}
+                  className={`cursor-pointer transition-all duration-200 ${
+                    isCustomerSelected(customer.id)
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                  }`}
+                  onClick={() => handleCustomerToggle(customer.id)}
+                >
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-full ${
                           isCustomerSelected(customer.id) 
-                            ? 'text-blue-600' 
-                            : 'text-gray-600'
-                        }`} />
+                            ? 'bg-blue-100' 
+                            : 'bg-gray-100'
+                        }`}>
+                          <User className={`h-4 w-4 ${
+                            isCustomerSelected(customer.id) 
+                              ? 'text-blue-600' 
+                              : 'text-gray-600'
+                          }`} />
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-800">
+                            {customer.name || `Customer #${customer.id}`}
+                          </h4>
+                          <p className="text-sm text-gray-500">ID: {customer.id}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-medium text-gray-800">
-                          {customer.name || `Customer #${customer.id}`}
-                        </h4>
-                        <p className="text-sm text-gray-500">ID: {customer.id}</p>
-                      </div>
+                      {isCustomerSelected(customer.id) && (
+                        <div className="p-1 bg-blue-500 rounded-full">
+                          <Check className="h-4 w-4 text-white" />
+                        </div>
+                      )}
                     </div>
-                    {isCustomerSelected(customer.id) && (
-                      <div className="p-1 bg-blue-500 rounded-full">
-                        <Check className="h-4 w-4 text-white" />
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
 
           {filteredCustomers.length === 0 && (
             <div className="text-center py-8 text-gray-500">
@@ -133,7 +136,7 @@ export const CustomerPickerModal = ({
           )}
         </div>
 
-        <DialogFooter className="flex gap-2">
+        <DialogFooter className="flex gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
