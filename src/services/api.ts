@@ -448,10 +448,23 @@ export const purchaseOrdersApi = {
       body: JSON.stringify(order),
     }),
   
+  // NEW: Update purchase order status
+  updateStatus: (id: number, status: string, notes?: string) =>
+    apiRequest<ApiResponse<any>>(`/purchase-orders/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, notes }),
+    }),
+  
   receive: (id: number, data: any) =>
     apiRequest<ApiResponse<any>>(`/purchase-orders/${id}/receive`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    }),
+
+  // NEW: Delete purchase order
+  delete: (id: number) =>
+    apiRequest<ApiResponse<any>>(`/purchase-orders/${id}`, {
+      method: 'DELETE',
     }),
 };
 
