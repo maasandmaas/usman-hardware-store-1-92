@@ -18,7 +18,8 @@ import {
   Cell,
   LineChart,
   Line,
-  Legend
+  Legend,
+  TooltipProps
 } from 'recharts';
 import { 
   TrendingUp, 
@@ -32,7 +33,6 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { reportsApi } from '@/services/reportsApi';
 import { useToast } from '@/hooks/use-toast';
 
@@ -114,32 +114,30 @@ const DynamicReports = () => {
     iconBg = "bg-blue-100",
     iconColor = "text-blue-600"
   }) => (
-    <Card className="overflow-hidden border-0 shadow-lg">
-      <CardContent className={`p-4 bg-gradient-to-r ${bgGradient} text-white relative`}>
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-white/80 mb-1">{title}</p>
-            <p className="text-2xl font-bold text-white mb-1">{value}</p>
-            {subtitle && (
-              <p className="text-xs text-white/70">{subtitle}</p>
-            )}
-            {trend && (
-              <div className="flex items-center mt-2 text-xs text-white/90">
-                {trend === 'up' ? <TrendingUp className="h-3 w-3 mr-1" /> : 
-                 trend === 'down' ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
-                {trendValue}
-              </div>
-            )}
-          </div>
-          <div className={`${iconBg} p-3 rounded-full shadow-lg`}>
-            <Icon className={`h-6 w-6 ${iconColor}`} />
-          </div>
+    <Card className="overflow-hidden border-0 shadow-lg h-32">
+      <CardContent className={`p-4 bg-gradient-to-br ${bgGradient} text-white h-full flex items-center justify-between`}>
+        <div className="flex-1">
+          <p className="text-xs font-medium text-white/90 mb-1">{title}</p>
+          <p className="text-xl font-bold text-white mb-1">{value}</p>
+          {subtitle && (
+            <p className="text-xs text-white/80">{subtitle}</p>
+          )}
+          {trend && (
+            <div className="flex items-center mt-1 text-xs text-white/90">
+              {trend === 'up' ? <TrendingUp className="h-3 w-3 mr-1" /> : 
+               trend === 'down' ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+              {trendValue}
+            </div>
+          )}
+        </div>
+        <div className={`${iconBg} p-2.5 rounded-full shadow-lg ml-3`}>
+          <Icon className={`h-5 w-5 ${iconColor}`} />
         </div>
       </CardContent>
     </Card>
   );
 
-  const CustomTooltip = ({ active, payload, label }: { active: any; payload: any; label: any }) => {
+  const CustomTooltip: React.FC<TooltipProps<any, any>> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
@@ -155,7 +153,7 @@ const DynamicReports = () => {
     return null;
   };
 
-  const PieTooltip = ({ active, payload }: { active: any; payload: any }) => {
+  const PieTooltip: React.FC<TooltipProps<any, any>> = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
