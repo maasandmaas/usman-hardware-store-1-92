@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Filter, Eye, Edit, Send, Download, CheckCircle, Trash2, FileText, Clock, XCircle, Calendar, User, DollarSign } from "lucide-react";
@@ -29,6 +28,7 @@ import { quotationsApi, customersApi } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import QuotationForm from "@/components/quotations/QuotationForm";
 import QuotationDetails from "@/components/quotations/QuotationDetails";
+import { generateQuotationPDF } from "@/utils/pdfGenerator";
 
 export default function Quotations() {
   const { toast } = useToast();
@@ -71,12 +71,29 @@ export default function Quotations() {
   // Mutations
   const createMutation = useMutation({
     mutationFn: quotationsApi.create,
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
       setShowCreateForm(false);
+      
+      // Auto-generate and download PDF
+      if (response.data) {
+        generateQuotationPDF({
+          quoteNumber: response.data.quoteNumber,
+          customerName: response.data.customerName,
+          date: response.data.date,
+          validUntil: response.data.validUntil,
+          items: response.data.items || [],
+          subtotal: response.data.subtotal || 0,
+          discount: response.data.discount || 0,
+          total: response.data.total || 0,
+          notes: response.data.notes,
+          createdBy: response.data.createdBy,
+        });
+      }
+      
       toast({
         title: "Success",
-        description: "Quotation created successfully",
+        description: "Quotation created successfully and PDF downloaded",
       });
     },
     onError: (error: any) => {
@@ -218,6 +235,21 @@ export default function Quotations() {
     }
   };
 
+  const handleDownloadPDF = (quotation: any) => {
+    generateQuotationPDF({
+      quoteNumber: quotation.quoteNumber,
+      customerName: quotation.customerName,
+      date: quotation.date,
+      validUntil: quotation.validUntil,
+      items: quotation.items || [],
+      subtotal: quotation.subtotal || 0,
+      discount: quotation.discount || 0,
+      total: quotation.total || 0,
+      notes: quotation.notes,
+      createdBy: quotation.createdBy,
+    });
+  };
+
   const getAvailableActions = (quotation: any) => {
     const actions = [];
     
@@ -230,6 +262,15 @@ export default function Quotations() {
         setShowDetailsDialog(true);
       },
       variant: "outline" as const
+    });
+
+    // Download PDF is always available
+    actions.push({
+      label: "PDF",
+      icon: <Download className="h-4 w-4" />,
+      action: () => handleDownloadPDF(quotation),
+      variant: "outline" as const,
+      className: "text-green-600 hover:text-green-700"
     });
 
     // Edit only for draft quotations
@@ -251,7 +292,8 @@ export default function Quotations() {
         label: "Send",
         icon: <Send className="h-4 w-4" />,
         action: () => sendMutation.mutate(quotation.id),
-        variant: "outline" as const
+        variant: "outline" as const,
+        className: "text-blue-600 hover:text-blue-700"
       });
     }
 

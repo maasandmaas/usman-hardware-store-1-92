@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Send, CheckCircle, XCircle, FileText, Calendar, User, DollarSign } from "lucide-react";
+import { Send, CheckCircle, XCircle, FileText, Calendar, User, DollarSign, Download } from "lucide-react";
+import { generateQuotationPDF } from "@/utils/pdfGenerator";
 
 interface QuotationDetailsProps {
   quotation: any;
@@ -34,6 +35,21 @@ export default function QuotationDetails({
   };
 
   const isExpired = new Date(quotation.validUntil) < new Date();
+
+  const handleDownloadPDF = () => {
+    generateQuotationPDF({
+      quoteNumber: quotation.quoteNumber,
+      customerName: quotation.customerName,
+      date: quotation.date,
+      validUntil: quotation.validUntil,
+      items: quotation.items || [],
+      subtotal: quotation.subtotal || 0,
+      discount: quotation.discount || 0,
+      total: quotation.total || 0,
+      notes: quotation.notes,
+      createdBy: quotation.createdBy,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -101,6 +117,15 @@ export default function QuotationDetails({
                 {new Date(quotation.validUntil).toLocaleDateString()}
                 {isExpired && " (Expired)"}
               </p>
+            </div>
+            <div>
+              <Button 
+                onClick={handleDownloadPDF}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -175,6 +200,15 @@ export default function QuotationDetails({
       <div className="flex gap-4 justify-end">
         <Button variant="outline" onClick={onClose}>
           Close
+        </Button>
+
+        <Button 
+          onClick={handleDownloadPDF}
+          variant="outline"
+          className="bg-green-50 text-green-700 hover:bg-green-100"
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Download PDF
         </Button>
 
         {quotation.status === 'draft' && onSend && (
