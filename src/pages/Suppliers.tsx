@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,7 +77,7 @@ const Suppliers = () => {
     },
   });
 
-  // Delete supplier mutation
+  // Delete supplier mutation with improved error handling
   const deleteSupplierMutation = useMutation({
     mutationFn: suppliersApi.delete,
     onSuccess: () => {
@@ -89,11 +88,22 @@ const Suppliers = () => {
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete supplier",
-        variant: "destructive",
-      });
+      console.error('Delete error:', error);
+      
+      // Handle 409 conflict error specifically
+      if (error.message && error.message.includes('409')) {
+        toast({
+          title: "Cannot Delete Supplier",
+          description: "This supplier cannot be deleted because it has associated products or purchase orders. Please remove or reassign them first.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete supplier",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -109,8 +119,13 @@ const Suppliers = () => {
     updateSupplierMutation.mutate({ id: editingSupplier.id, data: formData });
   };
 
-  const handleDeleteSupplier = (id: number) => {
-    deleteSupplierMutation.mutate(id);
+  const handleDeleteSupplier = async (id: number) => {
+    console.log('Attempting to delete supplier:', id);
+    try {
+      await deleteSupplierMutation.mutateAsync(id);
+    } catch (error) {
+      console.error('Delete failed:', error);
+    }
   };
 
   const handleViewSupplier = async (supplier: any) => {
@@ -338,8 +353,13 @@ const Suppliers = () => {
                               size="sm"
                               variant="outline"
                               className="text-red-600"
+                              disabled={deleteSupplierMutation.isPending}
                             >
-                              <Trash2 className="h-3 w-3 mr-1" />
+                              {deleteSupplierMutation.isPending ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3 w-3 mr-1" />
+                              )}
                               Delete
                             </Button>
                           </AlertDialogTrigger>
@@ -348,6 +368,12 @@ const Suppliers = () => {
                               <AlertDialogTitle>Delete Supplier</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Are you sure you want to delete this supplier? This action cannot be undone.
+                                {supplier.productsCount > 0 && (
+                                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                                    <strong>Warning:</strong> This supplier has {supplier.productsCount} associated products. 
+                                    Deletion may fail if there are active relationships.
+                                  </div>
+                                )}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -355,8 +381,16 @@ const Suppliers = () => {
                               <AlertDialogAction 
                                 onClick={() => handleDeleteSupplier(supplier.id)}
                                 className="bg-red-600 hover:bg-red-700"
+                                disabled={deleteSupplierMutation.isPending}
                               >
-                                Delete
+                                {deleteSupplierMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  "Delete"
+                                )}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
