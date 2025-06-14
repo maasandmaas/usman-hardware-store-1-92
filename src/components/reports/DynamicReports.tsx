@@ -114,11 +114,11 @@ const DynamicReports = () => {
     iconBg = "bg-blue-100",
     iconColor = "text-blue-600"
   }) => (
-    <Card className="overflow-hidden border-0 shadow-lg h-32">
-      <CardContent className={`p-4 bg-gradient-to-br ${bgGradient} text-white h-full flex items-center justify-between`}>
+    <Card className={`overflow-hidden border-0 shadow-lg h-28 bg-gradient-to-br ${bgGradient}`}>
+      <CardContent className="p-4 text-white h-full flex items-center justify-between">
         <div className="flex-1">
           <p className="text-xs font-medium text-white/90 mb-1">{title}</p>
-          <p className="text-xl font-bold text-white mb-1">{value}</p>
+          <p className="text-lg font-bold text-white mb-1">{value}</p>
           {subtitle && (
             <p className="text-xs text-white/80">{subtitle}</p>
           )}
@@ -130,8 +130,8 @@ const DynamicReports = () => {
             </div>
           )}
         </div>
-        <div className={`${iconBg} p-2.5 rounded-full shadow-lg ml-3`}>
-          <Icon className={`h-5 w-5 ${iconColor}`} />
+        <div className={`${iconBg} p-2 rounded-full shadow-lg ml-3`}>
+          <Icon className={`h-4 w-4 ${iconColor}`} />
         </div>
       </CardContent>
     </Card>
