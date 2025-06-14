@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -95,7 +94,7 @@ export default function QuotationForm({ quotation, onSubmit, onCancel, isLoading
 
   const handleCustomerSelect = (customer: any) => {
     setSelectedCustomer(customer);
-    form.setValue("customerId", customer.id);
+    form.setValue("customerId", Number(customer.id)); // Ensure it's a number!
   };
 
   const handleProductSelect = (index: number, product: any) => {
@@ -118,15 +117,17 @@ export default function QuotationForm({ quotation, onSubmit, onCancel, isLoading
   };
 
   const handleSubmit = (data: QuotationFormData) => {
+    // Ensure customerId is always a number (extra safety, in case)
     const formattedData = {
-      customerId: data.customerId,
-      validUntil: data.validUntil,
+      ...data,
+      customerId: Number(data.customerId),
       items: data.items.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
+        ...item,
+        productId: Number(item.productId), // force numeric productId (for API + schema)
+        unitPrice: Number(item.unitPrice),
+        quantity: Number(item.quantity),
       })),
-      discount: data.discount || 0,
+      discount: Number(data.discount) || 0,
       notes: data.notes || "",
     };
 
