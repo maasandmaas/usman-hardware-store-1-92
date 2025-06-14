@@ -1,4 +1,3 @@
-
 const BASE_URL = 'https://zaidawn.site/wp-json/ims/v1';
 
 // API response types
@@ -474,18 +473,23 @@ export const purchaseOrdersApi = {
     }),
 };
 
-// Quotations API
+// Quotations API - Updated with all endpoints
 export const quotationsApi = {
   getAll: (params?: {
     page?: number;
     limit?: number;
     customerId?: number;
     status?: string;
+    quoteNumber?: string;
+    dateFrom?: string;
+    dateTo?: string;
   }) => {
     const queryParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value.toString());
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, value.toString());
+        }
       });
     }
     const query = queryParams.toString();
@@ -494,10 +498,32 @@ export const quotationsApi = {
   
   getById: (id: number) => apiRequest<ApiResponse<any>>(`/quotations/${id}`),
   
-  create: (quotation: any) =>
+  create: (quotation: any) => 
     apiRequest<ApiResponse<any>>('/quotations', {
       method: 'POST',
       body: JSON.stringify(quotation),
+    }),
+  
+  update: (id: number, quotation: any) =>
+    apiRequest<ApiResponse<any>>(`/quotations/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(quotation),
+    }),
+  
+  delete: (id: number) =>
+    apiRequest<ApiResponse<any>>(`/quotations/${id}`, {
+      method: 'DELETE',
+    }),
+  
+  send: (id: number) =>
+    apiRequest<ApiResponse<any>>(`/quotations/${id}/send`, {
+      method: 'PUT',
+    }),
+  
+  updateStatus: (id: number, status: string) =>
+    apiRequest<ApiResponse<any>>(`/quotations/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
     }),
   
   convertToSale: (id: number) =>
