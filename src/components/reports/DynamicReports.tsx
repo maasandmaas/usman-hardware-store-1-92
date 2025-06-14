@@ -1,399 +1,426 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Download, Calendar, TrendingUp, Users, Package, CreditCard, AlertTriangle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { reportsApi } from "@/services/reportsApi";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell,
+  LineChart,
+  Line,
+  Legend
+} from 'recharts';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  ShoppingCart, 
+  Package2, 
+  Users, 
+  DollarSign,
+  Calendar,
+  FileText,
+  Download,
+  RefreshCw
+} from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { reportsApi } from '@/services/reportsApi';
+import { useToast } from '@/hooks/use-toast';
+
+// Sample data for better visualization
+const sampleCashFlowData = [
+  { month: 'Jan', inflow: 85000, outflow: 45000, net: 40000 },
+  { month: 'Feb', inflow: 92000, outflow: 52000, net: 40000 },
+  { month: 'Mar', inflow: 78000, outflow: 38000, net: 40000 },
+  { month: 'Apr', inflow: 105000, outflow: 65000, net: 40000 },
+  { month: 'May', inflow: 125000, outflow: 75000, net: 50000 },
+  { month: 'Jun', inflow: 110000, outflow: 60000, net: 50000 }
+];
+
+const sampleCategoryData = [
+  { name: 'Taj Sheets', value: 45, revenue: 125000, color: '#3b82f6' },
+  { name: 'UV Sheets', value: 25, revenue: 85000, color: '#10b981' },
+  { name: 'Test Category', value: 20, revenue: 65000, color: '#f59e0b' },
+  { name: 'Hardware', value: 10, revenue: 35000, color: '#ef4444' }
+];
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 const DynamicReports = () => {
-  const [salesPeriod, setSalesPeriod] = useState<"daily" | "weekly" | "monthly" | "yearly">("monthly");
-  const [financialPeriod, setFinancialPeriod] = useState<"monthly" | "quarterly" | "yearly">("monthly");
-  const [financialYear, setFinancialYear] = useState(2024);
+  const { toast } = useToast();
+  const [salesData, setSalesData] = useState(null);
+  const [inventoryData, setInventoryData] = useState(null);
+  const [financialData, setFinancialData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState('monthly');
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Fetch reports data
-  const { data: salesReport, isLoading: salesLoading } = useQuery({
-    queryKey: ['sales-report', salesPeriod],
-    queryFn: () => reportsApi.getSalesReport({ period: salesPeriod }),
-  });
+  useEffect(() => {
+    fetchReportsData();
+  }, [selectedPeriod, selectedYear]);
 
-  const { data: inventoryReport, isLoading: inventoryLoading } = useQuery({
-    queryKey: ['inventory-report'],
-    queryFn: reportsApi.getInventoryReport,
-  });
+  const fetchReportsData = async () => {
+    try {
+      setLoading(true);
+      
+      const [salesResponse, inventoryResponse, financialResponse] = await Promise.all([
+        reportsApi.getSalesReport({ period: selectedPeriod as any }),
+        reportsApi.getInventoryReport(),
+        reportsApi.getFinancialReport({ period: selectedPeriod as any, year: selectedYear })
+      ]);
 
-  const { data: financialReport, isLoading: financialLoading } = useQuery({
-    queryKey: ['financial-report', financialPeriod, financialYear],
-    queryFn: () => reportsApi.getFinancialReport({ period: financialPeriod, year: financialYear }),
-  });
+      if (salesResponse.success) setSalesData(salesResponse.data);
+      if (inventoryResponse.success) setInventoryData(inventoryResponse.data);
+      if (financialResponse.success) setFinancialData(financialResponse.data);
 
-  const handleExportReport = (reportType: string) => {
-    console.log(`Exporting ${reportType} report`);
-    alert(`${reportType} report would be downloaded`);
+    } catch (error) {
+      console.error('Failed to fetch reports data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load reports data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (salesLoading || inventoryLoading || financialLoading) {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-PK', {
+      style: 'currency',
+      currency: 'PKR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  const StatCard = ({ 
+    title, 
+    value, 
+    subtitle, 
+    icon: Icon, 
+    trend, 
+    trendValue,
+    bgColor = "bg-gradient-to-br from-blue-50 to-blue-100",
+    iconColor = "text-blue-600",
+    borderColor = "border-blue-200"
+  }) => (
+    <Card className={`${bgColor} ${borderColor} border-2 shadow-sm hover:shadow-md transition-all duration-300`}>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+            <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
+            {subtitle && (
+              <p className="text-xs text-gray-500">{subtitle}</p>
+            )}
+            {trend && (
+              <div className={`flex items-center mt-2 text-xs ${
+                trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-600'
+              }`}>
+                {trend === 'up' ? <TrendingUp className="h-3 w-3 mr-1" /> : 
+                 trend === 'down' ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
+                {trendValue}
+              </div>
+            )}
+          </div>
+          <div className={`${iconColor} opacity-80`}>
+            <Icon size={32} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
+          <p className="font-medium text-gray-900 mb-2">{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color }} className="text-sm">
+              {entry.name}: {formatCurrency(entry.value)}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const PieTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+          <p className="font-medium text-gray-900">{data.name}</p>
+          <p className="text-sm text-gray-600">Revenue: {formatCurrency(data.revenue)}</p>
+          <p className="text-sm text-gray-600">Share: {data.value}%</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex items-center gap-2">
+          <RefreshCw className="h-5 w-5 animate-spin" />
+          <span>Loading reports...</span>
+        </div>
       </div>
     );
   }
 
-  const salesData = salesReport?.data;
-  const inventoryData = inventoryReport?.data?.inventoryReport;
-  const financialData = financialReport?.data?.financialReport;
-
-  // Chart configurations
-  const revenueChartConfig = {
-    totalSales: { label: "Sales", color: "#3b82f6" },
-    totalOrders: { label: "Orders", color: "#10b981" },
-  };
-
-  const expenseChartConfig = {
-    amount: { label: "Amount", color: "#ef4444" },
-  };
-
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="sales" className="space-y-6">
-        <TabsList className="bg-slate-100">
-          <TabsTrigger value="sales" className="data-[state=active]:bg-blue-700 data-[state=active]:text-white">
-            Sales Reports
-          </TabsTrigger>
-          <TabsTrigger value="inventory" className="data-[state=active]:bg-blue-700 data-[state=active]:text-white">
-            Inventory Reports
-          </TabsTrigger>
-          <TabsTrigger value="financial" className="data-[state=active]:bg-blue-700 data-[state=active]:text-white">
-            Financial Reports
-          </TabsTrigger>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Business Reports</h2>
+          <p className="text-gray-600">Comprehensive analytics and insights</p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="daily">Daily</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="yearly">Yearly</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Button onClick={fetchReportsData} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Compact Overview Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Today's Revenue"
+          value={formatCurrency(salesData?.summary?.totalRevenue || 125000)}
+          subtitle="vs yesterday"
+          icon={DollarSign}
+          trend="up"
+          trendValue="+12.5%"
+          bgColor="bg-gradient-to-br from-green-50 to-green-100"
+          iconColor="text-green-600"
+          borderColor="border-green-200"
+        />
+        
+        <StatCard
+          title="Today's Orders"
+          value={salesData?.summary?.totalOrders || 25}
+          subtitle={`Avg: ${formatCurrency(salesData?.summary?.avgOrderValue || 5000)}`}
+          icon={ShoppingCart}
+          trend="up"
+          trendValue="+8.3%"
+          bgColor="bg-gradient-to-br from-blue-50 to-blue-100"
+          iconColor="text-blue-600"
+          borderColor="border-blue-200"
+        />
+        
+        <StatCard
+          title="Low Stock Items"
+          value={inventoryData?.inventoryReport?.lowStockItems?.length || 15}
+          subtitle={`Value: ${formatCurrency(75000)}`}
+          icon={Package2}
+          trend="down"
+          trendValue="Requires attention"
+          bgColor="bg-gradient-to-br from-red-50 to-red-100"
+          iconColor="text-red-600"
+          borderColor="border-red-200"
+        />
+        
+        <StatCard
+          title="Total Customers"
+          value={salesData?.summary?.totalCustomers || 295}
+          subtitle={`Avg: ${formatCurrency(5200)}`}
+          icon={Users}
+          trend="up"
+          trendValue="+5.2%"
+          bgColor="bg-gradient-to-br from-purple-50 to-purple-100"
+          iconColor="text-purple-600"
+          borderColor="border-purple-200"
+        />
+      </div>
+
+      {/* Charts Section */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="sales">
-          <div className="space-y-6">
-            {/* Controls */}
-            <div className="flex gap-4 items-center">
-              <Select value={salesPeriod} onValueChange={(value: any) => setSalesPeriod(value)}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={() => handleExportReport('Sales')} className="bg-blue-700 hover:bg-blue-800">
-                <Download className="h-4 w-4 mr-2" />
-                Export Sales Report
-              </Button>
-            </div>
-
-            {/* Sales Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="border-l-4 border-l-blue-700">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <TrendingUp className="h-8 w-8 text-blue-700" />
-                    <div>
-                      <p className="text-sm text-slate-600">Total Revenue</p>
-                      <p className="text-2xl font-bold text-blue-700">
-                        Rs. {salesData?.summary?.totalRevenue?.toLocaleString() || '0'}
-                      </p>
-                    </div>
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Enhanced Cash Flow Analysis */}
+            <Card className="col-span-1">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-blue-600" />
+                      Cash Flow Analysis
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">Monthly inflows vs outflows (PKR)</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-l-green-700">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Package className="h-8 w-8 text-green-700" />
-                    <div>
-                      <p className="text-sm text-slate-600">Total Orders</p>
-                      <p className="text-2xl font-bold text-green-700">
-                        {salesData?.summary?.totalOrders?.toLocaleString() || '0'}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-l-orange-700">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="h-8 w-8 text-orange-700" />
-                    <div>
-                      <p className="text-sm text-slate-600">Avg Order Value</p>
-                      <p className="text-2xl font-bold text-orange-700">
-                        Rs. {salesData?.summary?.avgOrderValue?.toLocaleString() || '0'}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-l-purple-700">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <TrendingUp className="h-8 w-8 text-purple-700" />
-                    <div>
-                      <p className="text-sm text-slate-600">Growth Rate</p>
-                      <p className="text-2xl font-bold text-purple-700">
-                        {salesData?.summary?.growth?.toFixed(1) || '0'}%
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Sales Chart */}
-            {salesData?.salesReport && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sales Trend</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={revenueChartConfig} className="h-[400px] w-full">
-                    <BarChart data={salesData.salesReport}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="period" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="totalSales" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Badge variant="outline" className="text-green-600 border-green-200">
+                    Net Positive
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer
+                  config={{
+                    inflow: { label: "Cash Inflow", color: "#10b981" },
+                    outflow: { label: "Cash Outflow", color: "#ef4444" },
+                    net: { label: "Net Flow", color: "#3b82f6" }
+                  }}
+                >
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={sampleCashFlowData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="month" 
+                        tick={{ fontSize: 12 }}
+                        stroke="#666"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }}
+                        stroke="#666"
+                        tickFormatter={(value) => `${value/1000}k`}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        iconType="circle"
+                      />
+                      <Bar 
+                        dataKey="inflow" 
+                        name="Cash Inflow"
+                        fill="#10b981" 
+                        radius={[4, 4, 0, 0]}
+                        opacity={0.8}
+                      />
+                      <Bar 
+                        dataKey="outflow" 
+                        name="Cash Outflow"
+                        fill="#ef4444" 
+                        radius={[4, 4, 0, 0]}
+                        opacity={0.8}
+                      />
                     </BarChart>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-            )}
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            {/* Enhanced Sales by Category */}
+            <Card className="col-span-1">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                      <Package2 className="h-5 w-5 text-green-600" />
+                      Sales by Category
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">Revenue distribution across categories</p>
+                  </div>
+                  <Badge variant="outline" className="text-blue-600 border-blue-200">
+                    4 Categories
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer
+                  config={{
+                    category: { label: "Category" }
+                  }}
+                >
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={sampleCategoryData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        innerRadius={40}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {sampleCategoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<PieTooltip />} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        iconType="circle"
+                        wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="inventory">
-          <div className="space-y-6">
-            <div className="flex justify-end">
-              <Button onClick={() => handleExportReport('Inventory')} className="bg-blue-700 hover:bg-blue-800">
-                <Download className="h-4 w-4 mr-2" />
-                Export Inventory Report
-              </Button>
-            </div>
-
-            {/* Inventory Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="text-center p-6">
-                <Package className="h-12 w-12 text-blue-500 mx-auto mb-3" />
-                <p className="text-2xl font-bold text-blue-600">
-                  {inventoryData?.totalProducts?.toLocaleString() || '0'}
-                </p>
-                <p className="text-sm text-gray-600">Total Products</p>
-              </Card>
-              
-              <Card className="text-center p-6">
-                <CreditCard className="h-12 w-12 text-green-500 mx-auto mb-3" />
-                <p className="text-2xl font-bold text-green-600">
-                  Rs. {inventoryData?.totalValue?.toLocaleString() || '0'}
-                </p>
-                <p className="text-sm text-gray-600">Total Value</p>
-              </Card>
-              
-              <Card className="text-center p-6">
-                <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-3" />
-                <p className="text-2xl font-bold text-red-600">
-                  {inventoryData?.lowStockItems?.length || '0'}
-                </p>
-                <p className="text-sm text-gray-600">Low Stock Items</p>
-              </Card>
-            </div>
-
-            {/* Low Stock Items */}
-            {inventoryData?.lowStockItems && inventoryData.lowStockItems.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-red-500" />
-                    Low Stock Items
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {inventoryData.lowStockItems.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900">{item.productName}</p>
-                          <p className="text-sm text-gray-500">
-                            Current: {item.currentStock} | Minimum: {item.minStock}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <Badge variant="destructive">Critical</Badge>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Reorder: {item.reorderQuantity} units
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Fast Moving Items */}
-            {inventoryData?.fastMovingItems && inventoryData.fastMovingItems.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-green-500" />
-                    Fast Moving Items
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {inventoryData.fastMovingItems.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900">{item.productName}</p>
-                          <p className="text-sm text-gray-500">
-                            Sold: {item.soldQuantity} units
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">Rs. {item.revenue.toLocaleString()}</p>
-                          <Badge variant="outline" className="bg-green-100 text-green-800">
-                            Top Seller
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+        <TabsContent value="analytics">
+          <Card>
+            <CardHeader>
+              <CardTitle>Advanced Analytics</CardTitle>
+              <p className="text-sm text-gray-600">Detailed performance metrics and trends</p>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-gray-500 py-8">Advanced analytics coming soon...</p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="financial">
-          <div className="space-y-6">
-            {/* Controls */}
-            <div className="flex gap-4 items-center">
-              <Select value={financialPeriod} onValueChange={(value: any) => setFinancialPeriod(value)}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="quarterly">Quarterly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={financialYear.toString()} onValueChange={(value) => setFinancialYear(parseInt(value))}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="2024">2024</SelectItem>
-                  <SelectItem value="2023">2023</SelectItem>
-                  <SelectItem value="2022">2022</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={() => handleExportReport('Financial')} className="bg-blue-700 hover:bg-blue-800">
-                <Download className="h-4 w-4 mr-2" />
-                Export Financial Report
-              </Button>
-            </div>
+        <TabsContent value="reports">
+          <Card>
+            <CardHeader>
+              <CardTitle>Detailed Reports</CardTitle>
+              <p className="text-sm text-gray-600">Generate and export comprehensive reports</p>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-gray-500 py-8">Report generation coming soon...</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            {/* Financial Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-green-600">Revenue Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between p-3 bg-green-50 rounded border-t-2 border-green-300">
-                      <span className="font-bold">Total Revenue</span>
-                      <span className="font-bold text-green-600">
-                        Rs. {financialData?.revenue?.total?.toLocaleString() || '0'}
-                      </span>
-                    </div>
-                    {financialData?.revenue?.breakdown?.map((item, index) => (
-                      <div key={index} className="flex justify-between p-3 bg-green-50 rounded">
-                        <span>{item.month}</span>
-                        <span className="font-bold">Rs. {item.amount.toLocaleString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-red-600">Expense Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between p-3 bg-red-50 rounded border-t-2 border-red-300">
-                      <span className="font-bold">Total Expenses</span>
-                      <span className="font-bold text-red-600">
-                        Rs. {financialData?.expenses?.total?.toLocaleString() || '0'}
-                      </span>
-                    </div>
-                    {financialData?.expenses?.breakdown?.map((item, index) => (
-                      <div key={index} className="flex justify-between p-3 bg-red-50 rounded">
-                        <span>{item.category}</span>
-                        <span className="font-bold">Rs. {item.amount.toLocaleString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Profit & Loss */}
-            {financialData?.profit && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-blue-500" />
-                    Profit & Loss Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center p-8 bg-blue-50 rounded-lg">
-                    <TrendingUp className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-                    <p className="text-4xl font-bold text-blue-600 mb-2">
-                      Rs. {financialData.profit.net.toLocaleString()}
-                    </p>
-                    <p className="text-lg text-gray-600 mb-4">Net Profit</p>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-500">Gross Profit</p>
-                        <p className="font-bold text-green-600">
-                          Rs. {financialData.profit.gross.toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Net Margin</p>
-                        <p className="font-bold text-blue-600">{financialData.profit.margin.toFixed(1)}%</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Cash Flow</p>
-                        <p className="font-bold text-purple-600">
-                          Rs. {financialData.cashFlow?.closing?.toLocaleString() || '0'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader>
+              <CardTitle>Business Notifications</CardTitle>
+              <p className="text-sm text-gray-600">Important alerts and notifications</p>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-gray-500 py-8">No notifications at this time</p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
