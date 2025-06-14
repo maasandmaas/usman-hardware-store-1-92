@@ -44,15 +44,17 @@ const PurchaseOrders = () => {
   const [statusUpdateOrder, setStatusUpdateOrder] = useState<any>(null);
   const [newStatus, setNewStatus] = useState("");
   const [statusNotes, setStatusNotes] = useState("");
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const itemsPerPage = 20;
 
-  // Fetch purchase orders
+  // Fetch purchase orders with updated parameters
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
     queryKey: ['purchase-orders', currentPage, filterStatus, searchTerm],
     queryFn: () => purchaseOrdersApi.getAll({
       page: currentPage,
       limit: itemsPerPage,
       status: filterStatus === 'all' ? undefined : filterStatus,
+      search: searchTerm || undefined,
     }),
   });
 
@@ -68,6 +70,7 @@ const PurchaseOrders = () => {
       });
     },
     onError: (error: any) => {
+      console.error('Create error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create purchase order",
@@ -85,12 +88,14 @@ const PurchaseOrders = () => {
       setStatusUpdateOrder(null);
       setNewStatus("");
       setStatusNotes("");
+      setIsStatusDialogOpen(false);
       toast({
         title: "Status Updated",
         description: "Purchase order status has been updated successfully",
       });
     },
     onError: (error: any) => {
+      console.error('Status update error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update purchase order status",
@@ -110,18 +115,29 @@ const PurchaseOrders = () => {
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete purchase order",
-        variant: "destructive",
-      });
+      console.error('Delete error:', error);
+      // Handle specific error for non-draft orders
+      if (error.message && (error.message.includes('400') || error.message.includes('draft'))) {
+        toast({
+          title: "Cannot Delete Order",
+          description: "Only draft purchase orders can be deleted",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete purchase order",
+          variant: "destructive",
+        });
+      }
     },
   });
 
-  const orders = ordersData?.data?.purchaseOrders || [];
-  const pagination = ordersData?.data?.pagination;
+  // Fixed data extraction to match API response structure
+  const orders = ordersData?.data?.purchaseOrders || ordersData?.purchaseOrders || [];
+  const pagination = ordersData?.data?.pagination || ordersData?.pagination;
 
-  // Filter orders by search term
+  // Filter orders by search term (additional client-side filtering)
   const filteredOrders = orders.filter((order: any) =>
     order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.supplierName?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -172,12 +188,14 @@ const PurchaseOrders = () => {
   };
 
   const handleCreateOrder = (formData: any) => {
+    console.log('Creating order with data:', formData);
     createOrderMutation.mutate(formData);
   };
 
   const handleStatusUpdate = () => {
     if (!statusUpdateOrder || !newStatus) return;
     
+    console.log('Updating status:', { id: statusUpdateOrder.id, status: newStatus, notes: statusNotes });
     updateStatusMutation.mutate({
       id: statusUpdateOrder.id,
       status: newStatus,
@@ -186,8 +204,16 @@ const PurchaseOrders = () => {
   };
 
   const handleViewOrder = (order: any) => {
+    console.log('Viewing order:', order);
     setSelectedOrder(order);
     setIsViewDialogOpen(true);
+  };
+
+  const handleEditStatus = (order: any) => {
+    setStatusUpdateOrder(order);
+    setNewStatus("");
+    setStatusNotes("");
+    setIsStatusDialogOpen(true);
   };
 
   // Calculate stats from current data
@@ -350,7 +376,9 @@ const PurchaseOrders = () => {
                   <TableCell className="font-medium">{order.orderNumber}</TableCell>
                   <TableCell>{order.supplierName}</TableCell>
                   <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(order.expectedDelivery).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {order.expectedDelivery ? new Date(order.expectedDelivery).toLocaleDateString() : 'Not set'}
+                  </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(order.status)}>
                       {getStatusIcon(order.status)}
@@ -370,77 +398,35 @@ const PurchaseOrders = () => {
                       </Button>
                       
                       {getAvailableStatusTransitions(order.status).length > 0 && (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setStatusUpdateOrder(order)}
-                            >
-                              <Edit className="h-3 w-3 mr-1" />
-                              Update
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Update Order Status</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <Label>Current Status: {order.status}</Label>
-                              </div>
-                              <div>
-                                <Label htmlFor="newStatus">New Status</Label>
-                                <Select value={newStatus} onValueChange={setNewStatus}>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select new status" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {getAvailableStatusTransitions(order.status).map((transition) => (
-                                      <SelectItem key={transition.value} value={transition.value}>
-                                        {transition.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div>
-                                <Label htmlFor="statusNotes">Notes (Optional)</Label>
-                                <Textarea
-                                  id="statusNotes"
-                                  value={statusNotes}
-                                  onChange={(e) => setStatusNotes(e.target.value)}
-                                  placeholder="Add any notes about this status change..."
-                                />
-                              </div>
-                              <div className="flex gap-2">
-                                <Button 
-                                  onClick={handleStatusUpdate}
-                                  disabled={!newStatus || updateStatusMutation.isPending}
-                                >
-                                  {updateStatusMutation.isPending ? (
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  ) : null}
-                                  Update Status
-                                </Button>
-                                <Button variant="outline" onClick={() => {
-                                  setStatusUpdateOrder(null);
-                                  setNewStatus("");
-                                  setStatusNotes("");
-                                }}>
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditStatus(order)}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          {updateStatusMutation.isPending ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <Edit className="h-3 w-3 mr-1" />
+                          )}
+                          Update
+                        </Button>
                       )}
 
                       {order.status === "draft" && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="text-red-600">
-                              <Trash2 className="h-3 w-3 mr-1" />
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-red-600"
+                              disabled={deleteOrderMutation.isPending}
+                            >
+                              {deleteOrderMutation.isPending ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3 w-3 mr-1" />
+                              )}
                               Delete
                             </Button>
                           </AlertDialogTrigger>
@@ -449,12 +435,24 @@ const PurchaseOrders = () => {
                               <AlertDialogTitle>Delete Purchase Order</AlertDialogTitle>
                               <AlertDialogDescription>
                                 Are you sure you want to delete this purchase order? This action cannot be undone.
+                                Only draft orders can be deleted.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteOrderMutation.mutate(order.id)}>
-                                Delete
+                              <AlertDialogAction 
+                                onClick={() => deleteOrderMutation.mutate(order.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                                disabled={deleteOrderMutation.isPending}
+                              >
+                                {deleteOrderMutation.isPending ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  "Delete"
+                                )}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -510,6 +508,61 @@ const PurchaseOrders = () => {
         </div>
       )}
 
+      {/* Status Update Dialog */}
+      <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Order Status</DialogTitle>
+          </DialogHeader>
+          {statusUpdateOrder && (
+            <div className="space-y-4">
+              <div>
+                <Label>Order: {statusUpdateOrder.orderNumber}</Label>
+                <p className="text-sm text-gray-600">Current Status: {statusUpdateOrder.status}</p>
+              </div>
+              <div>
+                <Label htmlFor="newStatus">New Status</Label>
+                <Select value={newStatus} onValueChange={setNewStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select new status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableStatusTransitions(statusUpdateOrder.status).map((transition) => (
+                      <SelectItem key={transition.value} value={transition.value}>
+                        {transition.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="statusNotes">Notes (Optional)</Label>
+                <Textarea
+                  id="statusNotes"
+                  value={statusNotes}
+                  onChange={(e) => setStatusNotes(e.target.value)}
+                  placeholder="Add any notes about this status change..."
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleStatusUpdate}
+                  disabled={!newStatus || updateStatusMutation.isPending}
+                >
+                  {updateStatusMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : null}
+                  Update Status
+                </Button>
+                <Button variant="outline" onClick={() => setIsStatusDialogOpen(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Order Details Modal */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -533,7 +586,12 @@ const PurchaseOrders = () => {
                 </div>
                 <div>
                   <Label>Expected Delivery</Label>
-                  <p>{new Date(selectedOrder.expectedDelivery).toLocaleDateString()}</p>
+                  <p>
+                    {selectedOrder.expectedDelivery 
+                      ? new Date(selectedOrder.expectedDelivery).toLocaleDateString() 
+                      : 'Not set'
+                    }
+                  </p>
                 </div>
                 <div>
                   <Label>Status</Label>
@@ -558,6 +616,12 @@ const PurchaseOrders = () => {
                         <TableHead>Quantity</TableHead>
                         <TableHead>Unit Price</TableHead>
                         <TableHead>Total</TableHead>
+                        {selectedOrder.status === 'received' && (
+                          <>
+                            <TableHead>Received</TableHead>
+                            <TableHead>Condition</TableHead>
+                          </>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -567,6 +631,16 @@ const PurchaseOrders = () => {
                           <TableCell>{item.quantity}</TableCell>
                           <TableCell>Rs. {item.unitPrice?.toLocaleString()}</TableCell>
                           <TableCell>Rs. {item.total?.toLocaleString()}</TableCell>
+                          {selectedOrder.status === 'received' && (
+                            <>
+                              <TableCell>{item.quantityReceived || 0}</TableCell>
+                              <TableCell>
+                                <Badge variant={item.itemCondition === 'good' ? 'default' : 'destructive'}>
+                                  {item.itemCondition || 'good'}
+                                </Badge>
+                              </TableCell>
+                            </>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -577,7 +651,14 @@ const PurchaseOrders = () => {
               {selectedOrder.notes && (
                 <div>
                   <Label>Notes</Label>
-                  <p className="text-sm text-gray-600">{selectedOrder.notes}</p>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap">{selectedOrder.notes}</p>
+                </div>
+              )}
+
+              {selectedOrder.createdBy && (
+                <div>
+                  <Label>Created By</Label>
+                  <p className="text-sm text-gray-600">{selectedOrder.createdBy}</p>
                 </div>
               )}
             </div>

@@ -1,3 +1,4 @@
+
 const BASE_URL = 'https://zaidawn.site/wp-json/ims/v1';
 
 // API response types
@@ -251,7 +252,6 @@ export const customersApi = {
       body: JSON.stringify(customer),
     }),
 
-  // NEW: Delete customer endpoint
   delete: (id: number) =>
     apiRequest<ApiResponse<any>>(`/customers/${id}`, {
       method: 'DELETE',
@@ -292,14 +292,12 @@ export const salesApi = {
       body: JSON.stringify(status),
     }),
 
-  // NEW: Order adjustment endpoint
   adjustOrder: (id: number, adjustment: any) =>
     apiRequest<ApiResponse<any>>(`/sales/${id}/adjust`, {
       method: 'POST',
       body: JSON.stringify(adjustment),
     }),
 
-  // NEW: PDF receipt generation endpoint
   generatePDF: (id: number) => 
     apiRequest<Blob>(`/sales/${id}/pdf`, {
       headers: {
@@ -420,7 +418,7 @@ export const suppliersApi = {
     }),
 };
 
-// Purchase Orders API
+// Purchase Orders API - Fixed to match new WordPress API structure
 export const purchaseOrdersApi = {
   getAll: (params?: {
     page?: number;
@@ -429,11 +427,14 @@ export const purchaseOrdersApi = {
     status?: string;
     dateFrom?: string;
     dateTo?: string;
+    search?: string;
   }) => {
     const queryParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value.toString());
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, value.toString());
+        }
       });
     }
     const query = queryParams.toString();
@@ -448,9 +449,15 @@ export const purchaseOrdersApi = {
       body: JSON.stringify(order),
     }),
   
-  // NEW: Update purchase order status
+  update: (id: number, order: any) =>
+    apiRequest<ApiResponse<any>>(`/purchase-orders/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(order),
+    }),
+  
+  // Fixed: Simple status update endpoint that matches the API
   updateStatus: (id: number, status: string, notes?: string) =>
-    apiRequest<ApiResponse<any>>(`/purchase-orders/${id}/status`, {
+    apiRequest<ApiResponse<any>>(`/purchase-orders/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ status, notes }),
     }),
@@ -461,7 +468,6 @@ export const purchaseOrdersApi = {
       body: JSON.stringify(data),
     }),
 
-  // NEW: Delete purchase order
   delete: (id: number) =>
     apiRequest<ApiResponse<any>>(`/purchase-orders/${id}`, {
       method: 'DELETE',
