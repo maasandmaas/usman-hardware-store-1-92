@@ -110,43 +110,41 @@ const DynamicReports = () => {
     icon: Icon, 
     trend, 
     trendValue,
-    bgColor = "bg-gradient-to-br from-blue-50 to-blue-100",
-    iconColor = "text-blue-600",
-    borderColor = "border-blue-200"
+    bgGradient = "from-blue-500 to-blue-600",
+    iconBg = "bg-blue-100",
+    iconColor = "text-blue-600"
   }) => (
-    <Card className={`${bgColor} ${borderColor} border-2 shadow-sm hover:shadow-md transition-all duration-300`}>
-      <CardContent className="p-4">
+    <Card className="overflow-hidden border-0 shadow-lg">
+      <CardContent className={`p-4 bg-gradient-to-r ${bgGradient} text-white relative`}>
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-            <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
+            <p className="text-sm font-medium text-white/80 mb-1">{title}</p>
+            <p className="text-2xl font-bold text-white mb-1">{value}</p>
             {subtitle && (
-              <p className="text-xs text-gray-500">{subtitle}</p>
+              <p className="text-xs text-white/70">{subtitle}</p>
             )}
             {trend && (
-              <div className={`flex items-center mt-2 text-xs ${
-                trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-600'
-              }`}>
+              <div className="flex items-center mt-2 text-xs text-white/90">
                 {trend === 'up' ? <TrendingUp className="h-3 w-3 mr-1" /> : 
                  trend === 'down' ? <TrendingDown className="h-3 w-3 mr-1" /> : null}
                 {trendValue}
               </div>
             )}
           </div>
-          <div className={`${iconColor} opacity-80`}>
-            <Icon size={32} />
+          <div className={`${iconBg} p-3 rounded-full shadow-lg`}>
+            <Icon className={`h-6 w-6 ${iconColor}`} />
           </div>
         </div>
       </CardContent>
     </Card>
   );
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip = ({ active, payload, label }: { active: any; payload: any; label: any }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
           <p className="font-medium text-gray-900 mb-2">{label}</p>
-          {payload.map((entry, index) => (
+          {payload.map((entry: any, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
               {entry.name}: {formatCurrency(entry.value)}
             </p>
@@ -157,7 +155,7 @@ const DynamicReports = () => {
     return null;
   };
 
-  const PieTooltip = ({ active, payload }) => {
+  const PieTooltip = ({ active, payload }: { active: any; payload: any }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -220,9 +218,9 @@ const DynamicReports = () => {
           icon={DollarSign}
           trend="up"
           trendValue="+12.5%"
-          bgColor="bg-gradient-to-br from-green-50 to-green-100"
+          bgGradient="from-green-500 to-green-600"
+          iconBg="bg-green-100"
           iconColor="text-green-600"
-          borderColor="border-green-200"
         />
         
         <StatCard
@@ -232,9 +230,9 @@ const DynamicReports = () => {
           icon={ShoppingCart}
           trend="up"
           trendValue="+8.3%"
-          bgColor="bg-gradient-to-br from-blue-50 to-blue-100"
+          bgGradient="from-blue-500 to-blue-600"
+          iconBg="bg-blue-100"
           iconColor="text-blue-600"
-          borderColor="border-blue-200"
         />
         
         <StatCard
@@ -244,9 +242,9 @@ const DynamicReports = () => {
           icon={Package2}
           trend="down"
           trendValue="Requires attention"
-          bgColor="bg-gradient-to-br from-red-50 to-red-100"
+          bgGradient="from-red-500 to-red-600"
+          iconBg="bg-red-100"
           iconColor="text-red-600"
-          borderColor="border-red-200"
         />
         
         <StatCard
@@ -256,9 +254,9 @@ const DynamicReports = () => {
           icon={Users}
           trend="up"
           trendValue="+5.2%"
-          bgColor="bg-gradient-to-br from-purple-50 to-purple-100"
+          bgGradient="from-purple-500 to-purple-600"
+          iconBg="bg-purple-100"
           iconColor="text-purple-600"
-          borderColor="border-purple-200"
         />
       </div>
 
@@ -274,8 +272,8 @@ const DynamicReports = () => {
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Enhanced Cash Flow Analysis */}
-            <Card className="col-span-1">
-              <CardHeader className="pb-4">
+            <Card className="col-span-1 shadow-lg border-0">
+              <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-blue-100">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -284,60 +282,54 @@ const DynamicReports = () => {
                     </CardTitle>
                     <p className="text-sm text-gray-600 mt-1">Monthly inflows vs outflows (PKR)</p>
                   </div>
-                  <Badge variant="outline" className="text-green-600 border-green-200">
+                  <Badge variant="outline" className="text-green-600 border-green-200 bg-white">
                     Net Positive
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent>
-                <ChartContainer
-                  config={{
-                    inflow: { label: "Cash Inflow", color: "#10b981" },
-                    outflow: { label: "Cash Outflow", color: "#ef4444" },
-                    net: { label: "Net Flow", color: "#3b82f6" }
-                  }}
-                >
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={sampleCashFlowData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis 
-                        dataKey="month" 
-                        tick={{ fontSize: 12 }}
-                        stroke="#666"
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 12 }}
-                        stroke="#666"
-                        tickFormatter={(value) => `${value/1000}k`}
-                      />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend 
-                        wrapperStyle={{ paddingTop: '20px' }}
-                        iconType="circle"
-                      />
-                      <Bar 
-                        dataKey="inflow" 
-                        name="Cash Inflow"
-                        fill="#10b981" 
-                        radius={[4, 4, 0, 0]}
-                        opacity={0.8}
-                      />
-                      <Bar 
-                        dataKey="outflow" 
-                        name="Cash Outflow"
-                        fill="#ef4444" 
-                        radius={[4, 4, 0, 0]}
-                        opacity={0.8}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+              <CardContent className="p-6">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={sampleCashFlowData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="month" 
+                      tick={{ fontSize: 12, fill: '#666' }}
+                      stroke="#666"
+                      axisLine={{ stroke: '#ddd' }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12, fill: '#666' }}
+                      stroke="#666"
+                      axisLine={{ stroke: '#ddd' }}
+                      tickFormatter={(value) => `${(value/1000).toFixed(0)}k`}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend 
+                      wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }}
+                      iconType="circle"
+                    />
+                    <Bar 
+                      dataKey="inflow" 
+                      name="Cash Inflow"
+                      fill="#10b981" 
+                      radius={[4, 4, 0, 0]}
+                      opacity={0.9}
+                    />
+                    <Bar 
+                      dataKey="outflow" 
+                      name="Cash Outflow"
+                      fill="#ef4444" 
+                      radius={[4, 4, 0, 0]}
+                      opacity={0.9}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
 
             {/* Enhanced Sales by Category */}
-            <Card className="col-span-1">
-              <CardHeader className="pb-4">
+            <Card className="col-span-1 shadow-lg border-0">
+              <CardHeader className="pb-4 bg-gradient-to-r from-green-50 to-green-100">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -346,78 +338,74 @@ const DynamicReports = () => {
                     </CardTitle>
                     <p className="text-sm text-gray-600 mt-1">Revenue distribution across categories</p>
                   </div>
-                  <Badge variant="outline" className="text-blue-600 border-blue-200">
+                  <Badge variant="outline" className="text-blue-600 border-blue-200 bg-white">
                     4 Categories
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent>
-                <ChartContainer
-                  config={{
-                    category: { label: "Category" }
-                  }}
-                >
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={sampleCategoryData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        innerRadius={40}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {sampleCategoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<PieTooltip />} />
-                      <Legend 
-                        verticalAlign="bottom" 
-                        height={36}
-                        iconType="circle"
-                        wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+              <CardContent className="p-6">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={sampleCategoryData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={90}
+                      innerRadius={40}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}%`}
+                      labelLine={false}
+                    >
+                      {sampleCategoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<PieTooltip />} />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36}
+                      iconType="circle"
+                      wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
         <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100">
               <CardTitle>Advanced Analytics</CardTitle>
               <p className="text-sm text-gray-600">Detailed performance metrics and trends</p>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <p className="text-center text-gray-500 py-8">Advanced analytics coming soon...</p>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="reports">
-          <Card>
-            <CardHeader>
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100">
               <CardTitle>Detailed Reports</CardTitle>
               <p className="text-sm text-gray-600">Generate and export comprehensive reports</p>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <p className="text-center text-gray-500 py-8">Report generation coming soon...</p>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
+          <Card className="shadow-lg border-0">
+            <CardHeader className="bg-gradient-to-r from-yellow-50 to-yellow-100">
               <CardTitle>Business Notifications</CardTitle>
               <p className="text-sm text-gray-600">Important alerts and notifications</p>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <p className="text-center text-gray-500 py-8">No notifications at this time</p>
             </CardContent>
           </Card>
